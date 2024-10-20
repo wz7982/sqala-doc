@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>原生SQL | sqala</title>
+    <meta name="generator" content="VuePress 1.9.10">
+    
+    <meta name="description" content="类型安全的Scala3查询库">
+    
+    <link rel="preload" href="/sqala-doc/assets/css/0.styles.41638646.css" as="style"><link rel="preload" href="/sqala-doc/assets/js/app.35463768.js" as="script"><link rel="preload" href="/sqala-doc/assets/js/2.767acac5.js" as="script"><link rel="preload" href="/sqala-doc/assets/js/1.7485bcf3.js" as="script"><link rel="preload" href="/sqala-doc/assets/js/30.8170df38.js" as="script"><link rel="prefetch" href="/sqala-doc/assets/js/10.c454cbf7.js"><link rel="prefetch" href="/sqala-doc/assets/js/11.4c11b429.js"><link rel="prefetch" href="/sqala-doc/assets/js/12.37c67b2d.js"><link rel="prefetch" href="/sqala-doc/assets/js/13.bf4c6df4.js"><link rel="prefetch" href="/sqala-doc/assets/js/14.a15beb18.js"><link rel="prefetch" href="/sqala-doc/assets/js/15.dd179505.js"><link rel="prefetch" href="/sqala-doc/assets/js/16.14fa32d7.js"><link rel="prefetch" href="/sqala-doc/assets/js/17.65f688a3.js"><link rel="prefetch" href="/sqala-doc/assets/js/18.9a514804.js"><link rel="prefetch" href="/sqala-doc/assets/js/19.254801e4.js"><link rel="prefetch" href="/sqala-doc/assets/js/20.1410a88d.js"><link rel="prefetch" href="/sqala-doc/assets/js/21.ea553156.js"><link rel="prefetch" href="/sqala-doc/assets/js/22.7789f1a7.js"><link rel="prefetch" href="/sqala-doc/assets/js/23.fc8c662a.js"><link rel="prefetch" href="/sqala-doc/assets/js/24.410416e3.js"><link rel="prefetch" href="/sqala-doc/assets/js/25.90d48899.js"><link rel="prefetch" href="/sqala-doc/assets/js/26.6bf27977.js"><link rel="prefetch" href="/sqala-doc/assets/js/27.e012e14c.js"><link rel="prefetch" href="/sqala-doc/assets/js/28.d552e251.js"><link rel="prefetch" href="/sqala-doc/assets/js/29.1ad360c9.js"><link rel="prefetch" href="/sqala-doc/assets/js/3.25337f94.js"><link rel="prefetch" href="/sqala-doc/assets/js/31.1f4437ab.js"><link rel="prefetch" href="/sqala-doc/assets/js/32.7cc5f0d1.js"><link rel="prefetch" href="/sqala-doc/assets/js/33.41186239.js"><link rel="prefetch" href="/sqala-doc/assets/js/4.0dfa8901.js"><link rel="prefetch" href="/sqala-doc/assets/js/5.28a50498.js"><link rel="prefetch" href="/sqala-doc/assets/js/6.f25848c6.js"><link rel="prefetch" href="/sqala-doc/assets/js/7.3ac2c704.js"><link rel="prefetch" href="/sqala-doc/assets/js/vendors~docsearch.8b826ef6.js">
+    <link rel="stylesheet" href="/sqala-doc/assets/css/0.styles.41638646.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/sqala-doc/" class="home-link router-link-active"><!----> <span class="site-name">sqala</span></a> <div class="links"><!----> <!----></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><!---->  <ul class="sidebar-links"><li><a href="/sqala-doc/metadata/" class="sidebar-link">元数据配置</a></li><li><a href="/sqala-doc/database/" class="sidebar-link">数据库交互</a></li><li><a href="/sqala-doc/query/" class="sidebar-link">查询</a></li><li><a href="/sqala-doc/native-query/" aria-current="page" class="active sidebar-link">原生SQL</a></li><li><a href="/sqala-doc/expr/" class="sidebar-link">表达式</a></li><li><a href="/sqala-doc/example/" class="sidebar-link">示例</a></li><li><a href="/sqala-doc/update/" class="sidebar-link">增删改</a></li><li><a href="/sqala-doc/dynamic-query/" class="sidebar-link">动态查询构造</a></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="原生sql"><a href="#原生sql" class="header-anchor">#</a> 原生SQL</h1> <p>sqala支持使用原生SQL，对于常用的固定模板的SQL，我们可以使用<code>jdbc</code>模块提供的字符串插值器<code>staticSql</code>来创建，前提是需要保证作用域中能找到测试连接信息的<code>given</code>实例，该实例我们在数据库交互部分的可选验证数据环节已经见过：</p> <div class="language-scala extra-class"><pre class="language-scala"><code><span class="token keyword">import</span> <span class="token namespace">sqala<span class="token punctuation">.</span>jdbc<span class="token punctuation">.</span></span><span class="token operator">*</span>
+
+<span class="token keyword">transparent</span> <span class="token keyword">inline</span> <span class="token keyword">given</span> JdbcTestConnection <span class="token operator">=</span> JdbcTestConnection<span class="token punctuation">(</span>
+    <span class="token string">&quot;Your Url&quot;</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;Your username&quot;</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;Your password&quot;</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;Driver class name&quot;</span><span class="token punctuation">,</span>
+    MysqlDialect <span class="token comment">// 对应的方言</span>
+<span class="token punctuation">)</span>
+</code></pre></div><p>有了以上保证后，使用字符串插值器创建原生SQL：</p> <div class="language-scala extra-class"><pre class="language-scala"><code><span class="token keyword">val</span> x <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token keyword">val</span> y <span class="token operator">=</span> <span class="token string">&quot;abc&quot;</span>
+
+<span class="token keyword">val</span> nativeSql <span class="token operator">=</span> <span class="token string-interpolation"><span class="token id function">staticSql</span><span class="token string">&quot;select a as col1, b, c from t where x = </span><span class="token interpolation"><span class="token punctuation">$</span><span class="token expression">x</span></span><span class="token string"> and y = </span><span class="token interpolation"><span class="token punctuation">$</span><span class="token expression">y</span></span><span class="token string">&quot;</span></span>
+</code></pre></div><p>传入的变量会被处理为<code>?</code>，来避免SQL注入。</p> <p><code>List</code>类型变量会按元素数量生成<code>(?, ?, ?)</code>，<strong>但注意其不像sqala提供的查询构造器对空集合进行优化，原生SQL在传入空集合时可能会生成错误的SQL，请在传入时请检查集合是否为空</strong>。</p> <p>然后我们可以使用配置好的上下文来查询数据：</p> <div class="language-scala extra-class"><pre class="language-scala"><code><span class="token keyword">val</span> result <span class="token operator">=</span> db<span class="token punctuation">.</span>fetch<span class="token punctuation">(</span>nativeSql<span class="token punctuation">)</span>
+</code></pre></div><p>如果SQL正确且参数类型与数据库相符合，sqala能从查询信息中自动推导出结果的字段，我们可以像使用普通对象一样处理查询中的字段，这个操作是类型安全的：</p> <div class="language-scala extra-class"><pre class="language-scala"><code><span class="token keyword">for</span> r <span class="token keyword">&lt;-</span> result <span class="token keyword">do</span>
+    <span class="token keyword">val</span> col1 <span class="token operator">=</span> r<span class="token punctuation">.</span>col1
+    <span class="token keyword">val</span> b <span class="token operator">=</span> r<span class="token punctuation">.</span>b
+    <span class="token keyword">val</span> c <span class="token operator">=</span> r<span class="token punctuation">.</span>c
+</code></pre></div><p>但如果你的查询是需要动态拼接的，则需要使用<code>sql</code>插值器：</p> <div class="language-scala extra-class"><pre class="language-scala"><code><span class="token keyword">val</span> x <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token keyword">val</span> y <span class="token operator">=</span> <span class="token string">&quot;abc&quot;</span>
+
+<span class="token keyword">val</span> nativeSql <span class="token operator">=</span> <span class="token string-interpolation"><span class="token id function">sql</span><span class="token string">&quot;select * from t where x = </span><span class="token interpolation"><span class="token punctuation">$</span><span class="token expression">x</span></span><span class="token string"> and y = </span><span class="token interpolation"><span class="token punctuation">$</span><span class="token expression">y</span></span><span class="token string">&quot;</span></span>
+</code></pre></div><p><code>sql</code>插值器支持<code>+</code>运算，方便进行条件拼接：</p> <div class="language-scala extra-class"><pre class="language-scala"><code><span class="token keyword">val</span> x <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token keyword">val</span> y <span class="token operator">=</span> <span class="token string">&quot;abc&quot;</span>
+
+<span class="token keyword">var</span> nativeSql <span class="token operator">=</span> <span class="token string-interpolation"><span class="token id function">sql</span><span class="token string">&quot;select * from t where true &quot;</span></span>
+
+<span class="token keyword">if</span> x <span class="token operator">&gt;</span> <span class="token number">0</span> then nativeSql <span class="token operator">+=</span> <span class="token string-interpolation"><span class="token id function">sql</span><span class="token string">&quot;and x = </span><span class="token interpolation"><span class="token punctuation">$</span><span class="token expression">x</span></span><span class="token string"> &quot;</span></span>
+
+<span class="token keyword">if</span> y<span class="token punctuation">.</span>nonEmpty then nativeSql <span class="token operator">+=</span> <span class="token string-interpolation"><span class="token id function">sql</span><span class="token string">&quot;and y = </span><span class="token interpolation"><span class="token punctuation">$</span><span class="token expression">y</span></span><span class="token string">&quot;</span></span>
+</code></pre></div><p>此时sqala不支持自动推断返回类型，但我们可以使用<code>fetchTo</code>方法配合一个新的类来查询原生SQL：</p> <div class="language-scala extra-class"><pre class="language-scala"><code><span class="token keyword">case</span> <span class="token keyword">class</span> Result<span class="token punctuation">(</span>x<span class="token operator">:</span> <span class="token builtin">Int</span><span class="token punctuation">,</span> y<span class="token operator">:</span> Streing<span class="token punctuation">)</span>
+
+<span class="token keyword">val</span> result <span class="token operator">=</span> db<span class="token punctuation">.</span>fetchTo<span class="token punctuation">[</span>Result<span class="token punctuation">]</span><span class="token punctuation">(</span>nativeSql<span class="token punctuation">)</span>
+</code></pre></div></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="prev">
+      ←
+      <a href="/sqala-doc/query/" class="prev">
+        查询
+      </a></span> <span class="next"><a href="/sqala-doc/expr/">
+        表达式
+      </a>
+      →
+    </span></p></div> </main></div><div class="global-ui"></div></div>
+    <script src="/sqala-doc/assets/js/app.35463768.js" defer></script><script src="/sqala-doc/assets/js/2.767acac5.js" defer></script><script src="/sqala-doc/assets/js/1.7485bcf3.js" defer></script><script src="/sqala-doc/assets/js/30.8170df38.js" defer></script>
+  </body>
+</html>
