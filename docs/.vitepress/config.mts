@@ -27,8 +27,8 @@ export default defineConfig({
           '/': {
             base: '/',
             items: [
-              { text: '元数据配置', link: '/zh/metadata' },
-              { text: '查询', link: '/zh/query' },
+              { text: '元数据配置', link: 'zh/metadata' },
+              { text: '查询', link: 'zh/query' },
               { text: '数据库交互', link: 'zh/database' }
             ],
           },
