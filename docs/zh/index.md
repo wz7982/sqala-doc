@@ -47,7 +47,7 @@ sqala是一个基于Scala 3的SQL查询库，得名于Scala和SQL的结合。
 
 4. 在编译期捕捉错误查询，并返回语义化的编译错误：
 
-    ![demo1](/images/demo1.gif)
+    ![demo1](../../images/demo1.gif)
 
 5. 支持MySQL、PostgreSQL、Oracle在内的多种方言，同一个查询表达式传入不同的方言参数即可生成不同的SQL。
 
