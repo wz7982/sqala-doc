@@ -37,7 +37,7 @@ FROM
 
 ![返回类型](../../images/query-result.png)
 
-## filter
+## 过滤
 
 `filter`方法对应到SQL的`WHERE`子句，参数是一个`T => Boolean`类型的函数，描述`WHERE`条件：
 
@@ -75,13 +75,13 @@ val q = queryContext:
         .filterIf(name.nonEmpty)(_.name == name)
 ```
 
-### filter的限制
+### 过滤的限制
 
 sqala会检查`filter`中的表达式，如果其中包含聚合函数、窗口函数等表达式，则会返回编译错误：
 
 ![filter的编译错误](../../images/filter-error.png)
 
-## map
+## 投影
 
 `map`方法用于手动指定`SELECT`投影列表，sqala允许投影到表达式、表达式组成的元组、表达式组成的命名元组。
 
@@ -171,7 +171,7 @@ val q = queryContext:
     yield d.name
 ```
 
-## take和drop
+## 限制结果
 
 `take`和`drop`对应SQL的`LIMIT`和`OFFSET`等功能，并且会在生成查询时根据方言选取合适的策略。
 
@@ -182,7 +182,7 @@ val q = queryContext:
     query[Department].drop(100).take(10)
 ```
 
-## join
+## 表连接
 
 sqala支持`join`、`leftJoin`、`rightJoin`方法连接表，`on`添加连接条件：
 
@@ -240,7 +240,7 @@ val q = queryContext:
 
 但是对于这样数据表存储树形数据的情况，更方便的做法是使用sqala提供的`递归查询`功能。
 
-## groupBy
+## 分组
 
 `groupBy`方法对应SQL的`GROUP BY`子句，参数为表达式组成的命名元组：
 
