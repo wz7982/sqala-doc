@@ -261,7 +261,22 @@ FROM
     `employee` AS `e`
 ```
 
-由于在`groupBy`中我们已经为分组表达式起名了，所以如果分组表达式比较复杂，在后续使用时不需要将表达式重复一次：
+在分组后的`map`等操作里，第一个参数是分组表达式的命名元组，后续参数是未分组的表，如果是单表查询，一共有两个参数，如果是两表连接查询，一个有三个参数，以此类推。
+
+sqala会对查询进行语义检查，从未分组表中引用出的字段，除非将其放入聚合函数，否则无法通过编译：
+
+![groupBy的编译错误](../../images/group-error.png)
+
+如果得到未分组字段的任意值即可满足需求，可以使用`anyValue`聚合函数：
+
+```scala
+val q = queryContext:
+    query[Employee]
+        .groupBy(e => (department = e.departmentId))
+        .map((g, e) => (g.department, anyValue(e.id)))
+```
+
+由于在`groupBy`中我们已经为分组表达式起了别名，所以如果分组表达式比较复杂，在后续使用时不需要将表达式重复一次：
 
 ```scala
 val q = queryContext:
@@ -274,3 +289,5 @@ val q = queryContext:
             )
         .map((g, e) => (g.s, count()))
 ```
+
+## 多维分组
