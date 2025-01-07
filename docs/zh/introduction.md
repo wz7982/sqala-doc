@@ -6,7 +6,7 @@
 //> using scala 3.6.2
 //> using options -language:experimental.namedTuples
 //> using dep com.h2database:h2:2.3.232
-//> using dep com.wz7982::sqala-jdbc:0.2.18
+//> using dep com.wz7982::sqala-jdbc:0.2.19
 
 import org.h2.jdbcx.*
 import sqala.jdbc.*
