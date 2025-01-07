@@ -1,6 +1,6 @@
 # 入门
 
-下面的例子展示了sqala的基本功能，将下面的代码保存为`.sc`文件，比如`demo.sc`，通过`scala demo.sc`命令执行即可看到运行结果：
+下面的例子使用H2内存数据库展示了sqala的基本功能，将下面的代码保存为`.sc`文件，比如`demo.sc`，通过`scala demo.sc`命令执行即可看到运行结果：
 
 ```scala
 //> using scala 3.6.2
