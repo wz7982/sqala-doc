@@ -9,6 +9,8 @@ import sqala.static.dsl.*
 import sqala.static.dsl.given
 ```
 
+以下示例中生成的查询均以MySQL方言为例，实际使用时sqala会根据方言配置生成合适的SQL。
+
 ## 构建查询
 
 sqala的查询需要放在`queryContext`方法中构建，该方法提供了构造查询需要的上下文。
@@ -20,7 +22,7 @@ val q = queryContext:
     query[Department]
 ```
 
-生成的查询为（以MySQL为例）：
+生成的SQL为：
 
 ```sql
 SELECT 
@@ -46,7 +48,7 @@ val q = queryContext:
     query[Department].filter(d => d.id == id)
 ```
 
-生成的查询为（以MySQL为例）：
+生成的SQL为：
 
 ```sql
 SELECT 
@@ -143,6 +145,12 @@ val q = queryContext:
 
 ![返回类型](../../images/map-namedtuple.png)
 
+### 投影的限制
+
+在投影中如果同时出现了聚合函数和其他表达式，sqala会在编译期检查并返回编译错误：
+
+![map的编译错误](../../images/map-error.png)
+
 ## 使用for推导式
 
 sqala支持将只使用了`filter`和`map`的简单查询转变为`for`推导式，提高可读性：
@@ -161,4 +169,108 @@ val q = queryContext:
     for d <- query[Department]
         if d.id == 1
     yield d.name
+```
+
+## take和drop
+
+`take`和`drop`对应SQL的`LIMIT`和`OFFSET`等功能，并且会在生成查询时根据方言选取合适的策略。
+
+如果只调用其一方法，那么`LIMIT`的默认值是`1`，`OFFSET`的默认值是`0`。
+
+```scala
+val q = queryContext:
+    query[Department].drop(100).take(10)
+```
+
+## join
+
+sqala支持`join`、`leftJoin`、`rightJoin`方法连接表，`on`添加连接条件：
+
+```scala
+val q = queryContext:
+    query[Employee]
+        .join[Department]
+        .on((e, d) => e.departmentId == d.id)
+```
+
+`.on`可以省略：
+
+```scala
+val q = queryContext:
+    query[Employee]
+        .join[Department]((e, d) => e.departmentId == d.id)
+```
+
+查询返回的类型为：
+
+![返回类型](../../images/join-result1.png)
+
+如果将上文中的`join`改为`leftJoin`，则返回类型为：
+
+![返回类型](../../images/join-result2.png)
+
+sqala会从连接路径中计算返回类型，比如我们有：
+
+```scala
+case class A(id: Int)
+case class B(id: Int)
+case class C(id: Int)
+
+val q = queryContext:
+    query[A]
+        .rightJoin[B]((a, b) => a.id == b.id)
+        .leftJoin[C]((a, b, c) => a.id == c.id)
+```
+
+那么，此查询的返回类型为：
+
+![返回类型](../../images/join-result3.png)
+
+这是由于外连接会产生额外的空值，sqala会将可能为空的类型自动添加上`Option`。
+
+## 自连接
+
+sqala可以很方便地处理一个表连接自身的情况，比如我们的`Department`表记录了`managerId`字段，即上级的id，我们可以使用自连接查询这样的数据：
+
+```scala
+val q = queryContext:
+    query[Department]
+        .join[Department]((d1, d2) => d1.managerId == d2.id)
+```
+
+但是对于这样数据表存储树形数据的情况，更方便的做法是使用sqala提供的`递归查询`功能。
+
+## groupBy
+
+`groupBy`方法对应SQL的`GROUP BY`子句，参数为表达式组成的命名元组：
+
+```scala
+val q = queryContext:
+    query[Employee]
+        .groupBy(e => (department = e.departmentId))
+        .map((g, e) => (g.department, count()))
+```
+
+生成的SQL为：
+
+```sql
+SELECT 
+    `e`.`department_id`,
+    COUNT(*)
+FROM
+    `employee` AS `e`
+```
+
+由于在`groupBy`中我们已经为分组表达式起名了，所以如果分组表达式比较复杂，在后续使用时不需要将表达式重复一次：
+
+```scala
+val q = queryContext:
+    query[Employee]
+        .groupBy: e => 
+            (s = 
+                if e.salary >= 50000 then "高"
+                else if e.salary >= 20000 && e.salary < 50000 then "中"
+                else "低"
+            )
+        .map((g, e) => (g.s, count()))
 ```
