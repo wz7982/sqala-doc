@@ -4,7 +4,7 @@ sqala是一个基于Scala 3的SQL查询库，得名于Scala和SQL的结合。
 
 使用sqala，你可以：
 
-1. 使用对象、字段构建查询：
+1. 使用面向对象的方式构建查询：
 
     ```scala
     case class User(id: Int, name: String)
@@ -82,7 +82,7 @@ sqala是一个基于Scala 3的SQL查询库，得名于Scala和SQL的结合。
     val id = 1
 
     val sql = staticSql"""
-    SELECT id, name FROM user WHERE id = $id
+    SELECT "id", "name" FROM "user" WHERE "id" = $id
     """
 
     val result = db.fetch(q)
