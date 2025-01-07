@@ -27,6 +27,7 @@ export default defineConfig({
           '/': {
             base: '/',
             items: [
+              { text: '入门', link: 'introduction' },
               { text: '元数据配置', link: 'metadata' },
               { text: '查询', link: 'query' },
               { text: '数据库交互', link: 'database' }
