@@ -17,7 +17,7 @@ libraryDependencies += "com.wz7982" % "sqala-jdbc_3" % "latest.integration"
 ```scala
 CREATE TABLE department(
     `id` INT PRIMARY KEY AUTO_INCREMENT,
-    `manager_id` INT,
+    `manager_id` INT NOT NULL,
     `name` VARCHAR(50) NOT NULL
 );
 
@@ -26,8 +26,9 @@ CREATE TABLE employee(
     `name` VARCHAR(50) NOT NULL,
     `salary` DECIMAL(10, 2) NOT NULL,
     `hire_date` DATE NOT NULL,
-    `manager_id` INT,
+    `manager_id` INT NOT NULL,
     `department_id` INT NOT NULL,
+    `email` VARCHAR(50),
     `state` TINYINT NOT NULL
 );
 ```
@@ -39,7 +40,7 @@ import java.time.LocalDate
 
 case class Department(
     id: Int,
-    managerId: Option[Int],
+    managerId: Int,
     name: String
 )
 
@@ -48,9 +49,10 @@ case class Employee(
     name: String,
     salary: BigDecimal,
     hireDate: LocalDate,
-    managerId: Option[Int],
+    managerId: Int,
     departmentId: Int,
-    state: Int
+    email: Option[String],
+    state: Int,
 )
 ```
 
@@ -148,7 +150,7 @@ import java.time.LocalDate
 
 case class Department(
     @autoInc id: Int,
-    managerId: Option[Int],
+    managerId: Int,
     name: String
 )
 
