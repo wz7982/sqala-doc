@@ -291,3 +291,41 @@ val q = queryContext:
 ```
 
 ## 多维分组
+
+除了普通分组外，sqala还支持`groupByCube`、`groupByRollup`、`groupBySets`多维分组，前两者使用方法与`groupBy`类似：
+
+```scala
+val q = queryContext:
+    query[Employee]
+        .groupByCube(e => (department = e.departmentId, name = e.name))
+        .map((g, e) => (g.department, g.name, count()))
+```
+
+或：
+
+```scala
+val q = queryContext:
+    query[Employee]
+        .groupByRollup(e => (department = e.departmentId, name = e.name))
+        .map((g, e) => (g.department, g.name, count()))
+```
+
+另外，`grouping`聚合函数可以配合多维分组使用（Sqlite等数据库不支持此函数）：
+
+```scala
+val q = queryContext:
+    query[Employee]
+        .groupByCube(e => (department = e.departmentId, name = e.name))
+        .map: (g, e) => 
+            (grouping(g.department), g.department, grouping(g.name), g.name, count())
+```
+
+`groupBySets`在此基础上多了一个参数，是基础分组组成的分组集（空分组集使用Unit类型表示）：
+
+```scala
+val q = queryContext:
+    query[Employee]
+        .groupBySets(e => (department = e.departmentId, name = e.name))
+            (g => ((g.department, g.name), g.name, ()))
+        .map((g, e) => (g.department, g.name, count()))
+```
