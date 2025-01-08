@@ -33,9 +33,9 @@ val q = queryContext:
     val baseQuery = query[Data]
 
     val groupingQuery = 
-        if cond == 1 then
+        if dim == 1 then
             baseQuery.groupBy(d => (dim = d.dim1))
-        else if cond == 2 then
+        else if dim == 2 then
             baseQuery.groupBy(d => (dim = d.dim2))
         else
             baseQuery.groupBy(d => (dim = d.dim3))
