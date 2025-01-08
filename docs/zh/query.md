@@ -67,7 +67,7 @@ sqala提供了`filterIf`方法用于动态拼接条件，会在第一个参数�
 
 ```scala
 val id = 1
-val name = "部门1"
+val name = "IT"
 
 val q = queryContext:
     query[Department]
