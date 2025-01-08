@@ -94,12 +94,10 @@ val json2 = r2.toJson
 
 ## JSON反序列化
 
-使用`fromJson`方法可以将JSON字符串映射回对象，映射过程中可能产生`JsonDecodeException`，所以我们要`import scala.language.experimental.saferExceptions`，并在`try`表达式中使用它：
+使用`fromJson`方法可以将JSON字符串映射回对象：
 
 ```scala
 import sqala.data.json.*
-
-import scala.language.experimental.saferExceptions
 
 val json = """
 {
@@ -111,10 +109,8 @@ val json = """
 }
 """
 
-try
-    val people = fromJson[People](json)
-    println(people)
-catch case e: JsonDecodeException => println(e.msg)
+val people = fromJson[People](json)
+println(people)
 ```
 
 ## JSON注解
