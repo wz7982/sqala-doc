@@ -10,7 +10,7 @@ def baseQuery(using QueryContext) =
         .join[Department]((e, d) => e.departmentId == d.id)
 ```
 
-这样，这个基础查询就可以多次使用，用于构建其他查询：
+这样，这个基础查询就可以在`queryContext`中多次使用，用于构建其他查询：
 
 ```scala
 val q1 = queryContext:
@@ -18,6 +18,21 @@ val q1 = queryContext:
 
 val q2 = queryContext:
     baseQuery.sortBy((e, d) => d.name)
+```
+
+在`queryContext`中，我们可以轻易地将子查询封装到变量中，在后续引入，而无需像SQL那样嵌套：
+
+```scala
+val q = queryContext:
+    val subquery = 
+        from[Employee]
+            .filter(e2 => e1.departmentId == e2.departmentId)
+            .map(e2 => avg(e2.salary))
+
+    val q =
+        from[Employee]
+            .filter: e1 => 
+                e1.salary > subquery
 ```
 
 ## 条件构造
