@@ -8,10 +8,22 @@
 libraryDependencies += "com.wz7982" % "sqala-dynamic_3" % "latest.integration"
 ```
 
-既然编译期不知道有什么样的表，自然也不可能编写出对应的实体类，所以我们使用`table`、`column`两个方法来动态创建表和字段，并且带入到查询里，动态查询DSL需要`import sqala.dynamic.*`：
+动态查询DSL需要`import sqala.dynamic.dsl.*`。
+
+我们使用`asTable`方法创建一个表，并且带入到查询里：
 
 ```scala
-import sqala.dynamic.*
+import import sqala.dynamic.dsl.*
+
+val department = asTable[Department]
+
+val q = select (department.id, department.name) from department where department.id == 1
+```
+
+我们也可以使用`table`、`column`两个方法来动态创建编译期无法感知到的表和字段，并且带入到查询里：
+
+```scala
+import import sqala.dynamic.dsl.*
 
 val q = select (List(column("a"), column("b"))) from table("t") where column("a") == 1
 ```

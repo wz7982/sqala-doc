@@ -10,6 +10,8 @@
 libraryDependencies += "com.wz7982" % "sqala-jdbc_3" % "latest.integration"
 ```
 
+元数据相关的设置通常需要`import sqala.metadata.*`。
+
 ## 基础配置
 
 我们以下面两个数据库表（MySQL）为例：
@@ -65,8 +67,8 @@ sqala无需像其他查询库那样额外定义一个表结构对象，在创建
 ```scala
 import sqala.static.dsl.*
 
-val q = queryContext:
-    query[Department].filter(d => d.id == 1)
+val q =
+    from[Department].filter(d => d.id == 1)
 ```
 
 ## 自定义字段类型
@@ -80,7 +82,7 @@ sqala内置支持的字段类型有：
 |scala.Float            |java.time.LocalDate    |
 |scala.Double           |java.time.LocalDateTime|
 |scala.math.BigDecimal  |以上类型对应的Option类型 |
-|sqala.static.dsl.Json  |                       |
+|sqala.metadata.Json  |                       |
 
 所以在上面的例子中，我们使用`Int`来接收员工表的`state`字段，但是使用`Int`管理这样的枚举字段，既不安全，数值也没有实际意义，因此我们更希望使用Scala3的`enum`来管理这样的字段：
 
@@ -109,8 +111,8 @@ case class Employee(
 ```scala
 import sqala.static.dsl.*
 
-val q = queryContext:
-    query[Employee].filter(e => e.state == EmployeeState.Active)
+val q =
+    from[Employee].filter(e => e.state == EmployeeState.Active)
 ```
 
 sqala会返回一个编译错误。原因是sqala不知道如何处理这样的字段，为其生成查询，或从查询结果中反序列化。
@@ -118,7 +120,7 @@ sqala会返回一个编译错误。原因是sqala不知道如何处理这样的�
 因此我们需要为自定义类型提供`trait CustomField`的实现，并建议将实现放入自定义类型的伴生对象中：
 
 ```scala
-import sqala.static.dsl.*
+import sqala.metadata.*
 
 enum EmployeeState:
     case Active
@@ -144,7 +146,7 @@ object EmployeeState:
 sqala支持`primaryKey`和`autoInc`注解标记主键字段和自增主键，因此，我们可以将两个实体类改为：
 
 ```scala
-import sqala.static.dsl.*
+import sqala.metadata.*
 
 import java.time.LocalDate
 
@@ -172,6 +174,8 @@ sqala支持一个实体类中有多个`primaryKey`字段，但只支持一个`au
 如果实体类和数据库表不符合驼峰风格字段名映射到蛇形风格规则的话，可以使用`table`和`column`注解手动管理名称：
 
 ```scala
+import sqala.metadata.*
+
 @table("department")
 case class Department(
     @autoInc @column("id") id: Int,

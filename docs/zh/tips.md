@@ -6,7 +6,7 @@
 
 ```scala
 def baseQuery(using QueryContext) =
-    query[Employee]
+    from[Employee]
         .join[Department]((e, d) => e.departmentId == d.id)
 ```
 
@@ -30,7 +30,7 @@ case class Data(dim1: Int, dim2: Int, dim3: Int, measure: Int)
 val dim: Int = ???
 
 val q = queryContext:
-    val baseQuery = query[Data]
+    val baseQuery = from[Data]
 
     val groupingQuery = 
         if dim == 1 then
@@ -49,7 +49,7 @@ val q = queryContext:
 
 ```scala
 val q = queryContext:
-    val salaryAvg = query[Employee].map(e => avg(e.salary))
+    val salaryAvg = from[Employee].map(e => avg(e.salary))
 
-    query[Employee].filter(e => e.salary > salaryAvg)
+    from[Employee].filter(e => e.salary > salaryAvg)
 ```
