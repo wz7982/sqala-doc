@@ -29,7 +29,7 @@ val q =
 ```scala
 val employeeId: Int = ???
 
-val q =
+val q = queryContext:
     val querySalary = from[Employee]
         .filter(_.id == employeeId)
         .map(_.salary)

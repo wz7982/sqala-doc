@@ -10,7 +10,7 @@ def baseQuery(using QueryContext) =
         .join[Department]((e, d) => e.departmentId == d.id)
 ```
 
-这样，这个基础查询就可以多次使用，用于构建其他查询：
+这样，这个基础查询就可以在`queryContext`中多次使用，用于构建其他查询：
 
 ```scala
 val q1 = queryContext:
@@ -32,15 +32,12 @@ val dim: Int = ???
 val q = queryContext:
     val baseQuery = from[Data]
 
-    val groupingQuery = 
-        if dim == 1 then
-            baseQuery.groupBy(d => (dim = d.dim1))
-        else if dim == 2 then
-            baseQuery.groupBy(d => (dim = d.dim2))
-        else
-            baseQuery.groupBy(d => (dim = d.dim3))
-
-    groupingQuery.map((g, d) => (g.dim, sum(d.measure)))
+    if dim == 1 then
+        baseQuery.groupBy(d => (dim = d.dim1)).map(g, d) => (g.dim1, sum(d.measure))
+    else if dim == 2 then
+        baseQuery.groupBy(d => (dim = d.dim2)).map(g, d) => (g.dim2, sum(d.measure))
+    else
+        baseQuery.groupBy(d => (dim = d.dim3)).map(g, d) => (g.dim3, sum(d.measure))
 ```
 
 ## 提升子查询的可读性
