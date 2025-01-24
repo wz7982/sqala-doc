@@ -6,10 +6,11 @@
 //> using scala 3.6.2
 //> using options -language:experimental.namedTuples
 //> using dep com.h2database:h2:2.3.232
-//> using dep com.wz7982::sqala-jdbc:0.2.19
+//> using dep com.wz7982::sqala-jdbc:0.2.21
 
 import org.h2.jdbcx.*
 import sqala.jdbc.*
+import sqala.metadata.*
 import sqala.static.dsl.*
 
 object DB:
@@ -38,8 +39,7 @@ case class Demo(
 db.insert(Demo(0L, "sqala", "Scala's sql lib"))
 
 val result = db.find:
-    queryContext:
-        query[Demo].filter(_.key == "sqala")
+    from[Demo].filter(_.key == "sqala").map(d => (key = d.key, value = d.value))
 
 println(result)
 ```

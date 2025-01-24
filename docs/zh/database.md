@@ -6,7 +6,6 @@
 
 ```scala
 import sqala.jdbc.*
-import sqala.static.dsl.*
 
 import javax.sql.DataSource
 
@@ -78,8 +77,8 @@ case class Entity(x: Int, y: String) derives ValidateSchema
 使用`fetch`方法查询数据，其返回一个List类型的结果：
 
 ```scala
-val q = queryContext:
-    query[Department].filter(_.id > 1)
+val q =
+    from[Department].filter(_.id > 1)
 
 val result: List[Department] = db.fetch(q)
 ```
@@ -95,8 +94,8 @@ val result: List[SomeEntity] = db.fetchTo[SomeEntity](q)
 `find`方法返回一个`Option`类型的结果，即查询命中结果集的首条数据：
 
 ```scala
-val q = queryContext:
-    query[Department].filter(_.id > 1)
+val q =
+    from[Department].filter(_.id > 1)
 
 val result: Option[Department] = db.find(q)
 ```
@@ -112,8 +111,8 @@ val result: Option[SomeEntity] = db.findTo[SomeEntity](q)
 查询数据条数是一个常用的操作，我们可以使用`fetchSize`方法进行查询：
 
 ```scala
-val q = queryContext:
-    query[Department].filter(_.id > 1)
+val q =
+    from[Department].filter(_.id > 1)
 
 val result: Long = db.fetchSize(q)
 ```
@@ -125,8 +124,8 @@ val result: Long = db.fetchSize(q)
 使用`fetchExists`查询存在性：
 
 ```scala
-val q = queryContext:
-    query[Department].filter(_.id > 1)
+val q =
+    from[Department].filter(_.id > 1)
 
 val result: Boolean = db.fetchExists(q)
 ```
@@ -148,8 +147,8 @@ case class Page[T](
 `page`的参数分别为：查询语句、页大小、页码、是否需要查询条数（默认为true）：
 
 ```scala
-val q = queryContext:
-    query[Department]
+val q =
+    from[Department]
 
 val result: Page[Department] = db.page(q, 10, 1)
 ```
@@ -157,8 +156,8 @@ val result: Page[Department] = db.page(q, 10, 1)
 其中最后一个参数控制是否需要查询条数，如果在每次分页查询都查询条数，可能会浪费数据库资源，比如实际业务中我们可以只在第一页查询条数，其他情况返回0：
 
 ```scala
-val q = queryContext:
-    query[Department]
+val q =
+    from[Department]
 
 val pageSize = 10
 val pageNo = 1
@@ -235,8 +234,8 @@ val result: Int = db.save(department)
 在需要操作大批量数据的场景中（比如导出数据到文件），如果我们将数据一次性查入到内存，可能会导致内存占用过大，如果采用分页查询，可能会导致效率低下。因此sqala支持了JDBC的游标查询，使用`cursorFetch`启用游标查询：
 
 ```scala
-val q = queryContext:
-    query[Department]
+val q =
+    from[Department]
 
 db.cursorFetch(q, 100): c =>
     // 对数据的操作
@@ -262,8 +261,8 @@ case class Cursor[T](
 使用`sql`方法返回生成的SQL：
 
 ```scala
-val q = queryContext:
-    query[Department].filter(_.id > 1)
+val q =
+    from[Department].filter(_.id > 1)
 
 val (sql, args) = q.sql(MysqlDialect)
 ```

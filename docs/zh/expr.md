@@ -10,8 +10,8 @@ sqala中包含了一个SQL语法树，并在编译期读取Scala本身的语法�
 
 ```scala
 // id是一个字段类型的表达式
-val q = queryContext:
-    query[Department].filter(d => d.id > 1)
+val q =
+    from[Department].filter(d => d.id > 1)
 ```
 
 ## 值
@@ -19,8 +19,15 @@ val q = queryContext:
 除了字段外，值表达式也是最基本的表达式，比如一些需求需要把一个固定的值作为结果的一列：
 
 ```scala
-val q = queryContext:
-    query[Department].map(d => (id = d.id, c1 = 1, c2 = "a"))
+val q =
+    from[Department].map(d => (id = d.id, c1 = 1, c2 = "a"))
+```
+
+我们也可以使用`asExpr`将值转为SQL表达式：
+
+```scala
+val q =
+    from[Department].map(d => (id = d.id, c1 = 1.asExpr, c2 = "a".asExpr))
 ```
 
 ## 逻辑、关系运算
@@ -45,42 +52,42 @@ sqala支持以下的符号运算符：
 ```scala
 val id = 1
 val name = "小黑"
-val q = queryContext:
-    query[Department].filter(d => d.id > id && d.name == name)
+val q =
+    from[Department].filter(d => d.id > id && d.name == name)
 ```
 
 如果`==`或`!=`的右侧值是`None`，则对应SQL的`IS NULL`和`IS NOT NULL`
 
 ```scala
 // a.x IS NULL 
-val q1 = queryContext:
-    query[A].filter(a => a.x == None)
+val q1 =
+    from[A].filter(a => a.x == None)
 
 // a.x IS NOT NULL 
-val q2 = queryContext:
-    query[A].filter(a => a.x != None)
+val q2 =
+    from[A].filter(a => a.x != None)
 ```
 
 为了使`!=`与编程语言语义一致，sqala会进行语义优化：
 
 ```scala
 // a.x <> 1 OR a.x IS NULL
-val q = queryContext:
-    query[A].filter(a => a.x != 1)
+val q =
+    from[A].filter(a => a.x != Some(1))
 ```
 
 运算符的右侧不仅可以是普通的值，也可以是另一个表达式，比如它可以放在`ON`条件里：
 
 ```scala
-val q = queryContext:
-    query[A].join[B].on((a, b) => a.id == b.id)
+val q =
+    from[A].join[B].on((a, b) => a.id == b.id)
 ```
 
-值表达式也可以轻易地放在一个二元运算的左侧：
+只需要使用`.asExpr`，值表达式也可以轻易地放在一个二元运算的左侧：
 
 ```scala
-val q = queryContext:
-    query[Department].filter(d => 1 == d.id)
+val q =
+    from[Department].filter(d => 1.asExpr == d.id)
 ```
 
 除了这些符号组成的运算符，sqala还支持一些非符号的运算符：
@@ -96,8 +103,8 @@ val q = queryContext:
 
 ```scala
 val ids = List(1, 2, 3)
-val q = queryContext:
-    query[Department].filter(d => d.id.in(ids) && d.name.like("小%"))
+val q =
+    from[Department].filter(d => d.id.in(ids) && d.name.like("小%"))
 ```
 
 `in`运算在传入一个空列表时，为避免生成错误SQL，此谓词会被优化成`FALSE`。
@@ -105,35 +112,35 @@ val q = queryContext:
 `in`运算可以也传入一个类型相符的表达式元组，而非值列表：
 
 ```scala
-val q = queryContext:
-    query[Department].filter(d => d.id.in(d.id, d.id + 1, 1))
+val q =
+    from[Department].filter(d => d.id.in(d.id, d.id + 1, 1))
 ```
 
 使用`!`创建一元逻辑运算：
 
 ```scala
-val q = queryContext:
-    query[Department].filter(d => !(d.id == 1))
+val q =
+    from[Department].filter(d => !(d.id == 1))
 ```
 
 对`in`、`between`、`like`、`exists`等运算符使用逻辑运算`!`，会生成对应的`NOT IN`、`NOT BETWEEN`、`NOT LIKE`、`NOT EXISTS`运算符，而非一元运算。
 
 ## 多列比较
 
-sqala也允许多列同时参与关系运算：
+sqala也允许多列同时参与关系运算，需要使用`.asExpr`将一个表达式元组转变成一个单一的表达式：
 
 ```scala
 val q1 = queryContext:
-    query[Department].filter: d => 
-        (d.id, d.name) == (1, "小黑")
+    from[Department].filter: d => 
+        (d.id, d.name).asExpr == (1, "小黑")
 
 val q2 = queryContext:
-    query[Department].filter: d => 
-        (d.id, d.name).in(List((1, "小黑"), (2, "小白")))
+    from[Department].filter: d => 
+        (d.id, d.name).asExpr.in(List((1, "小黑"), (2, "小白")))
 
 val q3 = queryContext:
-    query[Department].filter: d => 
-        (d.id, d.name).in(query[Department].map(d => (d.id, d.name)))
+    from[Department].filter: d => 
+        (d.id, d.name).asExpr.in(from[Department].map(d => (d.id, d.name)))
 ```
 
 ## 数值运算
@@ -149,15 +156,15 @@ sqala支持以下数值运算符：
 | `%`       | `%`          |
 
 ```scala
-val q = queryContext: 
-    query[Department].filter(d => d.id + 1 > 5).map(_.id * 100)
+val q =
+    from[Department].filter(d => d.id + 1 > 5).map(_.id * 100)
 ```
 
 以及一元运算`+`和`-`：
 
 ```scala
-val q = queryContext: 
-    query[Department].map(d => -d.id)
+val q =
+    from[Department].map(d => -d.id)
 ```
 
 ## 函数
@@ -182,29 +189,27 @@ sqala内置了一些常用函数
 |`lower`   |`LOWER`     |
 |`now()`   |`NOW()`     |
 
-由于各种数据库的函数的差异极大，sqala没有内置其他的SQL函数，我们同样可以使用`sqlFunction`注解创建函数。
+由于各种数据库的函数的差异极大，sqala没有内置其他的SQL函数，但我们可以使用`Expr.Func`创建函数。
 
 我们以MySQL的`LEFT`函数为例：
 
 ```scala
-@sqlFunction("LEFT")
-def left(x: String, n: Int): String = ???
+def left(x: Expr[String], n: Int): Expr[String] =
+    Expr.Func("LEFT", x :: n.asExpr :: Nil)
 ```
-
-注解`sqlFunction`标记函数为SQL函数，注解的参数是SQL函数名称，由于这类方法仅在编译期读取并转换为SQL表达式，因此无需编写实际的方法体。
 
 这样我们就可以使用它构建查询了：
 
 ```scala
-val q = queryContext:
-    query[Department].map(d => left(d.name, 2))
+val q =
+    from[Department].map(d => left(d.name, 2))
 ```
 
 函数类型的表达式当然也可以嵌套调用：
 
 ```scala
-val q = queryContext:
-    query[Department].map(d => left(left(d.name, 2), 1))
+val q =
+    from[Department].map(d => left(left(d.name, 2), 1))
 ```
 
 ## 聚合函数
@@ -214,7 +219,7 @@ sqala内置了几个常用的SQL标准聚合函数：
 | 函数名称              | 对应SQL函数        |
 |:--------------------:|:------------------:|
 | `count()`            | `COUNT(*)`         |
-| `countDistinct(expr)`| `COUNT(DISTINCT x)`|
+| `count(expr)`        | `COUNT(x)`         |
 | `sum(expr)`          | `SUM(x)`           |
 | `max(expr)`          | `MAX(x)`           |
 | `min(expr)`          | `MIN(x)`           |
@@ -222,23 +227,15 @@ sqala内置了几个常用的SQL标准聚合函数：
 | `anyValue(expr)`     | `ANY_VALUE(x)`     |
 
 ```scala
-val q = queryContext:
-    query[Department].map(d => (c = count(), s = sum(d.id)))
+val q =
+    from[Department].map(d => (c = count(), s = sum(d.id)))
 ```
 
 聚合函数也可以和其他表达式组合：
 
 ```scala
-val q = queryContext:
-    query[Department].map(d => (c = count() + sum(d.id * 100)))
-```
-
-聚合函数不可嵌套调用：
-
-```scala
-// 编译错误
-val q = queryContext:
-    query[Department].map(d => sum(sum(d.id)))
+val q =
+    from[Department].map(d => (c = count() + sum(d.id * 100)))
 ```
 
 ### 特殊聚合函数
@@ -251,7 +248,7 @@ sqala支持两个特殊的数值聚合函数`percentileDisc`和`percentileCont`�
 
 ```scala
 val q = queryContext:
-    query[Department]
+    from[Department]
         .map: d => 
             percentileDisc(0.5, withinGroup = d.id.asc)
 ```
@@ -267,8 +264,8 @@ val q = queryContext:
 sqala支持特殊的字符串聚合函数`stringAgg`和`groupConcat`，两个方法的实质内容完全一致，作用是将字符串一次拼接，用法如下：
 
 ```scala
-val q = queryContext:
-    query[Department]
+val q =
+    from[Department]
         .map: d => 
             stringAgg(d.name, ",", d.id.asc)
 ```
@@ -294,37 +291,26 @@ sqala对此函数进行了特殊方言适配，规则如下：
 sqala支持`grouping`聚合函数，对应到数据库的`GROUPING`函数，用于区分哪些表达式参与了当前分组，在`GROUP BY CUBE`等复杂分组下且被分组表达式可能有空值的场景十分有用，其参数为若干个分组表达式：
 
 ```scala
-val q = queryContext:
-    query[Department]
+val q =
+    from[Department]
         .groupBy d =>
             (name = d.name)
         .map: (g, _) => 
             grouping(g.name)
 ```
 
-如果参数不是分组表达式，则会产生编译错误。
-
 **请注意：对于`GROUPING`函数，MySQL数据库限制其必须在`GROUP BY ROLLUP`或`GROUP BY GROUPING SETS`的查询中使用；SQLite数据库不支持此函数，sqala不对以上情况进行编译期检查。**
 
 ### 自定义聚合函数
 
-除了sqala内置的聚合函数外，我们可以轻易地自定义聚合函数：
+除了sqala内置的聚合函数外，我们也可以使用`Expr.Func`轻易自定义聚合函数。
 
-```scala
-import sqala.static.dsl.*
+除了函数都具有的函数名、参数列表等字段，聚合函数可以使用`Expr.Func`的：
 
-@sqlAgg("FUNCTION_NAME")
-def functionDistinct(x: Int, sortBy: Sort[?], withinGroup: Sort[?]): Int = ???
-```
-
-与自定义函数类似，但使用`sqlAgg`注解定义SQL聚合函数。
-
-自定义聚合函数遵循以下约定：
-
-    1. 如果参数名为`sortBy`，则会生成聚合函数的`ORDER BY`子句。
-    2. 如果参数名为`withinGroup`，则会生成聚合函数的`WITHIN GROUP`子句。
-    3. 如果参数名为`filter`，则会生成聚合函数的`FILTER`子句。
-    4. 如果方法名以`Distinct`结尾，则对应到`DISTINCT`的聚合函数。
+    1. 字段名为`sortBy`，生成聚合函数的`ORDER BY`子句。
+    2. 字段名为`withinGroup`，会生成聚合函数的`WITHIN GROUP`子句。
+    3. 字段名为`filter`，会生成聚合函数的`FILTER`子句。
+    4. 字段名为`distinct`，值为`true`时对应到`DISTINCT`的聚合函数。
 
 ## 窗口函数
 
@@ -344,27 +330,27 @@ sqala支持下面几个分析函数：
 | `nthValue`        | `NTH_VALUE(x)`       |
 | `cumeDist()`      | `CUME_DIST()`        |
 
-在分析函数或聚合函数之后调用`over`，可以生成窗口函数表达式，可以使用`partitionBy`及`sortBy`，`partitionBy`的参数是若干表达式，`sortBy`的参数是若干表达式生成的排序规则：
+在分析函数或聚合函数之后调用`over`，可以生成窗口函数表达式，可以使用`partitionBy`及`sortBy`（或`orderBy`），`partitionBy`的参数是若干表达式，`sortBy`的参数是若干表达式生成的排序规则：
 
 ```scala
-val q = queryContext:
-    query[Department].map: d => 
+val q =
+    from[Department].map: d => 
         rank() over (partitionBy (d.birthday) sortBy (d.name.asc))
 ```
 
 窗口函数的参数可以为空：
 
 ```scala
-val q = queryContext:
-    query[Department].map: d => 
+val q =
+    from[Department].map: d => 
         rank() over ()
 ```
 
-窗口函数的参数可以仅有`sortBy`：
+窗口函数的参数可以仅有`sortBy`（或`orderBy`）：
 
 ```scala
-val q = queryContext:
-    query[Department].map: d => 
+val q =
+    from[Department].map: d => 
         rank() over (sortBy (d.name.asc))
 ```
 
@@ -383,51 +369,37 @@ sqala支持窗口函数的框架，使用`rowsBetween`、`rangeBetween`、`group
 ```scala
 import scala.language.postfixOps
 
-val q = queryContext:
-    query[Department].map: d => 
+val q =
+    from[Department].map: d => 
         rank() over (partitionBy (d.birthday) sortBy (d.name.asc) rowsBetween (currentRow, 1 preceding))
 ```
 
-我们可以使用`sqlWindow`注解创建窗口函数，规则与`sqlFunction`一致。
-
 ## 条件表达式
 
-sqala将Scala3的`if`表达式翻译为SQL的`CASE WHEN`表达式：
+sqala使用`if`方法创建`CASE WHEN`表达式：
 
 ```scala
-val q = queryContext:
-    query[Employee].map: e =>
-        if e.state == EmployeeState.Active then 1
-        else 0
+val q =
+    from[Employee].map: e =>
+        `if` e.state == EmployeeState.Active `then` 1
+        `else` 0
 ```
 
 可以在`then`中返回`Option`类型的值：
 
 ```scala
-val q = queryContext:
-    query[Employee].map: e =>
-        if e.state == EmployeeState.Active then Some(1)
-        else None
+val q 
+    from[Employee].map: e =>
+        `if` e.state == EmployeeState.Active `then` Some(1)
+        `else` None
 ```
-
-将Scala3的`match`表达式翻译为SQL的`CASE x WHEN`表达式：
-
-```scala
-val q = queryContext:
-    query[Employee].map: e =>
-        d.state match
-            case EmployeeState.Active => 1
-            case _ => 0
-```
-
-**暂不支持带有if守卫的match表达式。**
 
 条件表达式也可以和其他表达式组合：
 
 ```scala
-val q = queryContext:
-    query[Employee].map: e =>
-        sum(if e.state == EmployeeState.Active then 1 else 0)
+val q =
+    from[Employee].map: e =>
+        sum(`if` e.state == EmployeeState.Active `then` 1 `else` 0)
 ```
 
 ## JSON操作
@@ -435,15 +407,15 @@ val q = queryContext:
 sqala支持`->`和`->>`两个JSON操作符，语义与MySQL和PostgreSQL一致：
 
 ```scala
-val q = queryContext:
-    query[A].map: a => 
+val q =
+    from[A].map: a => 
         a.x -> 0 ->> "a"
 ```
 
-对于JSON操作，需要将字段类型指定为`sqala.static.dsl.Json`：
+对于JSON操作，需要将字段类型指定为`sqala.metadata.Json`：
 
 ```scala
-import sqala.static.dsl.*
+import sqala.metadata.Json
 
 case class A(x: Json)
 ```
@@ -457,8 +429,8 @@ case class A(x: Json)
 ```scala
 import scala.language.postfixOps
 
-val q = queryContext:
-    query[A].map: a => 
+val q =
+    from[A].map: a => 
         a.date + interval(1 day) + interval(1 month)
 ```
 
@@ -476,15 +448,15 @@ val q = queryContext:
 
 sqala会在生成SQL时自动进行方言转换，比如在SQLServer中会将其转换成`DATEADD`函数，在SQLite中会将其转换成`DATETIME`函数，其他数据库将会生成不同的`INTERVAL`表达式方言。
 
-sqala支持字符串插值器`timestamp`和`date`，将字符串转变为数据库的时间字面量，对应的类型分别为`LocalDateTime`和`LocalDate`：
+sqala支持`timestamp`和`date`方法，将字符串转变为数据库的时间字面量表达式，对应的类型分别为`Expr[LocalDateTime]`和`Expr[LocalDate]`：
 
 ```scala
-val time1 = timestamp"2020-01-01 00:00:00"
+val time1 = timestamp("2020-01-01 00:00:00")
 
-val time2 = date"2020-01-01"
+val time2 = date("2020-01-01")
 
-val q = queryContext:
-    query[A].filter(a => a.date1 == time1 && a.date2 == time2)
+val q =
+    from[A].filter(a => a.date1 == time1 && a.date2 == time2)
 ```
 
 在Sqlite和SQLServer中会分别转变为日期函数和`CAST`表达式，其他数据库则会生成时间字面量。
@@ -492,11 +464,9 @@ val q = queryContext:
 我们可以使用`extract`取出时间的某个部分：
 
 ```scala
-import scala.language.postfixOps
-
-val q = queryContext:
-    query[A].map: a => 
-        extract(a.date year)
+val q =
+    from[A].map: a => 
+        extract(year from a.date)
 ```
 
 SQLServer中会将其转换成`DATEPART`函数，其他的数据库会生成`EXTRACT`表达式。
@@ -504,11 +474,9 @@ SQLServer中会将其转换成`DATEPART`函数，其他的数据库会生成`EXT
 可以使用`extract`操作取出时间差值的某个部分：
 
 ```scala
-import scala.language.postfixOps
-
 val q = 
-    query[A].map: a => 
-        extract(a.date1 - a.date2 day)
+    from[A].map: a => 
+        extract(day from (a.date1 - a.date2))
 ```
 
 ## 类型转换
@@ -516,8 +484,8 @@ val q =
 我们可以使用`as`方法将表达式转换类型：
 
 ```scala
-val q = queryContext:
-    query[A].map: a => 
+val q =
+    from[A].map: a => 
         a.x.as[String]
 ```
 
@@ -534,8 +502,8 @@ case class Task(id: Int, name: String, userIds: String)
 其中`userIds`字段是使用`,`分隔的用户ID列表，我们想查询某个用户的所有任务，可以先自定义SQL函数`stringToArray`：
 
 ```scala
-@sqlFunction("STRING_TO_ARRAY")
-def stringToArray(x: String): List[String] = compileTimeOnly
+def stringToArray(x: Expr[String]): Expr[List[String]] =
+    Expr.Func("STRING_TO_ARRAY", x :: Nil)
 ```
 
 然后我们可以使用`any`查询：
@@ -545,21 +513,21 @@ val userId: Int = ??? // 假设是外界传参
 val userIdString = userId.toString
 
 val q = queryContext:
-    query[Task].filter(t => userIdString == any(stringToArray(t.userIds)))
+    from[Task].filter(t => userIdString.asExpr == any(stringToArray(t.userIds)))
 ```
 
 我们也可以把`in`谓词变为`any`数组谓词：
 
 ```scala
-val q = queryContext:
-    query[A].filter(a => a.x.in(List(1, 2, 3)))
+val q =
+    from[A].filter(a => a.x.in(List(1, 2, 3)))
 ```
 
 等价于：
 
 ```scala
-val q = queryContext:
-    query[A].filter(a => a.x == any(List(1, 2, 3)))
+val q =
+    from[A].filter(a => a.x == any(List(1, 2, 3)))
 ```
 
 **需要注意的是，虽然数组是SQL标准语法，但目前只有PostgreSQL和H2等少数数据库支持此语法。**
@@ -569,10 +537,11 @@ val q = queryContext:
 sqala支持自定义非标准二元运算符，以MySQL的`RLIKE`为例：
 
 ```scala
-extension (x: String)
+extension (x: Expr[String])
     @sqlBinaryOperator("RLIKE")
-    def rlike(y: String)(using QueryContext): Boolean = compileTimeOnly
+    def rlike(y: String): Expr[Boolean] =
+        Expr.Binary(x, SqlBinaryOperator.Custom("RLIKE"), y.asExpr)
 
 val q = queryContext:
-    query[A].filter(a => a.x.rlike("..."))
+    from[A].filter(a => a.x.rlike("..."))
 ```
