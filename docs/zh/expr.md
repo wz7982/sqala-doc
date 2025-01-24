@@ -73,7 +73,7 @@ val q2 =
 ```scala
 // a.x <> 1 OR a.x IS NULL
 val q =
-    from[A].filter(a => a.x != Some(1))
+    from[A].filter(a => a.x != 1)
 ```
 
 运算符的右侧不仅可以是普通的值，也可以是另一个表达式，比如它可以放在`ON`条件里：
@@ -83,9 +83,20 @@ val q =
     from[A].join[B].on((a, b) => a.id == b.id)
 ```
 
-只需要使用`.asExpr`，值表达式也可以轻易地放在一个二元运算的左侧：
+值表达式也可以轻易地放在一个二元运算的左侧，但是`==`需要替换为`===`，`!=`需要替换为`<>`，并导入`import sqala.static.dsl.given`：
 
 ```scala
+import sqala.static.dsl.given
+
+val q =
+    from[Department].filter(d => 1 === d.id)
+```
+
+或是使用`asExpr`显式将值转为表达式：
+
+```scala
+import sqala.static.dsl.given
+
 val q =
     from[Department].filter(d => 1.asExpr == d.id)
 ```
@@ -127,18 +138,36 @@ val q =
 
 ## 多列比较
 
-sqala也允许多列同时参与关系运算，需要使用`.asExpr`将一个表达式元组转变成一个单一的表达式：
+sqala也允许多列同时参与关系运算，与值表达式写在比较左侧类似，`==`需要替换为`===`，`!=`需要替换为`<>`，并导入`import sqala.static.dsl.given`：
 
 ```scala
-val q1 = queryContext:
+import sqala.static.dsl.given
+
+val q1 =
+    from[Department].filter: d => 
+        (d.id, d.name) === (1, "小黑")
+
+val q2 =
+    from[Department].filter: d => 
+        (d.id, d.name).in(List((1, "小黑"), (2, "小白")))
+
+val q3 =
+    from[Department].filter: d => 
+        (d.id, d.name).in(from[Department].map(d => (d.id, d.name)))
+```
+
+或是使用`.asExpr`将一个表达式元组转变成一个单一的表达式：
+
+```scala
+val q1 =
     from[Department].filter: d => 
         (d.id, d.name).asExpr == (1, "小黑")
 
-val q2 = queryContext:
+val q2 =
     from[Department].filter: d => 
         (d.id, d.name).asExpr.in(List((1, "小黑"), (2, "小白")))
 
-val q3 = queryContext:
+val q3 =
     from[Department].filter: d => 
         (d.id, d.name).asExpr.in(from[Department].map(d => (d.id, d.name)))
 ```
@@ -259,7 +288,7 @@ sqala支持两个特殊的数值聚合函数`percentileDisc`和`percentileCont`�
 用法如下：
 
 ```scala
-val q = queryContext:
+val q =
     from[Department]
         .map: d => 
             percentileDisc(0.5, withinGroup = d.id.asc)
@@ -524,7 +553,7 @@ def stringToArray(x: Expr[String]): Expr[List[String]] =
 val userId: Int = ??? // 假设是外界传参
 val userIdString = userId.toString
 
-val q = queryContext:
+val q =
     from[Task].filter(t => userIdString.asExpr == any(stringToArray(t.userIds)))
 ```
 
@@ -554,6 +583,6 @@ extension (x: Expr[String])
     def rlike(y: String): Expr[Boolean] =
         Expr.Binary(x, SqlBinaryOperator.Custom("RLIKE"), y.asExpr)
 
-val q = queryContext:
+val q =
     from[A].filter(a => a.x.rlike("..."))
 ```
