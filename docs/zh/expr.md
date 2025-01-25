@@ -532,47 +532,6 @@ val q =
 
 sqala会自动进行数据库方言适配。
 
-## 数组谓词
-
-sqala支持`any`和`all`两个操作配合集合，作为谓词使用，以PostgreSQL查询为例，比如我们有：
-
-```scala
-case class Task(id: Int, name: String, userIds: String)
-```
-
-其中`userIds`字段是使用`,`分隔的用户ID列表，我们想查询某个用户的所有任务，可以先自定义SQL函数`stringToArray`：
-
-```scala
-def stringToArray(x: Expr[String]): Expr[List[String]] =
-    Expr.Func("STRING_TO_ARRAY", x :: Nil)
-```
-
-然后我们可以使用`any`查询：
-
-```scala
-val userId: Int = ??? // 假设是外界传参
-val userIdString = userId.toString
-
-val q =
-    from[Task].filter(t => userIdString.asExpr == any(stringToArray(t.userIds)))
-```
-
-我们也可以把`in`谓词变为`any`数组谓词：
-
-```scala
-val q =
-    from[A].filter(a => a.x.in(List(1, 2, 3)))
-```
-
-等价于：
-
-```scala
-val q =
-    from[A].filter(a => a.x == any(List(1, 2, 3)))
-```
-
-**需要注意的是，虽然数组是SQL标准语法，但目前只有PostgreSQL和H2等少数数据库支持此语法。**
-
 ## 自定义二元运算符
 
 sqala支持自定义非标准二元运算符，以MySQL的`RLIKE`为例：
