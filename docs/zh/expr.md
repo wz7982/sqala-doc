@@ -46,7 +46,7 @@ val idList: List[Int] = ???
 val q = from[Department].filter(d => d.id.in(idList.map(_.asPreparedExpr)))
 ```
 
-sqala没有默认启用参数预编译的原因是，在类似如下查询时：
+sqala没有默认启用参数预编译的原因是，在类似如下查询中：
 
 ```scala
 val q = from[Department]
@@ -66,7 +66,7 @@ GROUP BY
     "t1"."id" + ?
 ```
 
-由于数据库驱动无法确定两个`?`是同一个表达式，此查询会在运行时报错。
+由于数据库无法确定两个`?`是同一个表达式，此查询会在运行时报错。
 
 ## 逻辑、关系运算
 
