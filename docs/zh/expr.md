@@ -46,6 +46,28 @@ val idList: List[Int] = ???
 val q = from[Department].filter(d => d.id.in(idList.map(_.asPreparedExpr)))
 ```
 
+sqala没有默认启用参数预编译的原因是，在类似如下查询时：
+
+```scala
+val q = from[Department]
+    .groupBy(d => d.id + 1)
+    .map(d => (d.id + 1, count()))
+```
+
+如果默认启用预编译，会生成类似下面的SQL：
+
+```sql
+SELECT
+    "t1"."id" + ? AS "c1",
+    COUNT(*) AS "c2"
+FROM
+    "department" AS "t1"
+GROUP BY
+    "t1"."id" + ?
+```
+
+由于数据库驱动无法确定两个`?`是同一个表达式，此查询会在运行时报错。
+
 ## 逻辑、关系运算
 
 除了字段和值之外，构造查询最常用的就是逻辑运算与关系运算表达式，它常用于查询表达式的`filter`、`on`、`having`等方法中。
