@@ -311,6 +311,41 @@ val q =
         .map(e => (e.departmentId, anyValue(e.id)))
 ```
 
+### 分组的限制
+
+由于sqala将值表达式生成为JDBC预编译占位符`?`，在类似如下查询中：
+
+```scala
+val q = from[Department]
+    .groupBy(d => d.id + 1)
+    .map(d => (d.id + 1, count()))
+```
+
+会生成类似下面的SQL：
+
+```sql
+SELECT
+    "t1"."id" + ? AS "c1",
+    COUNT(*) AS "c2"
+FROM
+    "department" AS "t1"
+GROUP BY
+    "t1"."id" + ?
+```
+
+在使用PostgreSQL数据库时，由于驱动校验比较严格，数据库无法确定两个`?`是同一个表达式，此查询会在运行时报错。
+
+我们可以在数据库连接中添加`?preferQueryMode=simple`来禁用预编译，或是将查询改为子查询形式：
+
+```scala
+val q = queryContext:
+    val subquery =
+        from[Department]
+            .map(d => (x = d.id + 1))
+    
+    fromQuery(subquery).groupBy(q => q.x).map(q => (q.x, count()))
+```
+
 ## 多维分组
 
 除了普通分组外，sqala还支持`groupByCube`、`groupByRollup`、`groupBySets`多维分组，前两者使用方法与`groupBy`类似：
