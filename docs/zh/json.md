@@ -2,7 +2,7 @@
 
 sqala为JSON提供了支持，我们可以导入`import sqala.data.json.*`来将查询结果生成JSON，或是从JSON映射到实体结果。
 
-**sqala目前的JSON支持性能欠佳，可以用于快速搭建demo代码，但生产环境应使用专用的JSON库。**
+**sqala目前的JSON解析性能欠佳，仅适用于快速搭建demo代码，但生产环境应使用专用的JSON库。**
 
 首先添加依赖：
 
