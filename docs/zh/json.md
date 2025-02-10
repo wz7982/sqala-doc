@@ -203,9 +203,9 @@ enum State:
 
 ```scala
 given JsonEncoder[State] with
-    override def encode(x: State)(using JsonDateFormat): JsonNode = x match
-        case State.Off => JsonNode.Num(0)
-        case State.On => JsonNode.Num(1)
+    override def encode(x: State)(using JsonDateFormat): String = x match
+        case State.Off => "0"
+        case State.On => "1"
 ```
 
 同时我们希望，前端无论是传递状态码、枚举项名称、或是其代表的含义时，都可以成功反序列化，可以提供一个`JsonDecoder`实例：
