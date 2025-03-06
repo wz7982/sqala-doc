@@ -59,11 +59,11 @@ val q =
 如果`==`或`!=`的右侧值是`None`，则对应SQL的`IS NULL`和`IS NOT NULL`
 
 ```scala
-// a.x IS NULL 
+// a.x IS NULL
 val q1 =
     from[A].filter(a => a.x == None)
 
-// a.x IS NOT NULL 
+// a.x IS NOT NULL
 val q2 =
     from[A].filter(a => a.x != None)
 ```
@@ -144,15 +144,15 @@ sqala也允许多列同时参与关系运算，与值表达式写在比较左侧
 import sqala.static.dsl.given
 
 val q1 =
-    from[Department].filter: d => 
+    from[Department].filter: d =>
         (d.id, d.name) === (1, "小黑")
 
 val q2 =
-    from[Department].filter: d => 
+    from[Department].filter: d =>
         (d.id, d.name).in(List((1, "小黑"), (2, "小白")))
 
 val q3 =
-    from[Department].filter: d => 
+    from[Department].filter: d =>
         (d.id, d.name).in(from[Department].map(d => (d.id, d.name)))
 ```
 
@@ -160,15 +160,15 @@ val q3 =
 
 ```scala
 val q1 =
-    from[Department].filter: d => 
+    from[Department].filter: d =>
         (d.id, d.name).asExpr == (1, "小黑")
 
 val q2 =
-    from[Department].filter: d => 
+    from[Department].filter: d =>
         (d.id, d.name).asExpr.in(List((1, "小黑"), (2, "小白")))
 
 val q3 =
-    from[Department].filter: d => 
+    from[Department].filter: d =>
         (d.id, d.name).asExpr.in(from[Department].map(d => (d.id, d.name)))
 ```
 
@@ -290,7 +290,7 @@ sqala支持两个特殊的数值聚合函数`percentileDisc`和`percentileCont`�
 ```scala
 val q =
     from[Department]
-        .map: d => 
+        .map: d =>
             percentileDisc(0.5, withinGroup = d.id.asc)
 ```
 
@@ -307,7 +307,7 @@ sqala支持特殊的字符串聚合函数`stringAgg`和`groupConcat`，两个方
 ```scala
 val q =
     from[Department]
-        .map: d => 
+        .map: d =>
             stringAgg(d.name, ",", d.id.asc)
 ```
 
@@ -336,7 +336,7 @@ val q =
     from[Department]
         .groupBy d =>
             (name = d.name)
-        .map: (g, _) => 
+        .map: (g, _) =>
             grouping(g.name)
 ```
 
@@ -375,7 +375,7 @@ sqala支持下面几个分析函数：
 
 ```scala
 val q =
-    from[Department].map: d => 
+    from[Department].map: d =>
         rank() over (partitionBy (d.birthday) sortBy (d.name.asc))
 ```
 
@@ -383,7 +383,7 @@ val q =
 
 ```scala
 val q =
-    from[Department].map: d => 
+    from[Department].map: d =>
         rank() over ()
 ```
 
@@ -391,7 +391,7 @@ val q =
 
 ```scala
 val q =
-    from[Department].map: d => 
+    from[Department].map: d =>
         rank() over (sortBy (d.name.asc))
 ```
 
@@ -411,7 +411,7 @@ sqala支持窗口函数的框架，使用`rowsBetween`、`rangeBetween`、`group
 import scala.language.postfixOps
 
 val q =
-    from[Department].map: d => 
+    from[Department].map: d =>
         rank() over (partitionBy (d.birthday) sortBy (d.name.asc) rowsBetween (currentRow, 1 preceding))
 ```
 
@@ -429,7 +429,7 @@ val q =
 可以在`then`中返回`Option`类型的值：
 
 ```scala
-val q 
+val q
     from[Employee].map: e =>
         `if` e.state == EmployeeState.Active `then` Some(1)
         `else` None
@@ -449,7 +449,7 @@ sqala支持`->`和`->>`两个JSON操作符，语义与MySQL和PostgreSQL一致�
 
 ```scala
 val q =
-    from[A].map: a => 
+    from[A].map: a =>
         a.x -> 0 ->> "a"
 ```
 
@@ -471,7 +471,7 @@ case class A(x: Json)
 import scala.language.postfixOps
 
 val q =
-    from[A].map: a => 
+    from[A].map: a =>
         a.date + interval(1 day) + interval(1 month)
 ```
 
@@ -506,7 +506,7 @@ val q =
 
 ```scala
 val q =
-    from[A].map: a => 
+    from[A].map: a =>
         extract(year from a.date)
 ```
 
@@ -515,8 +515,8 @@ SQLServer中会将其转换成`DATEPART`函数，其他的数据库会生成`EXT
 可以使用`extract`操作取出时间差值的某个部分：
 
 ```scala
-val q = 
-    from[A].map: a => 
+val q =
+    from[A].map: a =>
         extract(day from (a.date1 - a.date2))
 ```
 
@@ -526,7 +526,7 @@ val q =
 
 ```scala
 val q =
-    from[A].map: a => 
+    from[A].map: a =>
         a.x.as[String]
 ```
 
@@ -538,7 +538,6 @@ sqala支持自定义非标准二元运算符，以MySQL的`RLIKE`为例：
 
 ```scala
 extension (x: Expr[String])
-    @sqlBinaryOperator("RLIKE")
     def rlike(y: String): Expr[Boolean] =
         Expr.Binary(x, SqlBinaryOperator.Custom("RLIKE"), y.asExpr)
 

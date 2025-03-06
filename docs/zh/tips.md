@@ -33,11 +33,11 @@ val q = queryContext:
     val baseQuery = from[Data]
 
     if dim == 1 then
-        baseQuery.groupBy(d => (dim = d.dim1)).map(g, d) => (g.dim1, sum(d.measure))
+        baseQuery.groupBy(d => d.dim1).map(d => (d.dim3, sum(d.measure)))
     else if dim == 2 then
-        baseQuery.groupBy(d => (dim = d.dim2)).map(g, d) => (g.dim2, sum(d.measure))
+        baseQuery.groupBy(d => d.dim2).map(d => (d.dim3, sum(d.measure)))
     else
-        baseQuery.groupBy(d => (dim = d.dim3)).map(g, d) => (g.dim3, sum(d.measure))
+        baseQuery.groupBy(d => d.dim3).map(d => (d.dim3, sum(d.measure)))
 ```
 
 ## 提升子查询的可读性
