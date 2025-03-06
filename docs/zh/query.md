@@ -16,14 +16,14 @@ import sqala.static.dsl.given
 `from`方法用于构建查询，类型参数是实体类类型：
 
 ```scala
-val q = 
+val q =
     from[Department]
 ```
 
 生成的SQL为：
 
 ```sql
-SELECT 
+SELECT
     `t1`.`id` AS `c1`,
     `t1`.`manager_id` AS `c2`,
     `t1`.`name` AS `c3`
@@ -42,14 +42,14 @@ FROM
 ```scala
 val id = 1
 
-val q = 
+val q =
     from[Department].filter(d => d.id == id)
 ```
 
 生成的SQL为：
 
 ```sql
-SELECT 
+SELECT
     `t1`.`id` AS `c1`,
     `t1`.`manager_id` AS `c2`,
     `t1`.`name` AS `c3`
@@ -67,7 +67,7 @@ sqala提供了`filterIf`（或`whereIf`）方法用于动态拼接条件，会�
 val id = 1
 val name = "IT"
 
-val q = 
+val q =
     from[Department]
         .filterIf(id > 0)(_.id == id)
         .filterIf(name.nonEmpty)(_.name == name)
@@ -80,14 +80,14 @@ val q =
 ### 投影到表达式
 
 ```scala
-val q = 
+val q =
     from[Department].map(d => d.id)
 ```
 
 生成的SQL为：
 
 ```sql
-SELECT 
+SELECT
     `t1`.`id` AS `c1`
 FROM
     `department` AS `t1`
@@ -100,14 +100,14 @@ FROM
 ### 投影到表
 
 ```scala
-val q = 
+val q =
     from[Department].map(d => d)
 ```
 
 生成的SQL为：
 
 ```sql
-SELECT 
+SELECT
     `t1`.`id` AS `c1`,
     `t1`.`manager_id` AS `c2`,
     `t1`.`name` AS `c3`
@@ -122,14 +122,14 @@ FROM
 ### 投影到元组
 
 ```scala
-val q = 
+val q =
     from[Department].map(d => (d.id, d.name))
 ```
 
 生成的SQL为：
 
 ```sql
-SELECT 
+SELECT
     `t1`.`id` AS `c1`,
     `t1`.`name` AS `c2`
 FROM
@@ -153,7 +153,7 @@ import scala.language.experimental.namedTuples
 利用命名元组，我们可以给投影的字段起名，并在查询后直接使用`.`来调用字段，无需对投影中间结果预先定义实体类接收：
 
 ```scala
-val q = 
+val q =
     from[Department].map(d => (id = d.id, name = d.name))
 ```
 
@@ -164,7 +164,7 @@ val q =
 sqala支持将只使用了`filter`和`map`的简单查询转变为`for`推导式，提高可读性：
 
 ```scala
-val q = 
+val q =
     from[Department]
         .filter(d => d.id == 1)
         .map(d => d.name)
@@ -173,7 +173,7 @@ val q =
 可以简写为：
 
 ```scala
-val q = 
+val q =
     for d <- from[Department]
         if d.id == 1
     yield d.name
@@ -186,7 +186,7 @@ val q =
 如果只调用其一方法，那么`LIMIT`的默认值是`Long.MaxValue`，`OFFSET`的默认值是`0`。
 
 ```scala
-val q = 
+val q =
     from[Department].drop(100).take(10)
 ```
 
@@ -195,7 +195,7 @@ val q =
 sqala支持`join`、`leftJoin`、`rightJoin`方法连接表，`on`添加连接条件：
 
 ```scala
-val q = 
+val q =
     from[Employee]
         .join[Department]
         .on((e, d) => e.departmentId == d.id)
@@ -216,7 +216,7 @@ case class A(id: Int)
 case class B(id: Int)
 case class C(id: Int)
 
-val q = 
+val q =
     from[A]
         .rightJoin[B]((a, b) => a.id == b.id)
         .leftJoin[C]((a, b, c) => a.id == c.id)
@@ -233,7 +233,7 @@ val q =
 sqala可以很方便地处理一个表连接自身的情况，比如我们的`Department`表记录了`managerId`字段，即上级的id，我们可以使用自连接查询这样的数据：
 
 ```scala
-val q = 
+val q =
     from[Department]
         .join[Department]((d1, d2) => d1.managerId == d2.id)
 ```
@@ -245,7 +245,7 @@ val q =
 在投影后，我们可以使用`sortBy`（或`orderBy`）方法进行排序，参数是表达式的排序规则或其组成的元组，多个`sortBy`（或`orderBy`）会依次拼接：
 
 ```scala
-val q = 
+val q =
     from[Department]
         .sortBy(d => (d.id, d.name.desc))
         .sortBy(d => d.managerId.asc)
@@ -254,7 +254,7 @@ val q =
 生成的SQL为：
 
 ```sql
-SELECT 
+SELECT
     `t1`.`id` AS `c1`,
     `t1`.`manager_id` AS `c2`,
     `t1`.`name` AS `c3`
@@ -286,7 +286,7 @@ ORDER BY
 `groupBy`方法对应SQL的`GROUP BY`子句：
 
 ```scala
-val q = 
+val q =
     from[Employee]
         .groupBy(e => e.departmentId)
         .map(e => (e.departmentId, count()))
@@ -295,7 +295,7 @@ val q =
 生成的SQL为：
 
 ```sql
-SELECT 
+SELECT
     `t1`.`department_id` AS `c1`,
     COUNT(*) AS `c2`
 FROM
@@ -305,7 +305,7 @@ FROM
 如果得到未分组字段的任意值即可满足需求，可以使用`anyValue`聚合函数：
 
 ```scala
-val q = 
+val q =
     from[Employee]
         .groupBy(e => e.departmentId)
         .map(e => (e.departmentId, anyValue(e.id)))
@@ -342,7 +342,7 @@ val q = queryContext:
     val subquery =
         from[Department]
             .map(d => (x = d.id + 1))
-    
+
     fromQuery(subquery).groupBy(q => q.x).map(q => (q.x, count()))
 ```
 
@@ -351,7 +351,7 @@ val q = queryContext:
 除了普通分组外，sqala还支持`groupByCube`、`groupByRollup`、`groupBySets`多维分组，前两者使用方法与`groupBy`类似：
 
 ```scala
-val q = 
+val q =
     from[Employee]
         .groupByCube(e => (e.departmentId, e.name))
         .map(e => (e.departmentId, e.name, count()))
@@ -360,7 +360,7 @@ val q =
 或：
 
 ```scala
-val q = 
+val q =
     from[Employee]
         .groupByRollup(e => (e.departmentId, e.name))
         .map(e => (e.departmentId, e.name, count()))
@@ -369,17 +369,17 @@ val q =
 另外，`grouping`聚合函数可以配合多维分组使用（Sqlite等数据库不支持此函数）：
 
 ```scala
-val q = 
+val q =
     from[Employee]
         .groupByCube(e => (e.departmentId, e.name))
-        .map: e => 
+        .map: e =>
             (grouping(e.departmentId), e.departmentId, grouping(e.name), e.name, count())
 ```
 
 `groupBySets`参数是基础分组组成的分组集（空分组集使用Unit类型表示）：
 
 ```scala
-val q = 
+val q =
     from[Employee]
         .groupBySets(e => ((e.departmentId, e.name), e.name, ()))
         .map(e => (e.departmentId, e.name, count()))
@@ -390,7 +390,7 @@ val q =
 使用`distinct`方法来对结果集进行去重：
 
 ```scala
-val q = 
+val q =
     from[Department].map(d => d.name).distinct
 ```
 
@@ -409,19 +409,19 @@ sqala对以上子查询均进行了支持。
 谓词子查询通常配合`IN`、`ANY`、`ALL`、`EXISTS`等操作使用：
 
 ```scala
-val q1 = 
+val q1 =
     from[A].filter: a =>
         a.x.in(from[B].map(b => b.x))
 
-val q2 =  
+val q2 =
     from[A].filter: a =>
         a.x == any(from[B].map(b => b.x))
 
-val q3 = 
+val q3 =
     from[A].filter: a =>
         a.x != all(from[B].map(b => b.x))
 
-val q4 = 
+val q4 =
     from[A].filter: a =>
         exists(from[B].filter(b => b.x > 0))
 ```
@@ -431,11 +431,11 @@ val q4 =
 谓词子查询也可以不使用以上操作，直接使用运算符：
 
 ```scala
-val q1 = 
+val q1 =
     from[A].filter: a =>
         a.x == from[B].map(b => b.x).take(1)
 
-val q2 = 
+val q2 =
     from[A].filter: a =>
         a.x > from[B].map(b => sum(b.x))
 ```
@@ -445,7 +445,7 @@ val q2 =
 sqala支持将子查询放入表连接中，使用表子查询的前提是子查询**投影到了命名元组**，此时我们可以使用`.`来调用子查询的字段：
 
 ```scala
-val q = 
+val q =
     val subquery = from[B].map(b => (x = b.x, y = b.y))
 
     from[A].leftJoinQuery(subquery).on((a, q) => a.x == q.x)
@@ -454,7 +454,7 @@ val q =
 `joinLateral`和`leftJoinLateral`子查询支持使用外侧表的字段：
 
 ```scala
-val q = 
+val q =
     from[A].leftJoinLateral(a =>
         from[B].filter(b => a.z > b.z).map(b => (x = b.x, y = b.y))
     ).on((a, q) => a.x == q.x)
@@ -480,7 +480,7 @@ val q = fromQuery(from[A].map(a => (x = a.x, y = a.y)))
 符合以上规则的子查询可以放入`map`列表中：
 
 ```scala
-val q = 
+val q =
     val scalarQuery = from[B].map(b => sum(b.x))
     from[A].map(a => (a.x, scalarQuery))
 ```
@@ -490,7 +490,7 @@ val q =
 sqala支持使用`union`、`unionAll`、`intersect`、`intersectAll`、`except`、`exceptAll`等方法来处理集合查询，比如：
 
 ```scala
-val q = 
+val q =
     val q1 = from[Department]
         .filter(d => d.id == 1)
         .map(d => (id = d.id, name = d.name))
@@ -514,13 +514,13 @@ q1 ++ q2
 
     2. 如果是投影查询，其返回类型必须列数量一致，且类型一一对应，假如有两个查询，分别返回：
         `(Option[Int], String, Option[LocalDate])`
-        
+
         和：
-        
+
         `(Int, Option[String], LocalDate)`
-        
+
         ，这样的两个查询调用集合操作将会返回：
-        
+
         `(Option[Int], Option[String], Option[LocalDate])`
         。
 
@@ -528,10 +528,10 @@ q1 ++ q2
 
 ```scala
 // 作为子查询时字段为id和name
-val q = 
+val q =
     val q1 = from[Department].map(d => (id = d.id, name = d.name))
     val q2 = from[Department].map(d => (d.id, d.name))
-    
+
     q1 union q2
 ```
 
@@ -554,7 +554,7 @@ val q = fromValues(list).filter(e => e.id > 0)
 `department`表存储树形数据，如果我们想在`department`表查询一整个部门树，通常来说可能需要发出多次查询，但sqala借鉴了Oracle方言的`CONNECT BY`功能，使用`connectBy`方法创建递归查询，无需发出多次查询浪费数据库性能，在生成SQL时会将其转换为SQL标准的`CTE(Common Table Expression)`查询，而无需数据库本身支持`CONNECT BY`：
 
 ```scala
-val q = 
+val q =
     from[Department]
         .connectBy(d => prior(d.id) == d.managerId)
         .startWith(d => d.managerId == 0)
@@ -568,7 +568,7 @@ val q =
 `sortSiblingsBy`方法用于指定**每层**的排序规则，而`sortBy`用于指定总的排序规则：
 
 ```scala
-val q = 
+val q =
     from[Department]
         .connectBy(d => prior(d.id) == d.managerId)
         .startWith(d => d.managerId == 0)
@@ -579,7 +579,7 @@ val q =
 `maxDepth`用于指定最大的递归层数：
 
 ```scala
-val q = 
+val q =
     from[Department]
         .connectBy(d => prior(d.id) == d.managerId)
         .startWith(d => d.managerId == 0)
@@ -591,7 +591,7 @@ val q =
 查询结果和排序中可以使用`level()`伪列，用于统计层级，计数从1开始：
 
 ```scala
-val q = 
+val q =
     from[Department]
         .connectBy(d => prior(d.id) == d.managerId)
         .startWith(d => d.managerId == 0)
@@ -607,7 +607,7 @@ val q =
 ```scala
 case class City(population: Int, year: Int, country: String)
 
-val q = 
+val q =
     from[City]
         .map: c =>
             (
@@ -621,7 +621,7 @@ val q =
 但sqala也支持`pivot`这个更简洁的写法：
 
 ```scala
-val q = 
+val q =
     from[City]
         .pivot(c => (total = sum(c.population), count = count(1)))
         .`for`: c =>
@@ -633,22 +633,22 @@ val q =
 在`pivot`中指定若干个聚合函数，在`for`中使用`within`指定若干个投影列，sqala将会自动将其转换为`SUM(CASE WHEN ...)`形式的查询，无需数据库本身支持`PIVOT`子句；并将`pivot`和`for`中的命名元组字段名组合作为新的返回字段名，上面查询的返回类型为：
 
 ```scala
-val result: 
+val result:
     List[
         (
-            total_2000 : Option[Int], 
-            total_2001 : Option[Int], 
-            count_2000 : Long, 
+            total_2000 : Option[Int],
+            total_2001 : Option[Int],
+            count_2000 : Long,
             count_2001 : Long
         )
-    ] = 
+    ] =
         db.fetch(q)
 ```
 
 如果`for`中指定了其他表达式：
 
 ```scala
-val q = 
+val q =
     from[City]
         .pivot(c => (total = sum(c.population), count = count(1)))
         .`for`: c =>
@@ -661,27 +661,27 @@ val q =
 则返回类型为：
 
 ```scala
-val result: 
+val result:
     List[
         (
-            total_2000_cn : Option[Int], 
-            total_2000_us : Option[Int], 
-            total_2001_cn : Option[Int], 
-            total_2001_us : Option[Int], 
-            count_2000_cn : Long, 
-            count_2000_us : Long, 
-            count_2001_cn : Long, 
+            total_2000_cn : Option[Int],
+            total_2000_us : Option[Int],
+            total_2001_cn : Option[Int],
+            total_2001_us : Option[Int],
+            count_2000_cn : Long,
+            count_2000_us : Long,
+            count_2001_cn : Long,
             count_2001_us : Long
         )
-    ] = 
+    ] =
         db.fetch(q)
 ```
 
-## 语义分析
+<!-- ## 语义分析
 
 sqala支持在编译期进行静态查询的语义分析，并将大多数常见的SQL语义错误转化为编译期警告，将查询放入`analysisContext`中启用语义分析（**暂不支持`pivot`和`withRecursive`的语义分析**）：
 
 ```scala
 val q = analysisContext:
     from[Department]
-```
+``` -->
