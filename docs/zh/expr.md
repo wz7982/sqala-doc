@@ -92,11 +92,9 @@ val q =
     from[A].join[B].on((a, b) => a.id == b.id)
 ```
 
-值表达式也可以轻易地放在一个二元运算的左侧，但是`==`需要替换为`===`，`!=`需要替换为`<>`，并导入`import sqala.static.dsl.given`：
+值表达式也可以轻易地放在一个二元运算的左侧，但是`==`需要替换为`===`，`!=`需要替换为`<>`：
 
 ```scala
-import sqala.static.dsl.given
-
 val q =
     from[Department].filter(d => 1 === d.id)
 ```
@@ -104,8 +102,6 @@ val q =
 或是使用`asExpr`显式将值转为表达式：
 
 ```scala
-import sqala.static.dsl.given
-
 val q =
     from[Department].filter(d => 1.asExpr == d.id)
 ```
@@ -147,11 +143,9 @@ val q =
 
 ## 多列比较
 
-sqala也允许多列同时参与关系运算，与值表达式写在比较左侧类似，`==`需要替换为`===`，`!=`需要替换为`<>`，并导入`import sqala.static.dsl.given`：
+sqala也允许多列同时参与关系运算，与值表达式写在比较左侧类似，`==`需要替换为`===`，`!=`需要替换为`<>`：
 
 ```scala
-import sqala.static.dsl.given
-
 val q1 =
     from[Department].filter: d =>
         (d.id, d.name) === (1, "小黑")

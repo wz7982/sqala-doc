@@ -6,7 +6,6 @@
 
 ```scala
 import sqala.static.dsl.*
-import sqala.static.dsl.given
 ```
 
 以下示例中生成的查询均以MySQL方言为例，实际使用时sqala会根据方言配置生成合适的SQL。
