@@ -2,7 +2,7 @@
 
 为了更好地使用sqala处理业务，我们最好对sqala的表达式有一些了解。
 
-sqala中包含了一个SQL语法树，并在编译期读取Scala本身的语法树，转换到SQL语法树，因此，sqala拥有强大的表达力。
+sqala中包含了一个SQL表达式类型`Expr`，而`Expr`的子项也接收`Expr`类型的参数，因此，sqala拥有强大的表达式组合能力。
 
 ## 字段
 
@@ -28,6 +28,15 @@ val q =
 ```scala
 val q =
     from[Department].map(d => (id = d.id, c1 = 1.asExpr, c2 = "a".asExpr))
+```
+
+## 转换表达式
+
+sqala在绝大部分情况下，均将值（如Int、String等类型）、表达式（Expr类型）、子查询（Query类型）、和其组成的元组视为表达式（由`trait AsExpr`接管），但在某些未特殊优化的地方，比如某些SQL函数，使用非`Expr`类型的参数时需要使用`asExpr`方法将其转换为表达式：
+
+```scala
+val q =
+    from[Department].map(d => (id = d.id, c1 = floor(1.asExpr)))
 ```
 
 ## 逻辑、关系运算
