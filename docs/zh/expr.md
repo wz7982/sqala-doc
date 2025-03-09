@@ -139,7 +139,7 @@ val q =
     from[Department].filter(d => !(d.id == 1))
 ```
 
-对`in`、`between`、`like`、`exists`等运算符使用逻辑运算`!`，会生成对应的`NOT IN`、`NOT BETWEEN`、`NOT LIKE`、`NOT EXISTS`运算符，而非一元运算。
+对`in`、`between`、`like`等运算符使用逻辑运算`!`，会生成对应的`NOT IN`、`NOT BETWEEN`、`NOT LIKE`运算符，而非一元运算。
 
 ## 多列比较
 
