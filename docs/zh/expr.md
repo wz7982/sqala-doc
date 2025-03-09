@@ -206,8 +206,8 @@ sqala内置了一些常用函数
 | 函数名称 | 对应SQL函数 |
 |:--------:|:----------:|
 |`coalesce`|`COALESCE`  |
-|`ifnull`  |`COALESCE`  |
-|`nullif`  |`NULLIF`    |
+|`ifNull`  |`COALESCE`  |
+|`nullIf`  |`NULLIF`    |
 |`abs`     |`ABS`       |
 |`ceil`    |`CEIL`      |
 |`floor`   |`FLOOR`     |
@@ -219,7 +219,7 @@ sqala内置了一些常用函数
 |`trim`    |`TRIM`      |
 |`upper`   |`UPPER`     |
 |`lower`   |`LOWER`     |
-|`now()`   |`NOW()`     |
+|`now`     |`NOW`       |
 
 由于各种数据库的函数的差异极大，sqala没有内置其他的SQL函数，但我们可以使用`Expr.Func`创建函数。
 
@@ -305,7 +305,7 @@ val q =
 
 #### stringAgg
 
-sqala支持特殊的字符串聚合函数`stringAgg`和`groupConcat`，两个方法的实质内容完全一致，作用是拼接字符串，用法如下：
+sqala支持特殊的字符串聚合函数`stringAgg`、`groupConcat`和`listAgg`，三个方法的实质内容完全一致，作用是拼接字符串，用法如下：
 
 ```scala
 val q =
