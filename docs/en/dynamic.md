@@ -167,7 +167,7 @@ val q = select (List(column("q1.x"), column("q1.y"))) from subQuery
 
 ## Expressions
 
-The expressions in the dynamic query constructor mostly have similar usage to the [expressions](https://wz7982.github.io/sqala-doc/expr/) part of static queries, and you can refer to the explanations there. The difference lies in the usage of `CASE` expressions, which are designed to facilitate the dynamic construction of `CASE` at runtime:
+The expressions in the dynamic query constructor mostly have similar usage to the [expressions](./expr) part of static queries, and you can refer to the explanations there. The difference lies in the usage of `CASE` expressions, which are designed to facilitate the dynamic construction of `CASE` at runtime:
 
 ```scala
 val caseExpr = `case`(List(column("a") == 1 -> 1, column("a") == 2 -> 2), 0)
