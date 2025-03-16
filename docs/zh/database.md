@@ -219,7 +219,7 @@ val result: Int = db.update(department, skipNone = true)
 
 为了避免生成错误插入，此时如果非主键字段的值全都是None，则不会向数据库发出此更新请求。
 
-`save`方法可以使用实体对象生成：按主键是否存在觉得插入或更新的语句：
+`save`方法可以使用实体对象生成：按主键是否存在生成插入或更新的语句：
 
 ```scala
 val department = Department(1, 10, "IT")

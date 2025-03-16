@@ -32,7 +32,7 @@ import sqala.jdbc.*
 given Logger = Logger((s: String) => println(s))
 ```
 
-If logging is not needed, it can be written as:
+If logging is not needed, simply write:
 
 ```scala
 import sqala.jdbc.*
@@ -74,7 +74,7 @@ If the definition of the entity class does not match the corresponding table in 
 
 ## Query Data
 
-Use the `fetch` method to query data, which returns a List type result:
+Use the `fetch` method to query data, which returns a List:
 
 ```scala
 val q =
@@ -89,9 +89,9 @@ We can use the `fetchTo` method to map the results to types not automatically de
 val result: List[SomeEntity] = db.fetchTo[SomeEntity](q)
 ```
 
-## Query First Data
+## Query First Row
 
-The `find` method returns an `Option` type result, which is the first data in the query result set:
+The `find` method returns an `Option` type result, which is the first row in the query result set:
 
 ```scala
 val q =
@@ -108,7 +108,7 @@ val result: Option[SomeEntity] = db.findTo[SomeEntity](q)
 
 ## Query Count
 
-Querying the count of data is a common operation. We can use the `fetchSize` method to query:
+Querying the count of data is a common operation. We can query count via the `fetchSize` method:
 
 ```scala
 val q =
@@ -117,7 +117,7 @@ val q =
 val result: Long = db.fetchSize(q)
 ```
 
-To avoid performance waste, when calling `fetchSize`, sqala will optimize the incoming query as appropriate. If the query is a `SELECT` query without `GROUP BY` and not `DISTINCT`, sqala will replace the `SELECT` fields with `COUNT(*)` and remove the `ORDER BY` and `LIMIT` clauses from the query. If the query is not a `SELECT` statement, or if it contains `GROUP BY`, or if the query is `DISTINCT`, sqala will not optimize the query and will use it as a subquery table.
+For better performance, when calling `fetchSize`, sqala will optimize the incoming query when possible. If the query is a `SELECT` query without `GROUP BY` and `DISTINCT`, sqala will replace the `SELECT` fields with `COUNT(*)` and remove the `ORDER BY` and `LIMIT` clauses from the query. If the query is not a `SELECT` statement, or if it contains `GROUP BY`, or if the query is `DISTINCT`, sqala will not optimize the query and will use it as a subquery table.
 
 ## Query Existence
 
@@ -130,7 +130,7 @@ val q =
 val result: Boolean = db.fetchExists(q)
 ```
 
-## Pagination Query
+## Paging
 
 Use the `page` method for pagination query, which returns a Page type result. The Page type is defined as follows:
 
@@ -209,7 +209,7 @@ val department = Department(1, 10, "IT")
 val result: Int = db.update(department)
 ```
 
-If you want to skip updating fields when their values are `None`, you can pass `skipNone = true`:
+If you want to skip updating fields with `None` value, you can pass `skipNone = true`:
 
 ```scala
 val department = Department(1, 10, "IT")
