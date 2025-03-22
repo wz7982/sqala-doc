@@ -1,6 +1,6 @@
 # Expressions
 
-To better use sqala for handling business, it is best to have some understanding of sqala's expressions.
+To better use sqala for handling business, it is better to have some understanding of sqala's expressions.
 
 sqala includes an SQL expression type `Expr`, and the sub-items of `Expr` also accept parameters of type `Expr`, thus sqala has powerful expression composition capabilities.
 
@@ -16,7 +16,7 @@ val q =
 
 ## Values
 
-In addition to fields, value expressions are also the most basic expressions. For example, some requirements may need a fixed value as a column in the result:
+Besides fields, value expressions are also the most basic expressions. For example, sometimes we may need a constant value as a column in the result:
 
 ```scala
 val q =
@@ -60,12 +60,12 @@ For example:
 
 ```scala
 val id = 1
-val name = "小黑"
+val name = "Dave"
 val q =
     from[Department].filter(d => d.id > id && d.name == name)
 ```
 
-If the right side of `==` or `!=` is `None`, it corresponds to SQL's `IS NULL` and `IS NOT NULL`:
+When the right side of `==` or `!=` is `None`, it corresponds to SQL's `IS NULL` and `IS NOT NULL`:
 
 ```scala
 // a.x IS NULL
@@ -148,11 +148,11 @@ sqala also allows multiple columns to participate in relational operations simul
 ```scala
 val q1 =
     from[Department].filter: d =>
-        (d.id, d.name) === (1, "小黑")
+        (d.id, d.name) === (1, "Dave")
 
 val q2 =
     from[Department].filter: d =>
-        (d.id, d.name).in(List((1, "小黑"), (2, "小白")))
+        (d.id, d.name).in(List((1, "Dave"), (2, "Ben")))
 
 val q3 =
     from[Department].filter: d =>
@@ -164,11 +164,11 @@ Or use `.asExpr` to convert a tuple of expressions into a single expression:
 ```scala
 val q1 =
     from[Department].filter: d =>
-        (d.id, d.name).asExpr == (1, "小黑")
+        (d.id, d.name).asExpr == (1, "Dave")
 
 val q2 =
     from[Department].filter: d =>
-        (d.id, d.name).asExpr.in(List((1, "小黑"), (2, "小白")))
+        (d.id, d.name).asExpr.in(List((1, "Dave"), (2, "Ben")))
 
 val q3 =
     from[Department].filter: d =>
@@ -230,7 +230,7 @@ def left(x: Expr[String], n: Int): Expr[String] =
     Expr.Func("LEFT", x :: n.asExpr :: Nil)
 ```
 
-This way, we can use it to build queries:
+Now, we can use `left` function to build queries:
 
 ```scala
 val q =
@@ -301,7 +301,7 @@ The first parameter accepts a `Double` value;
 
 The second parameter `withinGroup` accepts a sorting rule, and the sorting field must be of a numerical type.
 
-**MySQL, SQLite, and other databases do not currently support this function.**
+**MySQL, SQLite do not currently support this function.**
 
 #### stringAgg
 
@@ -343,7 +343,7 @@ val q =
             grouping(g.name)
 ```
 
-**Please note: For the `GROUPING` function, MySQL database restricts its use to queries with `GROUP BY ROLLUP` or `GROUP BY GROUPING SETS`; SQLite database does not support this function, and sqala does not perform compile-time checks for the above situations.**
+**Note: For the `GROUPING` function, MySQL database restricts its use to queries with `GROUP BY ROLLUP` or `GROUP BY GROUPING SETS`; SQLite database does not support this function, and sqala does not perform compile-time checks for the above situations.**
 
 ### Custom Aggregate Functions
 
@@ -500,4 +500,50 @@ val time1 = timestamp("2020-01-01 00:00:00")
 val time2 = date("2020-01-01")
 
 val q =
-    from
+    from[A].filter(a => a.date1 == time1 && a.date2 == time2)
+```
+
+In Sqlite and SQLServer, it will be converted to date function and `CAST` expression, on other databases, it gerates date literal.
+
+We can use `extract` function to extract some parts from datetime:
+
+```scala
+val q =
+    from[A].map: a =>
+        extract(year from a.date)
+```
+
+In SQLServer, it will be casted to `DATEPART` function, other databases however, `EXTRACT` expression will be generated。
+
+We can use `extract` operation to calculate duration between two datetime.
+
+```scala
+val q =
+    from[A].map: a =>
+        extract(day from (a.date1 - a.date2))
+```
+
+## Type Conversion
+
+We can use `as` function to convert expressions.
+
+```scala
+val q =
+    from[A].map: a =>
+        a.x.as[String]
+```
+
+sqala will automatically adopt to dialect of database.
+
+## Custom Binary Operator
+
+sqala supports customize non-standard binary operaor, for example, MySQL's `RLIKE`.
+
+```scala
+extension (x: Expr[String])
+    def rlike(y: String): Expr[Boolean] =
+        Expr.Binary(x, SqlBinaryOperator.Custom("RLIKE"), y.asExpr)
+
+val q =
+    from[A].filter(a => a.x.rlike("..."))
+```

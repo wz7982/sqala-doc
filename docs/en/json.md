@@ -19,7 +19,7 @@ import sqala.data.json.*
 
 case class People(id: Int, name: String, birthday: LocalDate, address: Option[String], emails: List[String])
 
-val people = People(1, "小黑", LocalDate.parse("1990-01-01"), None, List("xxxx@xxxx.com", "yyyy@yyyy.com"))
+val people = People(1, "Dave", LocalDate.parse("1990-01-01"), None, List("xxxx@xxxx.com", "yyyy@yyyy.com"))
 
 val json: String = people.toJson
 ```
@@ -29,7 +29,7 @@ The above code will generate the following JSON:
 ```json
 {
     "id": 1,
-    "name": "小黑",
+    "name": "Dave",
     "birthday": "1990-01-01 00:00:00",
     "address": null,
     "emails": ["xxxx@xxxx.com", "yyyy@yyyy.com"]
@@ -65,9 +65,9 @@ enum Result[T]:
 
 case class User(id: Int, name: String, state: State)
 
-val r1 = Result(User(1, "小黑", State.On))
+val r1 = Result(User(1, "Dave", State.On))
 val json1 = r1.toJson
-val r2 = Result[User](1, "错误")
+val r2 = Result[User](1, "Error")
 val json2 = r2.toJson
 ```
 
@@ -77,7 +77,7 @@ This will generate the following JSON:
 {
     "Success": {
         "id": 1,
-        "name": "小黑",
+        "name": "Dave",
         "state": "On"
     }
 }
@@ -89,7 +89,7 @@ And
 {
     "Failure": {
         "code": 1,
-        "msg": "错误"
+        "msg": "Error"
     }
 }
 ```
@@ -104,7 +104,7 @@ import sqala.data.json.*
 val json = """
 {
     "id": 1,
-    "name": "小黑",
+    "name": "Dave",
     "birthday": "1990-01-01 00:00:00",
     "address": null,
     "emails": ["xxxx@xxxx.com", "yyyy@yyyy.com"]
@@ -214,7 +214,7 @@ At the same time, we want to ensure that the frontend can successfully deseriali
 given JsonDecoder[State] with
     override def decode(node: JsonNode)(using JsonDateFormat): State throws JsonDecodeException =
         node match
-            case JsonNode.Num(1) | JsonNode.Str("On") | JsonNode.Str("开启") => State.On
+            case JsonNode.Num(1) | JsonNode.Str("On") => State.On
             case _ => State.Off
 ```
 

@@ -48,7 +48,7 @@ val q =
         .map((g, e) => (deptId = g.deptId, salary = avg(e.salary)))
 ```
 
-## Query Department IDs with At Least One Employee
+## Query id of Department with At Least One Employee
 
 ```scala
 val q =
@@ -94,7 +94,7 @@ val q =
         extract(day from (now() - e.hireDate))
 ```
 
-## Calculate Employee's Income Rating
+## Rank Employee's Income
 
 ```scala
 val q =
@@ -109,7 +109,7 @@ val q =
             )
 ```
 
-## Count Employees with Salaries Higher Than Department Average
+## Find Employees with Salaries Higher Than Department Average
 
 ```scala
 val q =

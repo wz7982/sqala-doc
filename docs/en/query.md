@@ -191,7 +191,7 @@ val q =
 
 ## Table Joins
 
-sqala supports `join`, `leftJoin`, `rightJoin` methods to join tables, and `on` to add join conditions:
+sqala supports `join`, `leftJoin`, `rightJoin` methods to join tables, and `on` for join conditions:
 
 ```scala
 val q =
@@ -541,7 +541,7 @@ Use the `fromValues` method to create queries from in-memory collections. This q
 ```scala
 case class Entity(id: Int, name: String)
 
-val list = List(Entity(1, "小黑"), Entity(2, "小白"))
+val list = List(Entity(1, "Dave"), Entity(2, "Ben"))
 
 val q = fromValues(list).filter(e => e.id > 0)
 ```
@@ -562,3 +562,125 @@ val q =
 
 `connectBy` is used to create recursive join conditions, where `prior` is used to reference recursive query columns. For specific rules, please refer to the Oracle documentation.
 
+`startWith` is used to initial condition of the recursion.
+
+`sortSiblingsBy` method refers to the ranking rule for **each level**, while `sortBy` refers to the while ranking rule:
+
+```scala
+val q =
+    from[Department]
+        .connectBy(d => prior(d.id) == d.managerId)
+        .startWith(d => d.managerId == 0)
+        .sortSiblingsBy(d => d.name)
+        .map(d => (id = d.id, managerId = d.managerId, name = d.name))
+```
+
+`maxDepth` is used to limit the maximum of recursion:
+
+```scala
+val q =
+    from[Department]
+        .connectBy(d => prior(d.id) == d.managerId)
+        .startWith(d => d.managerId == 0)
+        .sortSiblingsBy(d => d.name)
+        .maxDepth(5)
+        .map(d => (id = d.id, managerId = d.managerId, name = d.name))
+```
+
+projection and ranking can use fake column `level()` which refers to level of current recursion. It starts with level 1.
+
+```scala
+val q =
+    from[Department]
+        .connectBy(d => prior(d.id) == d.managerId)
+        .startWith(d => d.managerId == 0)
+        .sortSiblingsBy(d => d.name)
+        .maxDepth(5)
+        .map(d => (id = d.id, managerId = d.managerId, name = d.name, level = level()))
+```
+
+## PivotTable
+
+In data analysis scenerios, it is common to transform rows to columns with aggragation functions and `CASE WHEN` expression, sqala also supports this:
+
+```scala
+case class City(population: Int, year: Int, country: String)
+
+val q =
+    from[City]
+        .map: c =>
+            (
+                total_2000 = sum(`if` c.year == 2000 `then` c.population `else` 0),
+                total_2001 = sum(`if` c.year == 2001 `then` c.population `else` 0),
+                count_2000 = count(`if` c.year == 2000 `then` Some(1) `else` None),
+                count_2001 = count(`if` c.year == 2001 `then` Some(1) `else` None)
+            )
+```
+
+And sqala supports a cleaner way to write above query with `pivot`:
+
+```scala
+val q =
+    from[City]
+        .pivot(c => (total = sum(c.population), count = count(1)))
+        .`for`: c =>
+            (
+                c.year.within(`2000` = 2000, `2001` = 2001)
+            )
+```
+
+In `pivot`, we invoke several aggregation functions. In `for` we use `within` to include projection columns. Sqala automatically convert this to queries like `SUM(CASE WHEN ...)` without database itself supporting `PIVOT`. And sqala will automatically handle the return type as following:
+
+```scala
+val result:
+    List[
+        (
+            total_2000 : Option[Int],
+            total_2001 : Option[Int],
+            count_2000 : Long,
+            count_2001 : Long
+        )
+    ] =
+        db.fetch(q)
+```
+
+If other expressions are used inside `for`:
+
+```scala
+val q =
+    from[City]
+        .pivot(c => (total = sum(c.population), count = count(1)))
+        .`for`: c =>
+            (
+                c.year.within(`2000` = 2000, `2001` = 2001),
+                c.country.within(cn = "CN", us = "US")
+            )
+```
+
+Then the return type will be:
+
+```scala
+val result:
+    List[
+        (
+            total_2000_cn : Option[Int],
+            total_2000_us : Option[Int],
+            total_2001_cn : Option[Int],
+            total_2001_us : Option[Int],
+            count_2000_cn : Long,
+            count_2000_us : Long,
+            count_2001_cn : Long,
+            count_2001_us : Long
+        )
+    ] =
+        db.fetch(q)
+```
+
+<!-- ## Semantic Analysis
+
+sqala supports static semantic analysis at compile time. And common sql sematic error will be transformed to compilation warnings. To use semantic analysis, please place your queries under `analysisContext`. (This does not support `pivot` at the moment)
+
+```scala
+val q = analysisContext:
+    from[Department]
+``` -->

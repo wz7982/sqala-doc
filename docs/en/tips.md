@@ -14,7 +14,7 @@ This way, the base query can be reused multiple times to build other queries:
 
 ```scala
 val q1 =
-    baseQuery.filter((e, d) => e.name == "Xiao Hei")
+    baseQuery.filter((e, d) => e.name == "Dave")
 
 val q2 =
     baseQuery.sortBy((e, d) => d.name)
@@ -31,7 +31,7 @@ And the actual query needs to be constructed within the `queryContext` method:
 
 ```scala
 val q1 = queryContext:
-    baseQuery.filter(e => e.name == "Xiao Hei")
+    baseQuery.filter(e => e.name == "Dave")
 
 val q2 = queryContext:
     baseQuery.filter(e => e.name == baseQuery.filter(ee => e.id == 1).map(ee => ee.name))
