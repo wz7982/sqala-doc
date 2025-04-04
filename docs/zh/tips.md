@@ -51,9 +51,9 @@ val dim: Int = ???
 val baseQuery = from[Data]
 
 val q = if dim == 1 then
-    baseQuery.groupBy(d => d.dim1).map(d => (d.dim3, sum(d.measure)))
+    baseQuery.groupBy(d => d.dim1).map(d => (d.dim1, sum(d.measure)))
 else if dim == 2 then
-    baseQuery.groupBy(d => d.dim2).map(d => (d.dim3, sum(d.measure)))
+    baseQuery.groupBy(d => d.dim2).map(d => (d.dim2, sum(d.measure)))
 else
     baseQuery.groupBy(d => d.dim3).map(d => (d.dim3, sum(d.measure)))
 ```
