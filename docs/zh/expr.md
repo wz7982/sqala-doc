@@ -32,11 +32,11 @@ val q =
 
 ## 转换表达式
 
-sqala在绝大部分情况下，均将值（如Int、String等类型）、表达式（Expr类型）、子查询（Query类型）、和其组成的元组视为表达式（由`trait AsExpr`接管），但在某些未特殊优化的地方，比如某些SQL函数，使用非`Expr`类型的参数时需要使用`asExpr`方法将其转换为表达式：
+sqala在绝大部分情况下，均将值（如Int、String等类型）、表达式（Expr类型）、子查询（Query类型）、和其组成的元组视为表达式（由`trait AsExpr`接管），但我们也可以使用`asExpr`方法将非`Expr`类型的值转换为表达式：
 
 ```scala
 val q =
-    from[Department].map(d => (id = d.id, c1 = floor(1.asExpr)))
+    from[Department].map(d => (c1 = floor(1.asExpr)))
 ```
 
 ## 逻辑、关系运算
