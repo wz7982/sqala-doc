@@ -512,16 +512,17 @@ q1 ++ q2
     1. 如果是单表查询，两个查询的所有字段类型必须相符，返回结果以第一个实体类类型为准
 
     2. 如果是投影查询，其返回类型必须列数量一致，且类型一一对应，假如有两个查询，分别返回：
-        `(Option[Int], String, Option[LocalDate])`
+        
+    (Option[Int], String, Option[LocalDate])
 
-        和：
+    和：
 
-        `(Int, Option[String], LocalDate)`
+    (Int, Option[String], LocalDate)
 
-        ，这样的两个查询调用集合操作将会返回：
+    ，这样的两个查询调用集合操作将会返回：
 
-        `(Option[Int], Option[String], Option[LocalDate])`
-        。
+    (Option[Int], Option[String], Option[LocalDate])
+    。
 
 除了第一个查询需要投影到命名元组外，后续的查询可以投影到元组，将这个查询用于子查询时，或接收数据库返回的结果时，字段名以第一个查询为准：
 
