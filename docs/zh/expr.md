@@ -244,18 +244,6 @@ val q =
     from[Department].map(d => left(left(d.name, 2), 1))
 ```
 
-为了让语义分析器`analysisContext`识别SQL函数，我们可以在自定义函数上添加`sqlFunction`注解：
-
-```scala
-import sqala.metadata.sqlFunction
-
-@sqlFunction
-def left(x: Expr[String], n: Int): Expr[String] =
-    Expr.Func("LEFT", x :: n.asExpr :: Nil)
-```
-
-如果是聚合函数则添加`sqlAgg`注解，窗口函数添加`sqlWindow`注解即可。
-
 ## 聚合函数
 
 sqala内置了几个常用的SQL标准聚合函数：
