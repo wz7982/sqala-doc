@@ -413,7 +413,7 @@ sqala使用`if`方法创建`CASE WHEN`表达式：
 ```scala
 val q =
     from[Employee].map: e =>
-        `if` e.state == EmployeeState.Active `then` 1
+        `if` (e.state == EmployeeState.Active) `then` 1
         `else` 0
 ```
 
@@ -422,7 +422,7 @@ val q =
 ```scala
 val q
     from[Employee].map: e =>
-        `if` e.state == EmployeeState.Active `then` Some(1)
+        `if` (e.state == EmployeeState.Active) `then` Some(1)
         `else` None
 ```
 
@@ -431,7 +431,7 @@ val q
 ```scala
 val q =
     from[Employee].map: e =>
-        sum(`if` e.state == EmployeeState.Active `then` 1 `else` 0)
+        sum(`if` (e.state == EmployeeState.Active) `then` 1 `else` 0)
 ```
 
 ## JSON操作
