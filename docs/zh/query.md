@@ -189,8 +189,8 @@ case class C(id: Int)
 
 val q = query:
     from[A]
-        .rightJoin[B]((a, b) => a.id == b.id)
-        .leftJoin[C]((a, b, c) => a.id == c.id)
+        .rightJoin[B].on((a, b) => a.id == b.id)
+        .leftJoin[C].on((a, b, c) => a.id == c.id)
 ```
 
 那么，此查询的返回类型为：
