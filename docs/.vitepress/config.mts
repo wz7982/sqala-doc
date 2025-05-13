@@ -37,7 +37,6 @@ export default defineConfig({
               { text: '原生SQL', link: 'native' },
               { text: '示例', link: 'example' },
               { text: '动态查询', link: 'dynamic' },
-              { text: 'JSON支持', link: 'json' },
             ],
           },
         },

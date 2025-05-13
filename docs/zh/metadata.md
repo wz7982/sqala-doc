@@ -67,7 +67,7 @@ sqala无需像其他查询库那样额外定义一个表结构对象，在创建
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val q = query:
     from[Department].filter(d => d.id == 1)
 ```
 
@@ -111,7 +111,7 @@ case class Employee(
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val q = query:
     from[Employee].filter(e => e.state == EmployeeState.Active)
 ```
 

@@ -5,7 +5,7 @@
 由于sqala使用Scala代码管理查询构造，因此可以很容易地将几个查询的共有部分封装起来：
 
 ```scala
-def baseQuery =
+def baseQuery = query:
     from[Employee]
         .join[Department]((e, d) => e.departmentId == d.id)
 ```
@@ -13,10 +13,10 @@ def baseQuery =
 这样，这个基础查询就可以多次使用，用于构建其他查询：
 
 ```scala
-val q1 =
+val q1 = query:
     baseQuery.filter((e, d) => e.name == "小黑")
 
-val q2 =
+val q2 = query:
     baseQuery.sortBy((e, d) => d.name)
 ```
 
@@ -27,13 +27,13 @@ def baseQuery(using QueryContext) =
     from[Employee]
 ```
 
-而实际的查询需要在`queryContext`方法中构建：
+而实际的查询需要在`query`方法中构建：
 
 ```scala
-val q1 = queryContext:
+val q1 = query:
     baseQuery.filter(e => e.name == "小黑")
 
-val q2 = queryContext:
+val q2 = query:
     baseQuery.filter(e => e.name == baseQuery.filter(ee => e.id == 1).map(ee => ee.name))
 ```
 
@@ -48,7 +48,8 @@ case class Data(dim1: Int, dim2: Int, dim3: Int, measure: Int)
 
 val dim: Int = ???
 
-val baseQuery = from[Data]
+val baseQuery = query:
+    from[Data]
 
 val q = if dim == 1 then
     baseQuery.groupBy(d => d.dim1).map(d => (d.dim1, sum(d.measure)))
@@ -60,11 +61,22 @@ else
 
 ## 提升子查询的可读性
 
-在同一个`queryContext`上下文中，我们可以将能独立运行的子查询存入变量，无需像标准SQL那样嵌套子查询，以提高可读性：
+在同一个`query`上下文中，我们可以将能独立运行的子查询存入变量，无需像标准SQL那样嵌套子查询，以提高可读性：
 
 ```scala
-val q = queryContext:
+val q = query:
     val salaryAvg = from[Employee].map(e => avg(e.salary))
 
     from[Employee].filter(e => e.salary > salaryAvg)
 ```
+
+## 显示SQL和语义分析
+
+将查询设置为`inline def`，sqala就会在编译期尝试生成查询树，并进行语义分析，以便尽早发现错误：
+
+![show](../../images/index-show.png)
+
+
+![error](../../images/index-error.png)
+
+前提是查询没用用到`filterIf`等动态特性。

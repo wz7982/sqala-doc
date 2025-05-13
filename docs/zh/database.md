@@ -44,40 +44,12 @@ given Logger = Logger(_ => ())
 
 我们无需为实体类手工编写反序列化代码，如果遇到编译错误，请尝试使用`CustomField`。
 
-## 验证数据（可选）
-
-验证数据是一个**可选步骤**，在配置好一个额外的测试连接信息之后，sqala将在编译期连接到数据库，并验证实体类的正确性。
-
-我们首先使用`transparent inline given`创建测试连接信息：
-
-```scala
-import sqala.jdbc.*
-
-transparent inline given JdbcTestConnection = JdbcTestConnection(
-    "Your Url",
-    "Your username",
-    "Your password",
-    "Driver class name",
-    MysqlDialect // 对应的方言
-)
-```
-
-确保`given`在作用域中，对需要验证的实体类添加`derives ValidateSchema`：
-
-```scala
-case class Entity(x: Int, y: String) derives ValidateSchema
-```
-
-如果实体类的定义与数据库中对应的表不符，将会产生编译错误，错误信息为数据库报错。
-
-**目前暂不支持自定义字段类型的验证。**
-
 ## 查询数据
 
 使用`fetch`方法查询数据，其返回一个List类型的结果：
 
 ```scala
-val q =
+val q = query:
     from[Department].filter(_.id > 1)
 
 val result: List[Department] = db.fetch(q)
@@ -94,7 +66,7 @@ val result: List[SomeEntity] = db.fetchTo[SomeEntity](q)
 `find`方法返回一个`Option`类型的结果，即查询命中结果集的首条数据：
 
 ```scala
-val q =
+val q = query:
     from[Department].filter(_.id > 1)
 
 val result: Option[Department] = db.find(q)
@@ -111,20 +83,26 @@ val result: Option[SomeEntity] = db.findTo[SomeEntity](q)
 查询数据条数是一个常用的操作，我们可以使用`fetchSize`方法进行查询：
 
 ```scala
-val q =
+val q = query:
     from[Department].filter(_.id > 1)
 
 val result: Long = db.fetchSize(q)
 ```
 
-为了避免性能浪费，在调用`fetchSize`时，sqala会视情况对传入的查询进行优化，如果查询是一个不包含`GROUP BY`，以及非`DISTINCT`的`SELECT`查询，sqala会将`SELECT`的字段替换成`COUNT(*)`，并去掉查询中的`ORDER BY`和`LIMIT`子句；如果查询不是`SELECT`语句，或是语句中包含`GROUP BY`，或查询是`DISTINCT`的，sqala不会对查询进行优化，并将其作为子查询表使用。
+为了避免性能浪费，在调用`fetchSize`时，sqala会视情况对传入的查询进行优化：
+
+    1. 首先去除查询中的`ORDER BY`和`LIMIT`子句；
+
+    2. 如果查询含有`GROUP BY`或`SELECT DISTINCT`，则将查询作为子查询，并将外层查询列设置为`COUNT(*)`；
+
+    3. 否则将`SELECT`的字段替换成`COUNT(*)`
 
 ## 查询存在性
 
 使用`fetchExists`查询存在性：
 
 ```scala
-val q =
+val q = query:
     from[Department].filter(_.id > 1)
 
 val result: Boolean = db.fetchExists(q)
@@ -147,7 +125,7 @@ case class Page[T](
 `page`的参数分别为：查询语句、页大小、页码、是否需要查询条数（默认为true）：
 
 ```scala
-val q =
+val q = query:
     from[Department]
 
 val result: Page[Department] = db.page(q, 10, 1)
@@ -156,7 +134,7 @@ val result: Page[Department] = db.page(q, 10, 1)
 其中最后一个参数控制是否需要查询条数，如果在每次分页查询都查询条数，可能会浪费数据库资源，比如实际业务中我们可以只在第一页查询条数，其他情况返回0：
 
 ```scala
-val q =
+val q = query:
     from[Department]
 
 val pageSize = 10
@@ -234,7 +212,7 @@ val result: Int = db.save(department)
 在需要操作大批量数据的场景中（比如导出数据到文件），如果我们将数据一次性查入到内存，可能会导致内存占用过大，如果采用分页查询，可能会导致效率低下。因此sqala支持了JDBC的游标查询，使用`cursorFetch`启用游标查询：
 
 ```scala
-val q =
+val q = query:
     from[Department]
 
 db.cursorFetch(q, 100): c =>
@@ -261,7 +239,7 @@ case class Cursor[T](
 使用`sql`方法返回生成的SQL：
 
 ```scala
-val q =
+val q = query:
     from[Department].filter(_.id > 1)
 
 val (sql, args) = q.sql(MysqlDialect)
@@ -283,7 +261,7 @@ try {
 }
 ```
 
-非常重要的一点是：在`transaction`内部执行的查询方法，请不要使用`db.`显式指定数据库连接上下文。
+**非常重要的一点是：在`transaction`内部执行的查询方法，请不要使用`db.`显式指定数据库连接上下文。**
 
 利用Scala3的上下文抽象机制，我们可以方便地将事务上下文在不同方法之间传播，而且这个操作是类型安全的：
 
