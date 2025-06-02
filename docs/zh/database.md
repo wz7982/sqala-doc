@@ -247,13 +247,13 @@ val (sql, args) = q.sql(MysqlDialect)
 
 ## 事务
 
-`transaction`方法用来创建一个事务，`transaction`是一个带有上下文的函数，内部出现异常会回滚事务并抛出异常，如无异常则会返回内部的返回值：
+`executeTransaction`方法用来创建一个事务并执行，`executeTransaction`是一个带有上下文的函数，内部出现异常会回滚事务并抛出异常，如无异常则会返回内部的返回值：
 
 ```scala
 try {
-    val result = db.transaction {
-        execute(...)
-        execute(...)
+    val result = db.executeTransaction {
+        transaction.execute(...)
+        transaction.execute(...)
     }
     println(result)
 } catch {
@@ -261,27 +261,27 @@ try {
 }
 ```
 
-**非常重要的一点是：在`transaction`内部执行的查询方法，请不要使用`db.`显式指定数据库连接上下文。**
+**非常重要的一点是：在`executeTransaction`内部执行的查询方法，请不要使用`transaction.`显式指定数据库连接上下文。**
 
 利用Scala3的上下文抽象机制，我们可以方便地将事务上下文在不同方法之间传播，而且这个操作是类型安全的：
 
 ```scala
 import sqala.jdbc.*
 
-def insertDepartment(row: Department)(using TransactionContext): Int =
-    executeReturnKey(insert(row)).head.toInt
+def insertDepartment(row: Department)(using JdbcTransactionContext): Int =
+    transaction.executeReturnKey(insert(row)).head.toInt
 
-def deleteDepartment(id: Int)(using TransactionContext): Int =
-    execute(delete[Department].where(d => d.id == id))
+def deleteDepartment(id: Int)(using JdbcTransactionContext): Int =
+    transaction.execute(delete[Department].where(d => d.id == id))
 
-def insertAndDelete(row: Department)(using TransactionContext): Int =
+def insertAndDelete(row: Department)(using JdbcTransactionContext): Int =
     val id = insertDepartment(row)
     deleteDepartment(id)
 
 val department: Department = ???
 
 try {
-    db.transaction {
+    db.executeTransaction {
         insertAndDelete(department)
     }
 } catch {
@@ -289,6 +289,20 @@ try {
 }
 ```
 
-通过`using TransactionContext`，将会在需要事务执行的函数上添加事务上下文，如果不在`transaction`方法内调用，则会产生编译错误，并且标记了`using TransactionContext`的方法可以在`transaction`内共享同一个事务。
+通过`using JdbcTransactionContext`，将会在需要事务执行的函数上添加事务上下文，如果不在`executeTransaction`方法内调用，则会产生编译错误，并且标记了`using JdbcTransactionContext`的方法可以在`transaction`内共享同一个事务。
 
-另外，使用`transactionWithIsolation`方法可以指定事务隔离级别。
+另外，使用`executeTransactionWithIsolation`方法可以指定事务隔离级别：
+
+```scala
+try {
+    val result = db.executeTransactionWithIsolation(TransactionIsolation.ReadUncommitted) {
+        transaction.execute(...)
+        transaction.execute(...)
+    }
+    println(result)
+} catch {
+    case e: Exception => println("查询错误")
+}
+```
+
+`TransactionIsolation`是一个枚举，枚举项有：`None`、`ReadUncommitted`、`ReadCommitted`、`RepeatableRead`和`Serializable`。
