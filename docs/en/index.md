@@ -1,21 +1,83 @@
 # Introduction to sqala
 
-sqala is an SQL query library based on Scala 3.6, named after the combination of Scala and SQL. It is a lightweight query library with no third-party dependencies other than the official Scala and Java libraries.
+sqala is an SQL query library based on Scala 3, named after the combination of Scala and SQL.
 
-Benefiting from Scala 3's powerful type system, sqala supports type-safe query construction. It allows for the safe building of complex queries in an object-oriented manner using Scala 3 code (supporting joins, subqueries, interoperability with in-memory collections, recursive queries, and complex projection operations). It also enables the safe deserialization of query results back into objects using JDBC.
+Using sqala, you can achieve:
 
-sqala facilitates the conversion of data objects into UPDATE, INSERT, DELETE operations without the need for writing boilerplate code.
+1. Building queries in an object-oriented manner:
 
-Additionally, sqala has built-in support for Data Integration and Analytics Scenarios. Based on the SQL AST (Abstract Syntax Tree) and SQL Parser provided by sqala, it can flexibly construct complex queries dynamically according to runtime information, providing a solid foundation for scenarios such as dynamically building data reports, without the need for unsafe and complex sql string concatenation.
+    ```scala
+    case class User(id: Int, name: String)
 
-sqala supports the generation of multiple database dialects, including MySQL, PostgreSQL, Oracle, MSSQL, Sqlite, DB2, etc. By simply passing in different database types, the same query can be converted into different dialects (with MySQL and PostgreSQL being the first-priority support).
+    val q =
+        from[User]
+            .filter(u => u.id == 1)
+            .map(u => u.name)
+
+    val i = insert(User(1, "Dave"))
+    ```
+
+2. Managing projections with named tuples, eliminating the need to predefine structures for projection results or use `Map[String, Any]`, and accessing returned fields using `.`:
+
+    ```scala
+    val q =
+        from[User].map(u => (id = u.id))
+
+    val result = db.fetch(q)
+
+    for r <- result do
+        println(r.id)
+    ```
+
+3. Utilizing Scala3's `inline` capability to generate high-performance deserialization code, which is 3-10 times faster than reflection-based Java mainstream query libraries.
 
 
-## Notes
+<!-- 4. Capture wrong queries at compiletime, and return sematic compilation warning:
 
-Since sqala currently uses experimental features of Scala 3 and is not built based on the Scala 3 LTS version, caution is advised when using it in production environments until the next LTS version of Scala 3 is released.
+    ![demo1](../../images/index-error.png) -->
 
-Ensure that the Scala version is `3.6.2` or higher and enable the experimental feature compilation option `-experimental`.
+4. Supporting multiple dialects including MySQL, PostgreSQL, and Oracle, with the same query expression generating different SQL by passing different dialect parameters.
 
-It is recommended to use the official Scala metals plugin with tools like VSCode or Vim. The IDEA series currently does not provide writing hints or correctly display the data types returned by queries.
+5. Supporting Oracle's recursive query feature `CONNECT BY`, but generating standard SQL that is compatible across databases:
 
+    ```scala
+    case class Department(id: Int, managerId: Int, name: String)
+
+    val q =
+        from[Department]
+            .connectBy(d => prior(d.id) == d.managerId)
+            .startWith(d => d.managerId == 0)
+            .map(d => (id = d.id, managerId = d.managerId, name = d.name))
+    ```
+
+6. Beyond CRUD, sqala also supports advanced features like multidimensional grouping, subquery predicates, `LATERAL` subqueries, function tables, pivot tables, providing strong support for data analysis scenarios.
+
+7. Using native SQL and automatically extracting result types from native SQL, accessing returned fields using `.`, maintaining type safety:
+
+    ```scala
+    val id = 1
+
+    val sql = staticSql"""
+    SELECT "id", "name" FROM "user" WHERE "id" = $id
+    """
+
+    val result = db.fetch(q)
+
+    for r <- result do
+        println(r.id)
+        println(r.name)
+    ```
+
+8. The `dynamic` module provides a DSL and SQL parser for dynamically constructing complex queries, supporting applications like dynamic report building.
+
+9. The `data` module provides JSON serialization, deserialization functions, and zero-overhead object mapping.
+
+10. No additional dependencies beyond Scala and Java official libraries.
+
+## Precautions
+
+1. Since sqala currently uses experimental features of Scala3 and is not built on the Scala3 LTS version, caution is advised when using it in production environments until the next LTS version of Scala3 is released.
+
+2. Ensure the Scala version is `3.6.2` or higher. And enable the experimental feature compilation option `-experimental`.
+
+3. It is recommended to use the official Scala metals plugin with editors like VSCode, Vim, etc. Jetbrains IDEA currently cannot provide writing hints or correctly display the data types returned by queries.

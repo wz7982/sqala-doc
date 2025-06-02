@@ -51,7 +51,19 @@ export default defineConfig({
         sidebar: {
           '/en/': {
             base: '/en/',
-            items: fetchItems('en'),
+            items: [
+              { text: 'Introduction', link: 'introduction' },
+              { text: 'Metadata', link: 'metadata' },
+              { text: 'Query', link: 'query' },
+              { text: 'Tips', link: 'tips' },
+              { text: 'Expression', link: 'expr' },
+              { text: 'Database', link: 'database' },
+              { text: 'CUD Operation', link: 'update' },
+              { text: 'Native Query', link: 'native' },
+              { text: 'Example', link: 'example' },
+              { text: 'Dynamic Query', link: 'dynamic' },
+              { text: 'JSON Support', link: 'json' },
+            ],
           },
         },
       },
