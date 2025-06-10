@@ -4,9 +4,8 @@
 
 ```scala
 //> using scala 3.7.0
-//> using options -language:experimental.namedTuples
 //> using dep com.h2database:h2:2.3.232
-//> using dep com.wz7982::sqala-jdbc:0.3.3
+//> using dep com.wz7982::sqala-jdbc:0.3.5
 
 import org.h2.jdbcx.*
 import sqala.jdbc.*

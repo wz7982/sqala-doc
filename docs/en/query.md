@@ -8,6 +8,10 @@ The following usage requires importing:
 import sqala.static.dsl.*
 ```
 
+**It is advisable to isolate query-building code in separate files or limit imports to local query-construction methods. Sqala extends SQL operators via extension methods, which may conflict with those from the standard library or other third-party libraries.**
+
+sqala needs a context for querying, thus queries must be placed inside `query` method.
+
 The generated queries in the following examples are based on the MySQL dialect. In actual use, sqala will generate appropriate SQL based on the dialect configuration.
 
 ## Building Queries
@@ -15,7 +19,7 @@ The generated queries in the following examples are based on the MySQL dialect. 
 The `from` method is used to build queries, with the type parameter being the entity class type:
 
 ```scala
-val q =
+val q = query:
     from[Department]
 ```
 
@@ -41,7 +45,7 @@ The `filter` (or `where`) method corresponds to the SQL `WHERE` clause. The para
 ```scala
 val id = 1
 
-val q =
+val q = query:
     from[Department].filter(d => d.id == id)
 ```
 
@@ -66,7 +70,7 @@ sqala provides the `filterIf` (or `whereIf`) method for dynamically splicing con
 val id = 1
 val name = "IT"
 
-val q =
+val q = query:
     from[Department]
         .filterIf(id > 0)(_.id == id)
         .filterIf(name.nonEmpty)(_.name == name)
@@ -79,7 +83,7 @@ The `map` (or `select`) method is used to manually specify the `SELECT` projecti
 ### Projection to Expression
 
 ```scala
-val q =
+val q = query:
     from[Department].map(d => d.id)
 ```
 
@@ -121,7 +125,7 @@ The return type of the query is:
 ### Projection to Tuple
 
 ```scala
-val q =
+val q = query:
     from[Department].map(d => (d.id, d.name))
 ```
 
@@ -141,18 +145,12 @@ The return type of the query is:
 
 ### Projection to Named Tuple
 
-Named tuples (NamedTuple) are a new feature in Scala 3.6. However, as of now (up to Scala 3.6.2), we still need to import:
-
-```scala
-import scala.language.experimental.namedTuples
-```
-
-to use them normally. Named tuples are expected to become a standard feature in Scala 3.7, at which point they can be used without importing.
+NamedTuple is a new feature introduced in Scala 3.7.
 
 Using named tuples, we can name the projected fields and directly use `.` to call the fields after the query, without pre-defining an entity class to receive the intermediate projection results:
 
 ```scala
-val q =
+val q = query
     from[Department].map(d => (id = d.id, name = d.name))
 ```
 
@@ -163,7 +161,7 @@ val q =
 sqala supports transforming simple queries that only use `filter` and `map` into `for` comprehensions to improve readability:
 
 ```scala
-val q =
+val q = query:
     from[Department]
         .filter(d => d.id == 1)
         .map(d => d.name)
@@ -172,7 +170,7 @@ val q =
 Can be simplified to:
 
 ```scala
-val q =
+val q = query:
     for d <- from[Department]
         if d.id == 1
     yield d.name
@@ -185,7 +183,7 @@ The `take` (or `limit`) and `drop` (or `offset`) methods correspond to SQL's `LI
 If only one of the methods is called, the default value for `LIMIT` is `Long.MaxValue`, and the default value for `OFFSET` is `0`.
 
 ```scala
-val q =
+val q = query:
     from[Department].drop(100).take(10)
 ```
 
@@ -194,7 +192,7 @@ val q =
 sqala supports `join`, `leftJoin`, `rightJoin` methods to join tables, and `on` for join conditions:
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .join[Department]
         .on((e, d) => e.departmentId == d.id)
@@ -204,10 +202,6 @@ The return type of the query is:
 
 ![Return Type](../../images/join-result1.png)
 
-If the `join` in the above is changed to `leftJoin`, the return type is:
-
-![Return Type](../../images/join-result2.png)
-
 sqala will calculate the return type from the join path. For example, if we have:
 
 ```scala
@@ -215,7 +209,7 @@ case class A(id: Int)
 case class B(id: Int)
 case class C(id: Int)
 
-val q =
+val q = query:
     from[A]
         .rightJoin[B]((a, b) => a.id == b.id)
         .leftJoin[C]((a, b, c) => a.id == c.id)
@@ -223,7 +217,7 @@ val q =
 
 Then, the return type of this query is:
 
-![Return Type](../../images/join-result3.png)
+![Return Type](../../images/join-result2.png)
 
 This is because outer joins produce additional null values, and sqala will automatically add `Option` to types that may be null.
 
@@ -232,7 +226,7 @@ This is because outer joins produce additional null values, and sqala will autom
 sqala can easily handle cases where a table joins itself. For example, if our `Department` table records the `managerId` field, which is the id of the superior, we can use a self-join to query such data:
 
 ```scala
-val q =
+val q = query:
     from[Department]
         .join[Department]((d1, d2) => d1.managerId == d2.id)
 ```
@@ -244,7 +238,7 @@ However, for cases where the data table stores tree data, it is more convenient 
 After projection, we can use the `sortBy` (or `orderBy`) method to sort. The parameter is the sorting rule of the expression or the tuple composed of them. Multiple `sortBy` (or `orderBy`) will be spliced in sequence:
 
 ```scala
-val q =
+val q = query:
     from[Department]
         .sortBy(d => (d.id, d.name.desc))
         .sortBy(d => d.managerId.asc)
@@ -280,12 +274,21 @@ If an expression is used directly without explicitly writing the sorting rule, s
 
 When generating dialects for databases like MySQL, sorting rules containing `NULLS` will be specially handled to avoid generating incorrect SQL.
 
+`sortByIf` (or `orderByIf`) method can be used in conditional sorting:
+
+```scala
+val q = query:
+    from[Department]
+        .sortByIf(true)(d => (d.id, d.name.desc))
+        .sortByIf(true)(d => d.managerId.asc)
+```
+
 ## Grouping
 
 The `groupBy` method corresponds to the SQL `GROUP BY` clause:
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .groupBy(e => e.departmentId)
         .map(e => (e.departmentId, count()))
@@ -304,7 +307,7 @@ FROM
 If obtaining any value of an ungrouped field meets the requirement, the `anyValue` aggregate function can be used:
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .groupBy(e => e.departmentId)
         .map(e => (e.departmentId, anyValue(e.id)))
@@ -315,9 +318,10 @@ val q =
 Since sqala generates value expressions as JDBC precompiled placeholders `?`, in queries like the following:
 
 ```scala
-val q = from[Department]
-    .groupBy(d => d.id + 1)
-    .map(d => (d.id + 1, count()))
+val q = query:
+    from[Department]
+        .groupBy(d => d.id + 1)
+        .map(d => (d.id + 1, count()))
 ```
 
 SQL similar to the following will be generated:
@@ -337,7 +341,7 @@ When using PostgreSQL, due to strict driver validation, the database cannot dete
 We can add `?preferQueryMode=simple` to the database connection to disable precompilation, or change the query to a subquery form:
 
 ```scala
-val q = queryContext:
+val q = query:
     val subquery =
         from[Department]
             .map(d => (x = d.id + 1))
@@ -350,7 +354,7 @@ val q = queryContext:
 In addition to ordinary grouping, sqala also supports `groupByCube`, `groupByRollup`, `groupBySets` for multi-dimensional grouping. The first two are used similarly to `groupBy`:
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .groupByCube(e => (e.departmentId, e.name))
         .map(e => (e.departmentId, e.name, count()))
@@ -359,7 +363,7 @@ val q =
 Or:
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .groupByRollup(e => (e.departmentId, e.name))
         .map(e => (e.departmentId, e.name, count()))
@@ -368,7 +372,7 @@ val q =
 Additionally, the `grouping` aggregate function can be used with multi-dimensional grouping (this function is not supported by databases like Sqlite):
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .groupByCube(e => (e.departmentId, e.name))
         .map: e =>
@@ -378,7 +382,7 @@ val q =
 `groupBySets` takes a grouping set composed of basic groupings (empty grouping sets are represented by the Unit type):
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .groupBySets(e => ((e.departmentId, e.name), e.name, ()))
         .map(e => (e.departmentId, e.name, count()))
@@ -389,7 +393,7 @@ val q =
 Use the `distinct` method to deduplicate the result set:
 
 ```scala
-val q =
+val q = query:
     from[Department].map(d => d.name).distinct
 ```
 
@@ -408,19 +412,19 @@ sqala supports all of the above subqueries.
 Predicate subqueries are usually used with operations like `IN`, `ANY`, `ALL`, `EXISTS`:
 
 ```scala
-val q1 =
+val q1 = query:
     from[A].filter: a =>
         a.x.in(from[B].map(b => b.x))
 
-val q2 =
+val q2 = query:
     from[A].filter: a =>
         a.x == any(from[B].map(b => b.x))
 
-val q3 =
+val q3 = query:
     from[A].filter: a =>
         a.x != all(from[B].map(b => b.x))
 
-val q4 =
+val q4 = query:
     from[A].filter: a =>
         exists(from[B].filter(b => b.x > 0))
 ```
@@ -430,11 +434,11 @@ Subqueries of the above types, except for `exists`, need to project to a type th
 Predicate subqueries can also use operators directly without the above operations:
 
 ```scala
-val q1 =
+val q1 = query:
     from[A].filter: a =>
         a.x == from[B].map(b => b.x).take(1)
 
-val q2 =
+val q2 = query:
     from[A].filter: a =>
         a.x > from[B].map(b => sum(b.x))
 ```
@@ -444,7 +448,7 @@ val q2 =
 sqala supports placing subqueries in table joins. The prerequisite for using table subqueries is that the subquery **projects to a named tuple**. At this point, we can use `.` to call the fields of the subquery:
 
 ```scala
-val q =
+val q = query:
     val subquery = from[B].map(b => (x = b.x, y = b.y))
 
     from[A].leftJoinQuery(subquery).on((a, q) => a.x == q.x)
@@ -453,7 +457,7 @@ val q =
 `joinLateral` and `leftJoinLateral` subqueries support using fields from the outer table:
 
 ```scala
-val q =
+val q = query:
     from[A].leftJoinLateral(a =>
         from[B].filter(b => a.z > b.z).map(b => (x = b.x, y = b.y))
     ).on((a, q) => a.x == q.x)
@@ -461,10 +465,10 @@ val q =
 
 **This is implemented using the database's LATERAL feature. Please ensure that the database version supports this feature when using it.**
 
-The `fromQuery` method supports nesting a query that returns a **named tuple** as a subquery:
+The `from` method supports nesting a query that returns a **named tuple** as a subquery:
 
 ```scala
-val q = fromQuery(from[A].map(a => (x = a.x, y = a.y)))
+val q = from(from[A].map(a => (x = a.x, y = a.y)))
 ```
 
 This method can transform `UNION` and other queries into subqueries, allowing the use of filtering, grouping, and other functions unique to `SELECT` statements.
@@ -479,7 +483,7 @@ Subqueries can be placed in the projection result using `map`, provided that:
 Subqueries that meet the above rules can be placed in the `map` list:
 
 ```scala
-val q =
+val q = query:
     val scalarQuery = from[B].map(b => sum(b.x))
     from[A].map(a => (a.x, scalarQuery))
 ```
@@ -489,7 +493,7 @@ val q =
 sqala supports using `union`, `unionAll`, `intersect`, `intersectAll`, `except`, `exceptAll` and other methods to handle set queries, for example:
 
 ```scala
-val q =
+val q = query:
     val q1 = from[Department]
         .filter(d => d.id == 1)
         .map(d => (id = d.id, name = d.name))
@@ -512,22 +516,22 @@ For queries on both sides of the set operation:
     1. If it is a single table query, all field types of the two queries must match, and the return result will be based on the first entity class type.
 
     2. If it is a projection query, their return types must have the same number of columns and the types must correspond one-to-one. For example, if there are two queries returning:
-        `(Option[Int], String, Option[LocalDate])`
+        (Option[Int], String, Option[LocalDate])
 
         and:
 
-        `(Int, Option[String], LocalDate)`
+        (Int, Option[String], LocalDate)
 
         , then calling a set operation on these two queries will return:
 
-        `(Option[Int], Option[String], Option[LocalDate])`
+        (Option[Int], Option[String], Option[LocalDate])
         .
 
 Except for the first query needing to project to a named tuple, subsequent queries can project to tuples. When using this query as a subquery or receiving database return results, the field names will be based on the first query:
 
 ```scala
 // When used as a subquery, the fields are id and name
-val q =
+val q = query:
     val q1 = from[Department].map(d => (id = d.id, name = d.name))
     val q2 = from[Department].map(d => (d.id, d.name))
 
@@ -543,7 +547,8 @@ case class Entity(id: Int, name: String)
 
 val list = List(Entity(1, "Dave"), Entity(2, "Ben"))
 
-val q = fromValues(list).filter(e => e.id > 0)
+val q = query:
+    fromValues(list).filter(e => e.id > 0)
 ```
 
 **This feature is implemented using the database's `VALUES` statement. Please ensure that the current database version supports this syntax when using it.**
@@ -553,7 +558,7 @@ val q = fromValues(list).filter(e => e.id > 0)
 The `department` table stores tree data. If we want to query an entire department tree in the `department` table, it usually requires multiple queries. However, sqala borrows from the `CONNECT BY` feature of the Oracle dialect and uses the `connectBy` method to create recursive queries, eliminating the need for multiple queries and wasting database performance. When generating SQL, it will be converted to the SQL standard `CTE (Common Table Expression)` query, without requiring the database itself to support `CONNECT BY`:
 
 ```scala
-val q =
+val q = query:
     from[Department]
         .connectBy(d => prior(d.id) == d.managerId)
         .startWith(d => d.managerId == 0)
@@ -567,7 +572,7 @@ val q =
 `sortSiblingsBy` method refers to the ranking rule for **each level**, while `sortBy` refers to the while ranking rule:
 
 ```scala
-val q =
+val q = query:
     from[Department]
         .connectBy(d => prior(d.id) == d.managerId)
         .startWith(d => d.managerId == 0)
@@ -578,7 +583,7 @@ val q =
 `maxDepth` is used to limit the maximum of recursion:
 
 ```scala
-val q =
+val q = query:
     from[Department]
         .connectBy(d => prior(d.id) == d.managerId)
         .startWith(d => d.managerId == 0)
@@ -590,7 +595,7 @@ val q =
 projection and ranking can use fake column `level()` which refers to level of current recursion. It starts with level 1.
 
 ```scala
-val q =
+val q = query:
     from[Department]
         .connectBy(d => prior(d.id) == d.managerId)
         .startWith(d => d.managerId == 0)
@@ -598,89 +603,3 @@ val q =
         .maxDepth(5)
         .map(d => (id = d.id, managerId = d.managerId, name = d.name, level = level()))
 ```
-
-## PivotTable
-
-In data analysis scenerios, it is common to transform rows to columns with aggragation functions and `CASE WHEN` expression, sqala also supports this:
-
-```scala
-case class City(population: Int, year: Int, country: String)
-
-val q =
-    from[City]
-        .map: c =>
-            (
-                total_2000 = sum(`if` c.year == 2000 `then` c.population `else` 0),
-                total_2001 = sum(`if` c.year == 2001 `then` c.population `else` 0),
-                count_2000 = count(`if` c.year == 2000 `then` Some(1) `else` None),
-                count_2001 = count(`if` c.year == 2001 `then` Some(1) `else` None)
-            )
-```
-
-And sqala supports a cleaner way to write above query with `pivot`:
-
-```scala
-val q =
-    from[City]
-        .pivot(c => (total = sum(c.population), count = count(1)))
-        .`for`: c =>
-            (
-                c.year.within(`2000` = 2000, `2001` = 2001)
-            )
-```
-
-In `pivot`, we invoke several aggregation functions. In `for` we use `within` to include projection columns. Sqala automatically convert this to queries like `SUM(CASE WHEN ...)` without database itself supporting `PIVOT`. And sqala will automatically handle the return type as following:
-
-```scala
-val result:
-    List[
-        (
-            total_2000 : Option[Int],
-            total_2001 : Option[Int],
-            count_2000 : Long,
-            count_2001 : Long
-        )
-    ] =
-        db.fetch(q)
-```
-
-If other expressions are used inside `for`:
-
-```scala
-val q =
-    from[City]
-        .pivot(c => (total = sum(c.population), count = count(1)))
-        .`for`: c =>
-            (
-                c.year.within(`2000` = 2000, `2001` = 2001),
-                c.country.within(cn = "CN", us = "US")
-            )
-```
-
-Then the return type will be:
-
-```scala
-val result:
-    List[
-        (
-            total_2000_cn : Option[Int],
-            total_2000_us : Option[Int],
-            total_2001_cn : Option[Int],
-            total_2001_us : Option[Int],
-            count_2000_cn : Long,
-            count_2000_us : Long,
-            count_2001_cn : Long,
-            count_2001_us : Long
-        )
-    ] =
-        db.fetch(q)
-```
-
-<!-- ## Semantic Analysis
-
-sqala supports static semantic analysis at compile time. And common sql sematic error will be transformed to compilation warnings. To use semantic analysis, please place your queries under `analysisContext`. (This does not support `pivot` at the moment)
-
-```scala
-val q = analysisContext:
-    from[Department]
-``` -->

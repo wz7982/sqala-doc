@@ -167,7 +167,7 @@ val q = select (List(column("q1.x"), column("q1.y"))) from subQuery
 
 ## 表达式
 
-动态查询构造器的表达式，大部分的用法都与静态查询的[表达式](https://wz7982.github.io/sqala-doc/expr/)部分类似，可以参照其中的说明，不同的是`CASE`表达式的用法，其是为了方便运行时动态构建`CASE`：
+动态查询构造器的表达式，大部分的用法都与静态查询的[表达式](./expr)部分类似，可以参照其中的说明，不同的是`CASE`表达式的用法，其是为了方便运行时动态构建`CASE`：
 
 ```scala
 val caseExpr = `case`(List(column("a") == 1 -> 1, column("a") == 2 -> 2), 0)

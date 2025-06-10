@@ -10,7 +10,7 @@ Fields are one of the most basic expressions. The fields we use in query constru
 
 ```scala
 // id is a field-type expression
-val q =
+val q = query:
     from[Department].filter(d => d.id > 1)
 ```
 
@@ -19,14 +19,14 @@ val q =
 Besides fields, value expressions are also the most basic expressions. For example, sometimes we may need a constant value as a column in the result:
 
 ```scala
-val q =
+val q = query:
     from[Department].map(d => (id = d.id, c1 = 1, c2 = "a"))
 ```
 
 We can also use `asExpr` to convert a value to an SQL expression:
 
 ```scala
-val q =
+val q = query:
     from[Department].map(d => (id = d.id, c1 = 1.asExpr, c2 = "a".asExpr))
 ```
 
@@ -35,7 +35,7 @@ val q =
 In most cases, sqala treats values (such as Int, String, etc.), expressions (Expr type), subqueries (Query type), and tuples composed of them as expressions (handled by `trait AsExpr`). However, in some places that are not specially optimized, such as certain SQL functions, when using parameters that are not of type `Expr`, you need to use the `asExpr` method to convert them to expressions:
 
 ```scala
-val q =
+val q = query:
     from[Department].map(d => (id = d.id, c1 = floor(1.asExpr)))
 ```
 
@@ -61,7 +61,7 @@ For example:
 ```scala
 val id = 1
 val name = "Dave"
-val q =
+val q = query:
     from[Department].filter(d => d.id > id && d.name == name)
 ```
 
@@ -69,11 +69,11 @@ When the right side of `==` or `!=` is `None`, it corresponds to SQL's `IS NULL`
 
 ```scala
 // a.x IS NULL
-val q1 =
+val q1 = query:
     from[A].filter(a => a.x == None)
 
 // a.x IS NOT NULL
-val q2 =
+val q2 = query:
     from[A].filter(a => a.x != None)
 ```
 
@@ -81,28 +81,28 @@ To make `!=` consistent with the semantics of programming languages, sqala perfo
 
 ```scala
 // a.x <> 1 OR a.x IS NULL
-val q =
+val q = query:
     from[A].filter(a => a.x != 1)
 ```
 
 The right side of the operator can not only be a regular value but also another expression, such as being placed in an `ON` condition:
 
 ```scala
-val q =
+val q = query:
     from[A].join[B].on((a, b) => a.id == b.id)
 ```
 
 Value expressions can also easily be placed on the left side of a binary operation, but `==` needs to be replaced with `===`, and `!=` needs to be replaced with `<>`:
 
 ```scala
-val q =
+val q = query:
     from[Department].filter(d => 1 === d.id)
 ```
 
 Or use `asExpr` to explicitly convert a value to an expression:
 
 ```scala
-val q =
+val q = query:
     from[Department].filter(d => 1.asExpr == d.id)
 ```
 
@@ -119,7 +119,7 @@ In addition to these symbolic operators, sqala also supports some non-symbolic o
 
 ```scala
 val ids = List(1, 2, 3)
-val q =
+val q = query:
     from[Department].filter(d => d.id.in(ids) && d.name.like("小%"))
 ```
 
@@ -128,14 +128,14 @@ When an empty list is passed to the `in` operation, to avoid generating incorrec
 The `in` operation can also accept a tuple of expressions of the corresponding type, rather than a list of values:
 
 ```scala
-val q =
+val q = query:
     from[Department].filter(d => d.id.in(d.id, d.id + 1, 1))
 ```
 
 Use `!` to create a unary logical operation:
 
 ```scala
-val q =
+val q = query:
     from[Department].filter(d => !(d.id == 1))
 ```
 
@@ -146,15 +146,15 @@ Using the logical operator `!` on `in`, `between`, `like` and other operators wi
 sqala also allows multiple columns to participate in relational operations simultaneously. Similar to value expressions written on the left side of a comparison, `==` needs to be replaced with `===`, and `!=` needs to be replaced with `<>`:
 
 ```scala
-val q1 =
+val q1 = query:
     from[Department].filter: d =>
         (d.id, d.name) === (1, "Dave")
 
-val q2 =
+val q2 = query:
     from[Department].filter: d =>
         (d.id, d.name).in(List((1, "Dave"), (2, "Ben")))
 
-val q3 =
+val q3 = query:
     from[Department].filter: d =>
         (d.id, d.name).in(from[Department].map(d => (d.id, d.name)))
 ```
@@ -162,15 +162,15 @@ val q3 =
 Or use `.asExpr` to convert a tuple of expressions into a single expression:
 
 ```scala
-val q1 =
+val q1 = query:
     from[Department].filter: d =>
         (d.id, d.name).asExpr == (1, "Dave")
 
-val q2 =
+val q2 = query:
     from[Department].filter: d =>
         (d.id, d.name).asExpr.in(List((1, "Dave"), (2, "Ben")))
 
-val q3 =
+val q3 = query:
     from[Department].filter: d =>
         (d.id, d.name).asExpr.in(from[Department].map(d => (d.id, d.name)))
 ```
@@ -188,14 +188,14 @@ sqala supports the following numerical operators:
 | `%`           | `%`                        |
 
 ```scala
-val q =
+val q = query:
     from[Department].filter(d => d.id + 1 > 5).map(_.id * 100)
 ```
 
 And unary operations `+` and `-`:
 
 ```scala
-val q =
+val q = query:
     from[Department].map(d => -d.id)
 ```
 
@@ -233,28 +233,16 @@ def left(x: Expr[String], n: Int): Expr[String] =
 Now, we can use `left` function to build queries:
 
 ```scala
-val q =
+val q = query:
     from[Department].map(d => left(d.name, 2))
 ```
 
 Function-type expressions can also be nested:
 
 ```scala
-val q =
+val q = query:
     from[Department].map(d => left(left(d.name, 2), 1))
 ```
-
-To allow the semantic analyzer `analysisContext` to recognize SQL functions, we can add the `sqlFunction` annotation to custom functions:
-
-```scala
-import sqala.metadata.sqlFunction
-
-@sqlFunction
-def left(x: Expr[String], n: Int): Expr[String] =
-    Expr.Func("LEFT", x :: n.asExpr :: Nil)
-```
-
-If it's an aggregate function, add the `sqlAgg` annotation, and for window functions, add the `sqlWindow` annotation.
 
 ## Aggregate Functions
 
@@ -271,14 +259,14 @@ sqala has built-in several commonly used SQL standard aggregate functions:
 | `anyValue(expr)`       | `ANY_VALUE(x)`             |
 
 ```scala
-val q =
+val q = query:
     from[Department].map(d => (c = count(), s = sum(d.id)))
 ```
 
 Aggregate functions can also be combined with other expressions:
 
 ```scala
-val q =
+val q = query:
     from[Department].map(d => (c = count() + sum(d.id * 100)))
 ```
 
@@ -291,7 +279,7 @@ sqala supports two special numerical aggregate functions `percentileDisc` and `p
 Usage is as follows:
 
 ```scala
-val q =
+val q = query:
     from[Department]
         .map: d =>
             percentileDisc(0.5, withinGroup = d.id.asc)
@@ -308,7 +296,7 @@ The second parameter `withinGroup` accepts a sorting rule, and the sorting field
 sqala supports special string aggregate functions `stringAgg`, `groupConcat`, and `listAgg`. The three methods are essentially the same, used for concatenating strings. Usage is as follows:
 
 ```scala
-val q =
+val q = query:
     from[Department]
         .map: d =>
             stringAgg(d.name, ",", d.id.asc)
@@ -335,7 +323,7 @@ In Oracle or DB2, it generates the `LISTAGG` function, and places the sorting ru
 sqala supports the `grouping` aggregate function, corresponding to the database's `GROUPING` function, used to distinguish which expressions participated in the current grouping. It is very useful in complex groupings like `GROUP BY CUBE` and when the grouped expressions may have null values. Its parameters are several grouping expressions:
 
 ```scala
-val q =
+val q = query:
     from[Department]
         .groupBy d =>
             (name = d.name)
@@ -377,7 +365,7 @@ sqala supports the following analytical functions:
 Calling `over` after an analytical function or aggregate function can generate a window function expression. You can use `partitionBy` and `sortBy` (or `orderBy`), where `partitionBy`'s parameters are several expressions, and `sortBy`'s parameters are several sorting rules generated by expressions:
 
 ```scala
-val q =
+val q = query:
     from[Department].map: d =>
         rank() over (partitionBy (d.birthday) sortBy (d.name.asc))
 ```
@@ -385,7 +373,7 @@ val q =
 The parameters of the window function can be empty:
 
 ```scala
-val q =
+val q = query:
     from[Department].map: d =>
         rank() over ()
 ```
@@ -393,7 +381,7 @@ val q =
 The parameters of the window function can only have `sortBy` (or `orderBy`):
 
 ```scala
-val q =
+val q = query:
     from[Department].map: d =>
         rank() over (sortBy (d.name.asc))
 ```
@@ -413,7 +401,7 @@ For example:
 ```scala
 import scala.language.postfixOps
 
-val q =
+val q = query:
     from[Department].map: d =>
         rank() over (partitionBy (d.birthday) sortBy (d.name.asc) rowsBetween (currentRow, 1 preceding))
 ```
@@ -423,7 +411,7 @@ val q =
 sqala uses the `if` method to create `CASE WHEN` expressions:
 
 ```scala
-val q =
+val q = query:
     from[Employee].map: e =>
         `if` e.state == EmployeeState.Active `then` 1
         `else` 0
@@ -432,7 +420,7 @@ val q =
 You can return an `Option` type value in `then`:
 
 ```scala
-val q
+val q = query:
     from[Employee].map: e =>
         `if` e.state == EmployeeState.Active `then` Some(1)
         `else` None
@@ -441,7 +429,7 @@ val q
 Conditional expressions can also be combined with other expressions:
 
 ```scala
-val q =
+val q = query:
     from[Employee].map: e =>
         sum(`if` e.state == EmployeeState.Active `then` 1 `else` 0)
 ```
@@ -451,7 +439,7 @@ val q =
 sqala supports the `->` and `->>` JSON operators, with semantics consistent with MySQL and PostgreSQL:
 
 ```scala
-val q =
+val q = query:
     from[A].map: a =>
         a.x -> 0 ->> "a"
 ```
@@ -473,7 +461,7 @@ We can use the `interval` method to perform operations on time:
 ```scala
 import scala.language.postfixOps
 
-val q =
+val q = query:
     from[A].map: a =>
         a.date + interval(1 day) + interval(1 month)
 ```
@@ -499,7 +487,7 @@ val time1 = timestamp("2020-01-01 00:00:00")
 
 val time2 = date("2020-01-01")
 
-val q =
+val q = query:
     from[A].filter(a => a.date1 == time1 && a.date2 == time2)
 ```
 
@@ -508,7 +496,7 @@ In Sqlite and SQLServer, it will be converted to date function and `CAST` expres
 We can use `extract` function to extract some parts from datetime:
 
 ```scala
-val q =
+val q = query:
     from[A].map: a =>
         extract(year from a.date)
 ```
@@ -518,7 +506,7 @@ In SQLServer, it will be casted to `DATEPART` function, other databases however,
 We can use `extract` operation to calculate duration between two datetime.
 
 ```scala
-val q =
+val q = query:
     from[A].map: a =>
         extract(day from (a.date1 - a.date2))
 ```
@@ -528,7 +516,7 @@ val q =
 We can use `as` function to convert expressions.
 
 ```scala
-val q =
+val q = query:
     from[A].map: a =>
         a.x.as[String]
 ```
@@ -544,6 +532,6 @@ extension (x: Expr[String])
     def rlike(y: String): Expr[Boolean] =
         Expr.Binary(x, SqlBinaryOperator.Custom("RLIKE"), y.asExpr)
 
-val q =
+val q = query:
     from[A].filter(a => a.x.rlike("..."))
 ```

@@ -67,7 +67,7 @@ sqala does not require an additional table structure object like other query lib
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val q = query:
     from[Department].filter(d => d.id == 1)
 ```
 
@@ -111,7 +111,7 @@ But when we build the query:
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val q = query:
     from[Employee].filter(e => e.state == EmployeeState.Active)
 ```
 

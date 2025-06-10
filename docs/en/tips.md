@@ -5,7 +5,7 @@
 Since sqala uses Scala code to manage query construction, it is easy to encapsulate common parts of several queries:
 
 ```scala
-def baseQuery =
+def baseQuery = query:
     from[Employee]
         .join[Department]((e, d) => e.departmentId == d.id)
 ```
@@ -13,10 +13,10 @@ def baseQuery =
 This way, the base query can be reused multiple times to build other queries:
 
 ```scala
-val q1 =
+val q1 = query:
     baseQuery.filter((e, d) => e.name == "Dave")
 
-val q2 =
+val q2 = query:
     baseQuery.sortBy((e, d) => d.name)
 ```
 
@@ -30,10 +30,10 @@ def baseQuery(using QueryContext) =
 And the actual query needs to be constructed within the `queryContext` method:
 
 ```scala
-val q1 = queryContext:
+val q1 = query:
     baseQuery.filter(e => e.name == "Dave")
 
-val q2 = queryContext:
+val q2 = query:
     baseQuery.filter(e => e.name == baseQuery.filter(ee => e.id == 1).map(ee => ee.name))
 ```
 
@@ -48,7 +48,8 @@ case class Data(dim1: Int, dim2: Int, dim3: Int, measure: Int)
 
 val dim: Int = ???
 
-val baseQuery = from[Data]
+val baseQuery = query:
+    from[Data]
 
 val q = if dim == 1 then
     baseQuery.groupBy(d => d.dim1).map(d => (d.dim3, sum(d.measure)))
@@ -60,11 +61,22 @@ else
 
 ## Improving Subquery Readability
 
-Within the same `queryContext`, we can store independently executable subqueries in variables, avoiding the need to nest subqueries as in standard SQL, thereby improving readability:
+Within the same `query` context, we can store independently executable subqueries in variables, avoiding the need to nest subqueries as in standard SQL, thereby improving readability:
 
 ```scala
-val q = queryContext:
+val q = query:
     val salaryAvg = from[Employee].map(e => avg(e.salary))
 
     from[Employee].filter(e => e.salary > salaryAvg)
 ```
+
+## Show SQL and Semantic Analystics
+
+Sqala will try to generate query trees at compile time when queries are set to `inline def` and do semantic analystics for earlier error detection:
+
+![show](../../images/index-show.png)
+
+
+![error](../../images/index-error.png)
+
+The premise is queries not containing dynamic features like `filterIf`.

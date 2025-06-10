@@ -3,14 +3,14 @@
 ## Query All Department Information
 
 ```scala
-val q =
+val q = query:
     from[Department]
 ```
 
 ## Query Employee Information Hired After January 1, 2020
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .filter(e => e.hireDate > LocalDate.of(2020, 1, 1))
 ```
@@ -18,7 +18,7 @@ val q =
 ## Query Employee Names and Corresponding Department Names
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .join[Department]((e, d) => e.departmentId == d.id)
         .map((e, d) => (employeeName = e.name, departmentName = d.name))
@@ -29,7 +29,7 @@ val q =
 ```scala
 val employeeId: Int = ???
 
-val q = queryContext:
+val q = query:
     val querySalary = from[Employee]
         .filter(_.id == employeeId)
         .map(_.salary)
@@ -42,7 +42,7 @@ val q = queryContext:
 ## Calculate Average Salary by Department
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .groupBy(e => (deptId = e.departmentId))
         .map((g, e) => (deptId = g.deptId, salary = avg(e.salary)))
@@ -51,7 +51,7 @@ val q =
 ## Query id of Department with At Least One Employee
 
 ```scala
-val q =
+val q = query:
     from[Department]
         .leftJoin[Employee]((d, e) => d.id == e.departmentId)
         .groupBy((d, _) => (id = d.id))
@@ -62,7 +62,7 @@ val q =
 ## Query All Employees and Their Managers' Names
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .leftJoin[Employee]((e1, e2) => e1.managerId == e2.id)
         .map((e1, e2) => (name = e1.name, managerName = e2.name))
@@ -71,7 +71,7 @@ val q =
 ## Query Top 3 Highest-Paid Employees by Department
 
 ```scala
-val q = queryContext:
+val q = query:
     val subquery = from[Employee]
         .join[Department]((e, d) => e.departmentId == d.id)
         .map: (e, d) =>
@@ -89,7 +89,7 @@ val q = queryContext:
 ```scala
 import scala.language.postfixOps
 
-val q =
+val q = query:
     from[Employee].map: e => 
         extract(day from (now() - e.hireDate))
 ```
@@ -97,7 +97,7 @@ val q =
 ## Rank Employee's Income
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .map: e =>
             (
@@ -112,7 +112,7 @@ val q =
 ## Find Employees with Salaries Higher Than Department Average
 
 ```scala
-val q =
+val q = query:
     from[Employee]
         .filter: e1 => 
             e1.salary >

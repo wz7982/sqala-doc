@@ -2,7 +2,6 @@
 
 sqala支持使用原生SQL，需要使用`sql`插值器：
 
-
 ```scala
 val x = 1
 val y = "abc"
