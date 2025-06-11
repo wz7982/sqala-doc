@@ -24,12 +24,15 @@ val dataSource: DataSource = ???
 val db = JdbcContext(dataSource, MysqlDialect)
 ```
 
-然后我们需要配置日志处理器，以便在执行查询时打印出对应的SQL语句，任何类型为`String => Unit`的函数都可以作为日志处理器，此处以标准库的`println`为例，实际使用时可以自行替换成成各种日志框架：
+然后我们需要配置日志处理器，以便在执行查询时打印出对应的SQL语句，任何类型为`String => Unit`的函数都可以作为日志处理器，此处以JVM主流日志框架`SLF4J`为例，实际使用时可以自行替换成成各种日志框架：
 
 ```scala
 import sqala.jdbc.*
 
-given Logger = Logger((s: String) => println(s))
+class Service:
+    val logger = LoggerFactory.getLogger(Service.class)
+
+    given Logger = Logger((s: String) => logger.info(s))
 ```
 
 如果不需要打印日志，可以写成：
@@ -37,7 +40,8 @@ given Logger = Logger((s: String) => println(s))
 ```scala
 import sqala.jdbc.*
 
-given Logger = Logger(_ => ())
+class Service:
+    given Logger = Logger(_ => ())
 ```
 
 配置好连接信息之后，就可以连接到数据库执行查询了。
