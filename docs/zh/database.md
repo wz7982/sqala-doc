@@ -157,7 +157,7 @@ val result: Int = db.execute(insert[Department](d => (d.managerId, d.name)) valu
 
 ## 使用对象插入数据
 
-`insert`方法可以使用实体对象生成插入语句，并执行返回受影响行数（使用`autoInc`标记的字段会跳过）：
+`insert`方法可以使用实体对象生成插入语句，并执行返回受影响行数（使用`@autoInc`注解标记的字段会跳过）：
 
 ```scala
 val department = Department(0, 1, "IT")
@@ -165,7 +165,7 @@ val department = Department(0, 1, "IT")
 val result: Int = db.insert(department)
 ```
 
-`insertAndReturn`方法可以使用实体对象生成插入语句，并执行后返回实体对象非自增主键字段值和数据库生成自增主键绑定的一个新的实体对象，由于使用`autoInc`标记的字段会跳过，因此，插入实体类的自增主键字段可以随意填写一个无关的值：
+`insertAndReturn`方法可以使用实体对象生成插入语句，并执行后返回实体对象非自增主键字段值和数据库生成自增主键绑定的一个新的实体对象，由于使用`@autoInc`标记的字段会跳过，因此，插入实体类的自增主键字段可以随意填写一个无关的值：
 
 ```scala
 val department = Department(0, 1, "IT")

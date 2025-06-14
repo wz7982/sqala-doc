@@ -46,7 +46,7 @@ sqala是一个基于Scala 3的SQL查询库，得名于Scala和SQL的结合。
     ```scala
     case class Department(id: Int, managerId: Int, name: String)
 
-    val q =
+    val q = query:
         from[Department]
             .connectBy(d => prior(d.id) == d.managerId)
             .startWith(d => d.managerId == 0)
@@ -63,6 +63,6 @@ sqala是一个基于Scala 3的SQL查询库，得名于Scala和SQL的结合。
 
 1. 由于sqala目前没有基于Scala3 LTS版本构建，在Scala3发布下一个LTS版本之前，应用在生产环境需谨慎。
 
-2. 请确保Scala版本在`3.7.0`及以上。并开启实验性特性编译选项`-experimental`。
+2. 请确保Scala版本在`3.7.0`及以上。
 
 3. 尽量使用Scala官方的metals插件配合VSCode、Vim等工具使用，IDEA系列目前无法获得编写提示，也无法正确显示查询返回的数据类型。

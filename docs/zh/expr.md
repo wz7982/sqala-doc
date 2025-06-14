@@ -532,6 +532,6 @@ extension (x: Expr[String])
     def rlike(y: String): Expr[Boolean] =
         Expr(SqlExpr(x, SqlBinaryOperator.Custom("RLIKE"), y.asExpr.asSqlExpr))
 
-val q =
+val q = query:
     from[A].filter(a => a.x.rlike("..."))
 ```

@@ -1,6 +1,6 @@
-# 入门
+# Getting Started
 
-下面的例子使用H2内存数据库展示了sqala的基本功能，将下面的代码保存为`.sc`文件，比如`demo.sc`，通过`scala demo.sc`命令执行即可看到运行结果：
+The following example demonstrates the basic functionality of sqala using the H2 in-memory database. Save the code below as a `.sc` file, for example `demo.sc`, and execute it with the `scala demo.sc` command to see the results:
 
 ```scala
 //> using scala 3.7.0
@@ -38,10 +38,7 @@ case class Demo(
 db.insert(Demo(0L, "sqala", "Scala's sql lib"))
 
 val result = db.find:
-    query:
-        from[Demo]
-            .filter(_.key == "sqala")
-            .map(d => (key = d.key, value = d.value))
+    from[Demo].filter(_.key == "sqala").map(d => (key = d.key, value = d.value))
 
 println(result)
 ```
