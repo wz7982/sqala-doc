@@ -1,4 +1,4 @@
-# Database Interaction
+# Interact with Database
 
 To interact with the database, after configuring the metadata information of the entity classes, we also need to configure the database connection information. Currently, sqala supports creating a JDBC context to manage connections.
 

@@ -1,4 +1,4 @@
-# CRUD Operations
+# CUD Operations
 
 ## Insert
 

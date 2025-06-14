@@ -1,4 +1,4 @@
-# Query Construction Techniques
+# Tips on Construct Queries
 
 ## Query Reuse
 
