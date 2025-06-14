@@ -24,12 +24,15 @@ val dataSource: DataSource = ???
 val db = JdbcContext(dataSource, MysqlDialect)
 ```
 
-Then we need to configure a log handler to print the corresponding SQL statements when executing queries. Any function of type `String => Unit` can be used as a log handler. Here, we use the standard library's `println` as an example. In actual use, it can be replaced with various logging frameworks:
+Then we need to configure a log handler to print the corresponding SQL statements when executing queries. Any function of type `String => Unit` can be used as a log handler. Here, we use the mainstream logging library `slf4j` as an example. In actual use, it can be replaced with various logging frameworks:
 
 ```scala
 import sqala.jdbc.*
 
-given Logger = Logger((s: String) => println(s))
+class Service:
+    val logger = LoggerFactory.getLogger(Service.class)
+
+    given Logger = Logger((s: String) => logger.info(s))
 ```
 
 If logging is not needed, simply write:
@@ -37,7 +40,8 @@ If logging is not needed, simply write:
 ```scala
 import sqala.jdbc.*
 
-given Logger = Logger(_ => ())
+class Service:
+    given Logger = Logger(_ => ())
 ```
 
 After configuring the connection information, you can connect to the database and execute queries.
