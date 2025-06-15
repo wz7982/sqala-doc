@@ -1,6 +1,6 @@
-# 原生SQL
+# Native SQL
 
-sqala支持使用原生SQL，需要使用`sql`插值器：
+sqala supports native SQL via `sql` string interpolator.
 
 ```scala
 val x = 1
@@ -9,7 +9,7 @@ val y = "abc"
 val nativeSql = sql"select * from t where x = $x and y = $y"
 ```
 
-`sql`插值器支持`+`运算，方便进行条件拼接：
+`sql` interpolator supports `+` operator for combining conditions:
 
 ```scala
 val x = 1
@@ -22,7 +22,7 @@ if x > 0 then nativeSql += sql"and x = $x "
 if y.nonEmpty then nativeSql += sql"and y = $y"
 ```
 
-我们可以使用`fetchTo`方法来查询原生SQL：
+We can use the `fetchTo` method to query native SQL:
 
 ```scala
 case class Result(x: Int, y: String)

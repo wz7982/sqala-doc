@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitepress';
-import { fetchItems } from './fetch_sidebar.mts';
 
 export default defineConfig({
   title: 'sqala',
@@ -9,9 +8,7 @@ export default defineConfig({
     'zh/:rest*': ':rest*',
   },
   themeConfig: {
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/wz7982/sqala' },
-    ],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/wz7982/sqala' }],
     search: {
       provider: 'local',
     },
@@ -51,7 +48,18 @@ export default defineConfig({
         sidebar: {
           '/en/': {
             base: '/en/',
-            items: fetchItems('en'),
+            items: [
+              { text: 'Getting Started', link: 'introduction' },
+              { text: 'Metadata Configuration', link: 'metadata' },
+              { text: 'Query', link: 'query' },
+              { text: 'Tips on Construct Queries', link: 'tips' },
+              { text: 'Expressions', link: 'expr' },
+              { text: 'Interact with Database', link: 'database' },
+              { text: 'CUD Operation', link: 'update' },
+              { text: 'Native SQL', link: 'native' },
+              { text: 'Examples', link: 'example' },
+              { text: 'Dynamic Query', link: 'dynamic' },
+            ],
           },
         },
       },
