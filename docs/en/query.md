@@ -100,28 +100,6 @@ The return type of the query is:
 
 ![Return Type](../../images/map-expr.png)
 
-### Projection to Table
-
-```scala
-val q =
-    from[Department].map(d => d)
-```
-
-The generated SQL is:
-
-```sql
-SELECT
-    `t1`.`id` AS `c1`,
-    `t1`.`manager_id` AS `c2`,
-    `t1`.`name` AS `c3`
-FROM
-    `department` AS `t1`
-```
-
-The return type of the query is:
-
-![Return Type](../../images/map-table.png)
-
 ### Projection to Tuple
 
 ```scala
