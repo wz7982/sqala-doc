@@ -53,7 +53,7 @@ Using sqala, you can achieve:
             .map(d => (id = d.id, managerId = d.managerId, name = d.name))
     ```
 
-8. Beyond CRUD, sqala also supports advanced features like multidimensional grouping, subquery predicates, `LATERAL` subqueries, function tables, pivot tables, providing strong support for data analysis scenarios.
+8. Beyond CRUD, sqala also supports advanced features like multidimensional grouping, subquery predicates, `LATERAL` subqueries, providing strong support for data analysis scenarios.
 
 9. The `dynamic` module provides a DSL and SQL parser for dynamically constructing complex queries, supporting applications like dynamic report building.
 
