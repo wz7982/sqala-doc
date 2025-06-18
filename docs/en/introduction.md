@@ -5,7 +5,7 @@ The following example demonstrates the basic functionality of sqala using the H2
 ```scala
 //> using scala 3.7.0
 //> using dep com.h2database:h2:2.3.232
-//> using dep com.wz7982::sqala-jdbc:0.3.5
+//> using dep com.wz7982::sqala-jdbc:0.3.6
 
 import org.h2.jdbcx.*
 import sqala.jdbc.*
@@ -38,7 +38,10 @@ case class Demo(
 db.insert(Demo(0L, "sqala", "Scala's sql lib"))
 
 val result = db.find:
-    from[Demo].filter(_.key == "sqala").map(d => (key = d.key, value = d.value))
+    query:
+        from[Demo]
+            .filter(_.key == "sqala")
+            .map(d => (key = d.key, value = d.value))
 
 println(result)
 ```
