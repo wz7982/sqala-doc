@@ -324,7 +324,7 @@ val q = query:
         from[Department]
             .map(d => (x = d.id + 1))
 
-    fromQuery(subquery).groupBy(q => q.x).map(q => (q.x, count()))
+    from(subquery).groupBy(q => q.x).map(q => (q.x, count()))
 ```
 
 ## Multi-dimensional Grouping
@@ -429,7 +429,7 @@ sqala supports placing subqueries in table joins. The prerequisite for using tab
 val q = query:
     val subquery = from[B].map(b => (x = b.x, y = b.y))
 
-    from[A].leftJoinQuery(subquery).on((a, q) => a.x == q.x)
+    from[A].leftJoin(subquery).on((a, q) => a.x == q.x)
 ```
 
 `joinLateral` and `leftJoinLateral` subqueries support using fields from the outer table:
@@ -518,7 +518,7 @@ val q = query:
 
 ## Creating Queries from In-Memory Collections
 
-Use the `fromValues` method to create queries from in-memory collections. This query can use projection, filtering, and other operations, and can be used with other queries for `join` or `union` operations:
+Use the `from` method to create queries from in-memory collections. This query can use projection, filtering, and other operations, and can be used with other queries for `join` or `union` operations:
 
 ```scala
 case class Entity(id: Int, name: String)
@@ -526,7 +526,7 @@ case class Entity(id: Int, name: String)
 val list = List(Entity(1, "Dave"), Entity(2, "Ben"))
 
 val q = query:
-    fromValues(list).filter(e => e.id > 0)
+    from(list).filter(e => e.id > 0)
 ```
 
 **This feature is implemented using the database's `VALUES` statement. Please ensure that the current database version supports this syntax when using it.**
