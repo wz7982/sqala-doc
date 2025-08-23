@@ -199,6 +199,17 @@ val q = query:
     from[Department].map(d => -d.id)
 ```
 
+## 字符串拼接
+
+sqala支持数据库的`||`拼接运算符，但为了不与逻辑运算`OR`冲突，sqala使用`++`来拼接字符串
+
+```scala
+val q = query:
+    from[Department].map(d => d.name ++ "abc")
+```
+
+在MySQL等不支持`||`运算符的数据库中，这个操作将生成`CONCAT`函数表达式。
+
 ## 函数
 
 sqala内置了一些常用函数
@@ -404,6 +415,16 @@ import scala.language.postfixOps
 val q = query:
     from[Department].map: d =>
         rank() over (partitionBy (d.birthday) sortBy (d.name.asc) rowsBetween (currentRow, 1 preceding))
+```
+
+窗口函数也支持单参数的框架`rows`、`range`、`groups`：
+
+```scala
+import scala.language.postfixOps
+
+val q = query:
+    from[Department].map: d =>
+        rank() over (partitionBy (d.birthday) sortBy (d.name.asc) rows currentRow)
 ```
 
 ## 条件表达式
