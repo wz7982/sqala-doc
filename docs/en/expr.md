@@ -199,6 +199,17 @@ val q = query:
     from[Department].map(d => -d.id)
 ```
 
+## String Concatenation
+
+sqala supports `||` string concatenation operator in databases, In order not to conflict with the OR operator, sqala uses `++` to concat strings.
+
+```scala
+val q = query:
+    from[Department].map(d => d.name ++ "abc")
+```
+
+In databases such as MySQL that do not support the `||` operator, this operation will generate a `CONCAT` function expression.
+
 ## Functions
 
 sqala has built-in some commonly used functions:
@@ -404,6 +415,16 @@ import scala.language.postfixOps
 val q = query:
     from[Department].map: d =>
         rank() over (partitionBy (d.birthday) sortBy (d.name.asc) rowsBetween (currentRow, 1 preceding))
+```
+
+Window function also supports single parameter frames `rows`, `range`, and `groups`:
+
+```scala
+import scala.language.postfixOps
+
+val q = query:
+    from[Department].map: d =>
+        rank() over (partitionBy (d.birthday) sortBy (d.name.asc) rows currentRow)
 ```
 
 ## Conditional Expressions

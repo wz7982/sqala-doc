@@ -483,11 +483,6 @@ val q = query:
     q1 unionAll q2
 ```
 
-Since `UNION ALL` is semantically consistent with set concatenation, the above `unionAll` can be abbreviated as `++`:
-
-```scala
-q1 ++ q2
-```
 
 For queries on both sides of the set operation:
 
