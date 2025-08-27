@@ -576,3 +576,12 @@ val q = query:
         .maxDepth(5)
         .map(d => (id = d.id, managerId = d.managerId, name = d.name, level = level()))
 ```
+
+## 查询锁
+
+sqala支持`forUpdate`、`forUpdateNoWait`、`forUpdateSkipLocked`、`forShare`、`forShareNoWait`、`forShareSkipLocked`等方法给查询加锁，对应数据库的相应加锁子句，但某些数据库可能未支持此操作，请确认后使用：
+
+```scala
+val q = query:
+    from[Department].forShareSkipLocked
+```
