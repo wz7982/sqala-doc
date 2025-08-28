@@ -29,3 +29,13 @@ case class Result(x: Int, y: String)
 
 val result = db.fetchTo[Result](nativeSql)
 ```
+
+sqala支持编译期读取静态的原生SQL，并连接到数据库检查合法性，以及从SQL中计算出返回类型（**此功能仅用于快速搭建Demo，请勿在生产环境使用**）：
+
+```scala
+val result = db.fetch(sql"select 1 as x, 'abc' as y")
+
+for r <- result do
+    val x: Int = r.x
+    val y: String = r.y
+```

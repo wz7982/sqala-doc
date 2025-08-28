@@ -9,19 +9,22 @@ import sqala.jdbc.*
 
 import javax.sql.DataSource
 
-// 任意连接池，比如Hikari、Druid、DBCP、C3P0等
-val dataSource: DataSource = ???
+// 为任意连接池实现JdbcConnection，比如Hikari、Druid、DBCP、C3P0等
+given JdbcConnection[SomeDataSource] with
+    def init(url: String, username: String, password: String, driverClassName: String): SomeDataSource =
+        // 构建代码
+        ??? 
 
-// 第二个参数传入数据库方言
+// 传入数据库方言和连接信息，可以从内存、配置文件等读取连接信息传入
 // 支持的方言有：
 // MysqlDialect
 // PostgresqlDialect
 // SqliteDialect
 // OracleDialect
 // MssqlDialect
-// DB2Dialect
+// Db2Dialect
 // H2Dialect
-val db = JdbcContext(dataSource, MysqlDialect)
+val db = JdbcContext[SomeDataSource](MysqlDialect, urlString, usernameString, passwordString, driverString)
 ```
 
 然后我们需要配置日志处理器，以便在执行查询时打印出对应的SQL语句，任何类型为`String => Unit`的函数都可以作为日志处理器，此处以JVM主流日志框架`SLF4J`为例，实际使用时可以自行替换成成各种日志框架：
