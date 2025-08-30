@@ -158,12 +158,22 @@ val q = query:
 
 `take`（或`limit`）和`drop`（或`offset`）方法对应SQL的`LIMIT`和`OFFSET`等功能，并且会在生成查询时根据方言选取合适的策略。
 
-如果只调用其一方法，那么`LIMIT`的默认值是`Long.MaxValue`，`OFFSET`的默认值是`0`。
+**由于MySQL和SQLite不支持可选子句，如果只调用其一方法，那么`LIMIT`的默认值是`Long.MaxValue`，`OFFSET`的默认值是`0`。**
 
 ```scala
 val q = query:
     from[Department].drop(100).take(10)
 ```
+
+除了简单的`take`外，sqala支持SQL标准中的`FETCH`子句，其转换规则和经实测的各数据库支持程度如下：
+
+|方法名     |SQL语句                |MySQL |PostgreSQL|Oracle |SqlServer|H2|Sqlite|
+|:---------:|:--------------------:|:------:|:------:|:------:|:------:|:-:|:----:|
+|take      |FETCH NEXT n ROWS ONLY|❌      |✅     |✅      |✅      |✅ |❌   |
+|takeWithTies|FETCH NEXT n ROWS WITH TIES|❌|✅     |✅      |❌      |✅ |❌   |
+|takePercent|FETCH NEXT n PERCENT ROWS ONLY|❌|❌  |✅      |❌      |✅ |❌   |
+|takePercentWithTies|FETCH NEXT n PERCENT ROWS WITH TIES|❌|❌  |✅ |❌ |✅ |❌|
+
 
 ## 表连接
 
