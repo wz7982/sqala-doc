@@ -167,7 +167,7 @@ val q = query:
 
 除了简单的`take`外，sqala支持SQL标准中的`FETCH`子句，其转换规则和经实测的各数据库支持程度如下：
 
-|方法名     |SQL语句                |MySQL |PostgreSQL|Oracle |SqlServer|H2|Sqlite|
+|方法名     |SQL语句                |MySQL |PostgreSQL|Oracle |SQLServer|H2|Sqlite|
 |:---------:|:--------------------:|:------:|:------:|:------:|:------:|:-:|:----:|
 |take      |FETCH NEXT n ROWS ONLY|❌      |✅     |✅      |✅      |✅ |❌   |
 |takeWithTies|FETCH NEXT n ROWS WITH TIES|❌|✅     |✅      |❌      |✅ |❌   |
