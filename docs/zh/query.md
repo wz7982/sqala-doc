@@ -169,11 +169,12 @@ val q = query:
 
 |方法名     |SQL语句                |MySQL |PostgreSQL|Oracle |SQLServer|H2|Sqlite|
 |:---------:|:--------------------:|:------:|:------:|:------:|:------:|:-:|:----:|
-|take      |FETCH NEXT n ROWS ONLY|❌      |✅     |✅      |✅      |✅ |❌   |
-|takeWithTies|FETCH NEXT n ROWS WITH TIES|❌|✅     |✅      |❌      |✅ |❌   |
-|takePercent|FETCH NEXT n PERCENT ROWS ONLY|❌|❌  |✅      |❌      |✅ |❌   |
-|takePercentWithTies|FETCH NEXT n PERCENT ROWS WITH TIES|❌|❌  |✅ |❌ |✅ |❌|
+|take      |`FETCH NEXT n ROWS ONLY` \| `LIMIT`|✅      |✅     |✅      |✅      |✅ |✅   |
+|takeWithTies|`FETCH NEXT n ROWS WITH TIES`|❌|✅     |✅      |❌      |✅ |❌   |
+|takePercent|`FETCH NEXT n PERCENT ROWS ONLY`|❌|❌  |✅      |❌      |✅ |❌   |
+|takePercentWithTies|`FETCH NEXT n PERCENT ROWS WITH TIES`|❌|❌  |✅ |❌ |✅ |❌|
 
+虽然SQLServer的`TOP`子句支持`PERCENT`和`WITH TIES`功能，但其不支持添加`OFFSET`偏移量，故而没有将上述方法在SQLServer方言生成中转为`TOP`子句。
 
 ## 表连接
 
