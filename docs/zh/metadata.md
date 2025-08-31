@@ -81,8 +81,8 @@ sqala内置支持的字段类型有：
 |scala.Long             |scala.Boolean          |
 |scala.Float            |java.time.LocalDate    |
 |scala.Double           |java.time.LocalDateTime|
-|scala.math.BigDecimal  |以上类型对应的Option类型 |
-|sqala.metadata.Json  |                       |
+|scala.math.BigDecimal  | sqala.metadata.Vector |
+|sqala.metadata.Json  | 以上类型对应的Option类型 |
 
 所以在上面的例子中，我们使用`Int`来接收员工表的`state`字段，但是使用`Int`管理这样的枚举字段，既不安全，数值也没有实际意义，因此我们更希望使用Scala3的`enum`来管理这样的字段：
 
