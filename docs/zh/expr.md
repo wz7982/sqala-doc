@@ -210,6 +210,24 @@ val q = query:
 
 在MySQL等不支持`||`运算符的数据库中，这个操作将生成`CONCAT`函数表达式。
 
+## 向量运算
+
+随着AI应用火热，各种关系型数据库也陆续推出了向量运算，sqala也支持了向量运算符并做了一些数据库兼容工作，将字段类型设置成`sqala.metadata.Vector`即可应用此类运算符，运算符和转换规则如下：
+
+| 运算符 | 含义    | PostgreSQL(pgvector插件) | Oracle 23ai | SQLServer 2025 | MySQL 9.0 |
+|:-----:|:-------:|:------------------------:|:-----------:|:--------------:|:---------:|
+|<->    |欧氏距离  |a <-> b     |L2_DISTANCE(a, b) | VECTOR_DISTANCE('euclidean', a, b) | DISTANCE(a, b, 'EUCLIDEAN')|
+|<=>    |余弦距离| a <=> b     |COSINE_DISTANCE(a, b)|VECTOR_DISTANCE('cosine', a, b)|DISTANCE(a, b, 'COSINE')|
+|<#>   | 点距离| a <#> b              |INNER_PRODUCT(a, b) * -1|VECTOR_DISTANCE('dot', a, b)|DISTANCE(a, b, 'DOT')|
+
+
+```scala
+val q = query:
+    from[Test].map(d => d <-> "[0.1, 0.2]")
+```
+
+**由于MySQL的JDBC驱动原因，sqala暂不支持在MySQL环境下反序列化Vector类型，请手动添加VECTOR_TO_STRING函数转为字符串接收**。
+
 ## 函数
 
 sqala内置了一些常用函数
