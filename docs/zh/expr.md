@@ -218,7 +218,7 @@ val q = query:
 |:-----:|:-------:|:------------------------:|:-----------:|:--------------:|:---------:|
 |`<->`    |欧氏距离  |`a <-> b`     |`L2_DISTANCE(a, b)` | `VECTOR_DISTANCE('euclidean', a, b)` | `DISTANCE(a, b, 'EUCLIDEAN')`|
 |`<=>`    |余弦距离| `a <=> b`     |`COSINE_DISTANCE(a, b)`|`VECTOR_DISTANCE('cosine', a, b)`|`DISTANCE(a, b, 'COSINE')`|
-|`<#>`   | 点距离| `a <#> b`     |`INNER_PRODUCT(a, b) * -1`|`VECTOR_DISTANCE('dot', a, b)`|`DISTANCE(a, b, 'DOT')`|
+|`<#>`   | 负内积| `a <#> b`     |`INNER_PRODUCT(a, b) * -1`|`VECTOR_DISTANCE('dot', a, b)`|`DISTANCE(a, b, 'DOT')`|
 
 
 ```scala
