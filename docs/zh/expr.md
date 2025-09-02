@@ -214,7 +214,7 @@ val q = query:
 
 随着AI应用日渐火热，各种关系型数据库也陆续推出了向量运算功能，sqala也支持了向量运算符并做了一些数据库兼容工作，将字段类型设置成`sqala.metadata.Vector`即可应用此类运算符，运算符和转换规则如下：
 
-| 运算符 | 含义    | PostgreSQL(pgvector插件) | Oracle 23ai | SQLServer 2025 | MySQL 9.0 |
+| 运算符 | 含义    | PostgreSQL(pgvector插件) | Oracle 23ai | SQLServer 2025 | MySQL 9.0(HeatWave) |
 |:-----:|:-------:|:------------------------:|:-----------:|:--------------:|:---------:|
 |`<->`    |欧氏距离  |`a <-> b`     |`L2_DISTANCE(a, b)` | `VECTOR_DISTANCE('euclidean', a, b)` | `DISTANCE(a, b, 'EUCLIDEAN')`|
 |`<=>`    |余弦距离| `a <=> b`     |`COSINE_DISTANCE(a, b)`|`VECTOR_DISTANCE('cosine', a, b)`|`DISTANCE(a, b, 'COSINE')`|
