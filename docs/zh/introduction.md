@@ -5,7 +5,7 @@
 ```scala
 //> using scala 3.7.0
 //> using dep com.h2database:h2:2.3.232
-//> using dep com.wz7982::sqala-jdbc:0.4.9
+//> using dep com.wz7982::sqala-jdbc:0.4.10
 
 import org.h2.jdbcx.*
 import sqala.jdbc.*
