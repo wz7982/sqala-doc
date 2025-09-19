@@ -36,11 +36,11 @@ WITH RECURSIVE
             "t1"."parent_id" AS "c6",
             "t1"."like_count" AS "c7",
             "t1"."state" AS "c8",
-            ? AS "__pseudo__level__"
+            1 AS "__pseudo__level__"
         FROM
             "comment" AS "t1"
         WHERE
-            "t1"."post_id" = ? AND "t1"."parent_id" IS NULL
+            "t1"."post_id" = 1 AND "t1"."parent_id" IS NULL
     )
     UNION ALL
     (
@@ -53,12 +53,12 @@ WITH RECURSIVE
             "t1"."parent_id" AS "c6",
             "t1"."like_count" AS "c7",
             "t1"."state" AS "c8",
-            "__cte__"."__pseudo__level__" + ? AS "__pseudo__level__"
+            "__cte__"."__pseudo__level__" + 1 AS "__pseudo__level__"
         FROM
             "comment" AS "t1"
             INNER JOIN "__cte__" ON "t1"."parent_id" = "__cte__"."id"
         WHERE
-            "t1"."post_id" = ?
+            "t1"."post_id" = 1
     )
 )
 SELECT
@@ -165,7 +165,7 @@ WITH RECURSIVE
             "t1"."content" AS "c2",
             CAST(NULL AS INTEGER) AS "c3",
             CAST(NULL AS VARCHAR) AS "c4",
-            ? AS "c5"
+            1 AS "c5"
         FROM
             "comment" AS "t1"
         WHERE
@@ -178,7 +178,7 @@ WITH RECURSIVE
             "t3"."content" AS "c2",
             "t2"."c1" AS "c3",
             "t2"."c2" AS "c4",
-            "t2"."c5" + ? AS "c5"
+            "t2"."c5" + 1 AS "c5"
         FROM
             "comment" AS "t3"
             INNER JOIN "__cte__" AS "t2" ON "t3"."parent_id" = "t2"."c1"

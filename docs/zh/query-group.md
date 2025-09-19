@@ -70,43 +70,6 @@ val q = query:
         .map(p => (p.channelId, anyValue(p.title), count()))
 ```
 
-## PostgreSQL的限制
-
-由于PostgreSQL数据库的驱动校验比较严格，而JDBC又没有预编译参数的占位符下标功能，因此在这样的一个分组查询中：
-
-```scala
-val q = query:
-    from(Post)
-        .groupBy(p => p.channelId + 1)
-        .map(p => (p.channelId + 1, count()))
-```
-
-会生成这样的SQL：
-
-```sql
-SELECT
-    "t1"."channel_id" + ? AS "c1",
-    COUNT(*) AS "c2"
-FROM
-    "post" AS "t1"
-GROUP BY
-    "t1"."channel_id" + ?
-```
-
-该数据库驱动无法判定两个`?`是同样的表达式，因此会在查询时报错。
-
-解决办法是在数据库连接中添加`?preferQueryMode=simple`来禁用预编译，
-
-或是将此查询改为[子查询](./query-sub.md)形式：
-
-```scala
-val q = query:
-    from:
-        from(Post).map(p => (channelId = p.channelId + 1))
-    .groupBy(p => p.channelId)
-    .map(p => (p.channelId, count()))
-```
-
 ## 分组后过滤
 
 `having`方法用于分组后过滤数据，使用方式与`filter`类似：
@@ -130,7 +93,7 @@ FROM
 GROUP BY
     "t1"."channel_id"
 HAVING
-    COUNT(*) > ?
+    COUNT(*) > 1
 ```
 
 ## 多维分组
@@ -183,7 +146,7 @@ val q = query:
 
 ```sql
 SELECT
-    CASE WHEN "t1"."age" <= ? THEN ? WHEN "t1"."age" <= ? AND "t1"."age" > ? THEN ? ELSE ? END AS "c1",
+    CASE WHEN "t1"."age" <= 30 THEN '青少年' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN '中年' ELSE '老年' END AS "c1",
     "t1"."nation" AS "c2",
     "t1"."gender" AS "c3",
     COUNT(*) AS "c4"
@@ -191,7 +154,7 @@ FROM
     "person" AS "t1"
 GROUP BY
     CUBE(
-        CASE WHEN "t1"."age" <= ? THEN ? WHEN "t1"."age" <= ? AND "t1"."age" > ? THEN ? ELSE ? END, 
+        CASE WHEN "t1"."age" <= 30 THEN '青少年' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN '中年' ELSE '老年' END, 
         "t1"."nation", 
         "t1"."gender"
     )
@@ -255,8 +218,8 @@ val q = query:
 
 ```sql
 SELECT
-    CASE WHEN "t1"."age" <= ? THEN ? WHEN "t1"."age" <= ? AND "t1"."age" > ? THEN ? ELSE ? END AS "c1",
-    GROUPING(CASE WHEN "t1"."age" <= ? THEN ? WHEN "t1"."age" <= ? AND "t1"."age" > ? THEN ? ELSE ? END) AS "c2",
+    CASE WHEN "t1"."age" <= 30 THEN '青少年' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN '中年' ELSE '老年' END AS "c1",
+    GROUPING(CASE WHEN "t1"."age" <= 30 THEN '青少年' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN '中年' ELSE '老年' END) AS "c2",
     "t1"."nation" AS "c3",
     GROUPING("t1"."nation") AS "c4",
     "t1"."gender" AS "c5",
@@ -266,7 +229,7 @@ FROM
     "person" AS "t1"
 GROUP BY
     CUBE(
-        CASE WHEN "t1"."age" <= ? THEN ? WHEN "t1"."age" <= ? AND "t1"."age" > ? THEN ? ELSE ? END, 
+        CASE WHEN CASE WHEN "t1"."age" <= 30 THEN '青少年' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN '中年' ELSE '老年' END, 
         "t1"."nation", 
         "t1"."gender"
     )
