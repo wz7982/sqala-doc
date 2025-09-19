@@ -265,6 +265,13 @@ val q = query:
 
 由于各个数据库函数差异极大，因此sqala只内置了ISO 9075标准中定义的SQL函数，虽然这些函数是标准函数，但仍要参考您实际使用的数据库文档是否支持这些函数，这些函数的作用也请参考数据库相关文档，不在此标准函数列表中的，您可以使用sqala提供的[自定义表达式](./expr-custom.md)功能自行创建。
 
+函数使用示例：
+
+```scala
+val q = query:
+    from(User).map(u => substring(u.name, 1))
+```
+
 sqala内置支持的函数如下（此函数没有列举聚合函数、窗口函数、时间操作函数、JSON函数等）：
 
 |     函数           |      对应的SQL函数      |
@@ -304,12 +311,21 @@ sqala内置支持的函数如下（此函数没有列举聚合函数、窗口函
 |`ceil(a)`         |`CEIL(a)`                 |
 |`floor(a)`       |`FLOOR(a)`                 |
 |`round(a, b)`     |`ROUND(a, b)`              |
-|`widthBucket(a, b, c, d)`|`WIDTH_BUCKET(a, b, c, d)|
+|`widthBucket(a, b, c, d)`|`WIDTH_BUCKET(a, b, c, d)`|
 |`currentDate()`   |`CURRENT_DATE`          |
 |`currentTime()`   |`CURRENT_TIME`          |
 |`currentTimestamp()`|`CURRENT_TIMESTAMP`    |
 |`localTime()`     |`LOCALTIME`             |
 |`localTimestamp()`|`LOCALTIMESTAMP`        |
+
+## 类型转换
+
+`as`方法配合类型参数进行类型转换，对应SQL的`CAST`表达式：
+
+```scala
+val q = query:
+    from(User).map(u => u.id.as[String])
+```
 
 <!-- # 表达式
 
