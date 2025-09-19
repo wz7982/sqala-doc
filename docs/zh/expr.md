@@ -263,6 +263,54 @@ val q = query:
 
 ## 函数
 
+由于各个数据库函数差异极大，因此sqala只内置了ISO 9075标准中定义的SQL函数，虽然这些函数是标准函数，但仍要参考您实际使用的数据库文档是否支持这些函数，这些函数的作用也请参考数据库相关文档，不在此标准函数列表中的，您可以使用sqala提供的[自定义表达式](./expr-custom.md)功能自行创建。
+
+sqala内置支持的函数如下（此函数没有列举聚合函数、窗口函数、时间操作函数、JSON函数等）：
+
+|     函数           |      对应的SQL函数      |
+|:-----------------:|:-----------------------:|
+|`substring(a, b)`  |`SUBSTRING(a FROM b)`    |
+|`substring(a, b, c)`|`SUBSTRING(a FROM b FOR c)`|
+|`upper(a)`        |`UPPER(a)`                |
+|`lower(a)`        |`LOWER(a)`                |
+|`lpad(a, b, c)`   |`LPAD(a, b, c)`           |
+|`rpad(a, b, c)`   |`RPAD(a, b, c)`           |
+|`btrim(a, b)`     |`BTRIM(a, b)`             |
+|`ltrim(a, b)`     |`LTRIM(a, b)`             |
+|`rtrim(a, b)`     |`RTRIM(a, b)`             |
+|`overlay(a, b, c)`|`OVERLAY(a PLACING b FROM c)`|
+|`overlay(a, b, c, d)`|`OVERLAY(a PLACING b FROM c FOR d)`|
+|`regexpLike(a, b)`|`REGEXP_LIKE(a, b)`      |
+|`position(a, b)` |`POSITION(a IN b)`         |
+|`charLength(a)`   |`CHAR_LENGTH(a)`          |
+|`octetLength(a)`  |`OCTET_LENGTH(a)`         |
+|`abs(a)`           |`ABS(a)`                  |
+|`mod(a, b)`        |`MOD(a, b)`               |
+|`sin(a)`         |`SIN(a)`                 |
+|`cos(a)`         |`COS(a)`                 |
+|`tan(a)`         |`TAN(a)`                 |
+|`asin(a)`         |`ASIN(a)`                 |
+|`acos(a)`         |`ACOS(a)`                 |
+|`atan(a)`         |`ATAN(a)`                 |
+|`sinh(a)`         |`SINH(a)`                 |
+|`cosh(a)`         |`COSH(a)`                 |
+|`tanh(a)`         |`TANH(a)`                 |
+|`log(a, b)`       |`LOG(a, b)`                 |
+|`log10(a)`       |`LOG10(a)`                 |
+|`ln(a)`         |`LN(a)`                 |
+|`exp(a)`         |`EXP(a)`                 |
+|`sqrt(a)`         |`SQRT(a)`                 |
+|`power(a, b)`     |`POWER(a, b)`             |
+|`ceil(a)`         |`CEIL(a)`                 |
+|`floor(a)`       |`FLOOR(a)`                 |
+|`round(a, b)`     |`ROUND(a, b)`              |
+|`widthBucket(a, b, c, d)`|`WIDTH_BUCKET(a, b, c, d)|
+|`currentDate()`   |`CURRENT_DATE`          |
+|`currentTime()`   |`CURRENT_TIME`          |
+|`currentTimestamp()`|`CURRENT_TIMESTAMP`    |
+|`localTime()`     |`LOCALTIME`             |
+|`localTimestamp()`|`LOCALTIMESTAMP`        |
+
 <!-- # 表达式
 
 ## 向量运算
