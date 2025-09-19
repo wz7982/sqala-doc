@@ -31,12 +31,18 @@ object DB:
         // 省略连接池构建代码
 
     // 您可以从环境变量，配置文件，或者是静态字符串中获取这些连接信息，传入JdbcContext的构造器中
-    val db = JdbcContext[SomeDataSource](MysqlDialect, url, username, password, driver)
+    val db = JdbcContext[SomeDataSource](MysqlDialect, true, url, username, password, driver)
 ```
 
 连接上下文构造的第一个参数是数据库使用的方言，目前sqala内置支持四种方言：
 
 `MysqlDialect`、`PostgresqlDialect`、`OracleDialect`、`H2Dialect`，均可从`sqala.static.metadata`中导入。
+
+第二个参数**很重要**，由于sqala支持的SQL表达式很全面，而不是所有的字符串（比如`INTERVAL`表达式、`TIME`字面量、JSON功能的JSON path等）都能使用JDBC预编译语句参数化，所以sqala自己管理转义字符，**避免SQL注入**，第一个参数如果为`true`则采用标准SQL的转义模式。
+
+如果您不确定您的数据库是何种转义模式，可以在数据库中发送查询`SELECT '//'`，如果数据库返回`//`则填`true`，如果为`/`则填`false`。
+
+通常情况下，MySQL数据库填写false，PostgreSQL和Oracle等数据库填写`true`。
 
 配置数据库连接信息的最后一步是配置一个日志处理器，以便在执行查询时在日志中记录调试信息，任何类型为`String => Unit`，下面将以JVM主流日志框架`SLF4J`和控制台打印两种情况为例，介绍日志配置方式，实际使用时可以自行替换成成各种日志框架。
 
@@ -322,8 +328,7 @@ case class Cursor[T](
 ```
 
 ## 返回SQL
-
-`db.sql`功能会返回sqala生成的SQL和查询中的参数：
+`db.showSql`功能会返回sqala生成的SQL：
 
 ```scala
 import sqala.static.dsl.*
@@ -331,7 +336,7 @@ import sqala.static.dsl.*
 val q = query:
     from(User)
 
-val (sql, args) = db.showSql(q)
+val sql = db.showSql(q)
 ```
 
 ## 事务

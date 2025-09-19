@@ -45,14 +45,14 @@ SELECT
 FROM
     (
         SELECT
-            SUM("t1"."population") FILTER (WHERE "t1"."country" = ? AND "t1"."year" = ?) AS "c1",
-            SUM("t1"."population") FILTER (WHERE "t1"."country" = ? AND "t1"."year" = ?) AS "c2",
-            SUM("t1"."population") FILTER (WHERE "t1"."country" = ? AND "t1"."year" = ?) AS "c3",
-            SUM("t1"."population") FILTER (WHERE "t1"."country" = ? AND "t1"."year" = ?) AS "c4",
-            COUNT(*) FILTER (WHERE "t1"."country" = ? AND "t1"."year" = ?) AS "c5",
-            COUNT(*) FILTER (WHERE "t1"."country" = ? AND "t1"."year" = ?) AS "c6",
-            COUNT(*) FILTER (WHERE "t1"."country" = ? AND "t1"."year" = ?) AS "c7",
-            COUNT(*) FILTER (WHERE "t1"."country" = ? AND "t1"."year" = ?) AS "c8"
+            SUM("t1"."population") FILTER (WHERE "t1"."country" = 'CN' AND "t1"."year" = 2024) AS "c1",
+            SUM("t1"."population") FILTER (WHERE "t1"."country" = 'CN' AND "t1"."year" = 2025) AS "c2",
+            SUM("t1"."population") FILTER (WHERE "t1"."country" = 'US' AND "t1"."year" = 2024) AS "c3",
+            SUM("t1"."population") FILTER (WHERE "t1"."country" = 'US' AND "t1"."year" = 2025) AS "c4",
+            COUNT(*) FILTER (WHERE "t1"."country" = 'CN' AND "t1"."year" = 2024) AS "c5",
+            COUNT(*) FILTER (WHERE "t1"."country" = 'CN' AND "t1"."year" = 2025) AS "c6",
+            COUNT(*) FILTER (WHERE "t1"."country" = 'US' AND "t1"."year" = 2024) AS "c7",
+            COUNT(*) FILTER (WHERE "t1"."country" = 'US' AND "t1"."year" = 2025) AS "c8"
         FROM
             "city" AS "t1"
     ) AS "t2"

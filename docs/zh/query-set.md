@@ -23,7 +23,7 @@ val q = query:
     FROM
         "user" AS "t1"
     WHERE
-        "t1"."id" = ?
+        "t1"."id" = 1
 )
 UNION ALL
 (
@@ -33,7 +33,7 @@ UNION ALL
     FROM
         "user" AS "t2"
     WHERE
-        "t2"."id" = ?
+        "t2"."id" = 2
 )
 ```
 
@@ -70,7 +70,7 @@ val q = query:
     FROM
         "user" AS "t1"
     WHERE
-        "t1"."id" = ?
+        "t1"."id" = 1
 )
 INTERSECT ALL
 (
@@ -80,7 +80,7 @@ INTERSECT ALL
     FROM
         "user" AS "t2"
     WHERE
-        "t2"."id" = ?
+        "t2"."id" = 2
 )
 ```
 
@@ -103,7 +103,7 @@ val q = query:
     FROM
         "user" AS "t1"
     WHERE
-        "t1"."id" = ?
+        "t1"."id" = 1
 )
 EXCEPT ALL
 (
@@ -113,6 +113,6 @@ EXCEPT ALL
     FROM
         "user" AS "t2"
     WHERE
-        "t2"."id" = ?
+        "t2"."id" = 2
 )
 ```
