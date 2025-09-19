@@ -270,7 +270,11 @@ WHERE
 
 ```scala
 val q = query:
-    from(User).map(u => (u.id, from(Post).filter(p => p.authorId == p.id).map(p => anyValue(p.title))))
+    from(User).map: u => 
+        (
+            u.id, 
+            from(Post).filter(p => p.authorId == p.id).map(p => anyValue(p.title))
+        )
 ```
 
 生成的SQL为：
