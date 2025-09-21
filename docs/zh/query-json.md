@@ -60,7 +60,7 @@ case class Entity(json: Json)
 
 val q = query:
     from:
-        Entity crossJoinLateral (e =>
+        Entity.crossJoinLateral(e =>
             jsonTable(
                 e.json,
                 "$",
