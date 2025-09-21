@@ -229,11 +229,11 @@ sqala还支持`%`运算符，但实际会生成SQL标准的`MOD`函数。
 
 ## 字符串拼接
 
-sqala支持数据库的`||`拼接运算符，但为了不与逻辑运算`OR`冲突，sqala使用`++`来拼接字符串：
+sqala支持数据库的`||`拼接运算符，我们可以使用`+`来拼接字符串，sqala会自动识别两侧的表达式类型，如果是数值则生成`+`运算符，如果是字符串则生成`||`运算符：
 
 ```scala
 val q = query:
-    from(User).map(u => u.name ++ "abc")
+    from(User).map(u => u.name + "abc")
 ```
 
 在MySQL等不支持`||`运算符的数据库中，这个操作将生成`CONCAT`函数表达式。
@@ -564,34 +564,6 @@ val q = query:
         rank() over (partitionBy (d.birthday) sortBy (d.name.asc) rows currentRow)
 ```
 
-## 条件表达式
-
-sqala使用`if`方法创建`CASE WHEN`表达式：
-
-```scala
-val q = query:
-    from[Employee].map: e =>
-        `if` (e.state == EmployeeState.Active) `then` 1
-        `else` 0
-```
-
-可以在`then`中返回`Option`类型的值：
-
-```scala
-val q = query:
-    from[Employee].map: e =>
-        `if` (e.state == EmployeeState.Active) `then` Some(1)
-        `else` None
-```
-
-条件表达式也可以和其他表达式组合：
-
-```scala
-val q = query:
-    from[Employee].map: e =>
-        sum(`if` (e.state == EmployeeState.Active) `then` 1 `else` 0)
-```
-
 ## JSON操作
 
 sqala支持`->`和`->>`两个JSON操作符，语义与MySQL和PostgreSQL一致：
@@ -667,16 +639,6 @@ SQLServer中会将其转换成`DATEPART`函数，其他的数据库会生成`EXT
 val q = query:
     from[A].map: a =>
         extract(day from (a.date1 - a.date2))
-```
-
-## 类型转换
-
-我们可以使用`as`方法将表达式转换类型：
-
-```scala
-val q = query:
-    from[A].map: a =>
-        a.x.as[String]
 ```
 
 sqala会自动进行数据库方言适配。

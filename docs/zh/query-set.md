@@ -10,7 +10,7 @@ SQL中`UNION`和`UNION ALL`代表并集操作，区别是前者将两个查询�
 val q = query:
     val q1 = from(User).filter(u => u.id == 1).map(u => (id = u.id, name = u.name))
     val q2 = from(User).filter(u => u.id == 2).map(u => (id = u.id, name = u.name))
-    q1 unionAll q2
+    q1.unionAll(q2)
 ```
 
 生成的SQL为：
@@ -59,7 +59,7 @@ SQL中`INTERSECT`和`INTERSECT ALL`代表交集操作。sqala中使用`intersect
 val q = query:
     val q1 = from(User).filter(u => u.id >= 5).map(u => (id = u.id, name = u.name))
     val q2 = from(User).filter(u => u.id <= 10).map(u => (id = u.id, name = u.name))
-    q1 intersectAll q2
+    q1.intersectAll(q2)
 ```
 
 ```sql
@@ -92,7 +92,7 @@ SQL中`EXCEPT`和`EXCEPT ALL`代表交集操作。sqala中使用`except`和`exce
 val q = query:
     val q1 = from(User).filter(u => u.id >= 5).map(u => (id = u.id, name = u.name))
     val q2 = from(User).filter(u => u.id <= 10).map(u => (id = u.id, name = u.name))
-    q1 exceptAll q2
+    q1.exceptAll(q2)
 ```
 
 ```sql

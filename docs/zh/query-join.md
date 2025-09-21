@@ -69,7 +69,7 @@ sqala支持如下的连接类型：
 ```scala
 val q = query:
     from:
-        Channel join Post on ((c, p) => c.id == p.channelId)
+        Channel.join(Post).on((c, p) => c.id == p.channelId)
 ```
 
 生成的SQL为：
@@ -219,9 +219,9 @@ sqala跟SQL一样，支持灵活调整连接顺序，而不是只支持A先连�
 ```scala
 val q = query:
     from:
-        Channel join (
-            Post leftJoin Comment on ((p, c) => p.id == c.postId)
-        ) on ((c, p, _) => c.id == p.channelId)
+        Channel.join(
+            Post.leftJoin(Comment).on((p, c) => p.id == c.postId)
+        ).on((c, p, _) => c.id == p.channelId)
 ```
 
 生成的SQL为：
@@ -265,13 +265,13 @@ FROM
 ```scala
 val q = query:
     from:
-        Channel joinLateral (c => 
+        Channel.joinLateral(c => 
             from(Post)
                 .filter(p => c.id == p.channelId)
                 .sortBy(p => p.likeCount.desc)
                 .map(p => (id = p.id, channelId = p.channelId, title = p.title))
                 .take(2)
-        ) on ((c, p) => c.id == p.channelId)
+        ).on((c, p) => c.id == p.channelId)
 ```
 
 这样的需求在传统ORM中，要么会生成`N + 1`的SQL语句，循环查询带来高IO开销，要么完全不支持这样的表达，退回到手写SQL。而使用sqala您可以轻松处理这样的复杂需求。

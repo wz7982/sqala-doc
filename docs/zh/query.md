@@ -163,8 +163,6 @@ ORDER BY
     `t1`.`id` ASC
 ```
 
-`sortByIf`/`orderByIf`用于处理条件拼接排序规则，使用方式类似`filterIf`/`whereIf`，此处不赘述。
-
 ## 投影
 
 `map`/`select`方法用于指定投影列表，其对应到SQL的`SELECT`子句，sqala允许投影到[表达式](./expr.md)，和其组成的元组或命名元组，并能够正确推导包括复杂投影和表连接在内的返回类型。您只需专注于业务逻辑的实现即可。
@@ -307,8 +305,6 @@ OFFSET 2 ROWS FETCH NEXT 3 ROWS ONLY
 |方法名     |SQL语句                |MySQL |PostgreSQL|Oracle|H2|
 |:---------:|:--------------------:|:------:|:------:|:------:|:------:|
 |`takeWithTies`|`FETCH NEXT n ROWS WITH TIES`|❌|✅     |✅      |✅ |
-|`takePercent`|`FETCH NEXT n PERCENT ROWS ONLY`|❌|❌  |✅      |✅ |
-|`takePercentWithTies`|`FETCH NEXT n PERCENT ROWS WITH TIES`|❌|❌  |✅ |✅ |
 
 ## 去重
 
