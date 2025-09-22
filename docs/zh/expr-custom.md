@@ -26,7 +26,7 @@ sqala支持更细致的自定义，但需要对SQL语法树结构有一定程度
 `createBinaryExpr`用于自定义SQL二元运算符，我们以PostgreSQL的`->>`为例：
 
 ```scala
-extension (x: Expr[Json])
+extension (x: Expr[Json])(using QueryContext)
     def ->>(k: String): Expr[Option[String]] =
         createBinaryExpr(x, "->>", k.asExpr)
 ```

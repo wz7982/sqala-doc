@@ -39,9 +39,9 @@ export default defineConfig({
                   { text: '动态构建查询', link: 'query-dynamic' },
                   { text: '递归查询', link: 'query-recursive' },
                   { text: '透视表', link: 'query-pivot' },
-                  { text: '行模式识别', link: 'query-recognize' },
                   { text: 'JSON表', link: 'query-json' },
                   { text: '函数表', link: 'query-func' },
+                  { text: '行模式识别', link: 'query-recognize' },
                   { text: '属性图查询', link: 'query-graph' },
                 ]
               },
