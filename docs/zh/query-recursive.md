@@ -133,7 +133,7 @@ val q = query:
                     level = 1
                 )
     )(t =>
-        from(Comment join t on ((c, prior) => c.parentId == prior.id))
+        from(Comment.join(t).on((c, prior) => c.parentId == prior.id))
             .map: (c, prior) =>
                 (
                     id = c.id, 
