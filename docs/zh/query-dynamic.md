@@ -30,12 +30,14 @@ val dim: Int = ???
 val q = query:
     val baseQuery = from(Data)
 
-    if dim == 1 then
-        baseQuery.groupBy(d => d.dim1).map(d => (d.dim1, sum(d.measure)))
+    val grouping = if dim == 1 then
+        baseQuery.groupBy(d => d.dim1)
     else if dim == 2 then
-        baseQuery.groupBy(d => d.dim2).map(d => (d.dim2, sum(d.measure)))
+        baseQuery.groupBy(d => d.dim2)
     else
-        baseQuery.groupBy(d => d.dim3).map(d => (d.dim3, sum(d.measure)))
+        baseQuery.groupBy(d => d.dim3)
+        
+    grouping.map((g, d) => (g, sum(d.measure)))
 ```
 
 ## 按列表生成OR条件

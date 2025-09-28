@@ -10,7 +10,7 @@
 val q = query:
     from(Post)
         .groupBy(p => p.channelId)
-        .map(p => (p.channelId, count()))
+        .map((g, p) => (g, count()))
 ```
 
 生成的SQL为：
@@ -25,13 +25,15 @@ GROUP BY
     "t1"."channel_id"
 ```
 
-使用元组支持支持多个分组[表达式](./expr.md)：
+在分组后的`sortBy`/`orderBy`/`having`/`map`中，均多了一个参数，这个参数代表当前分组集（如果是两表连接之后的分组则有三个参数，以此类推）。
+
+使用元组或命名元组支持支持多个分组[表达式](./expr.md)：
 
 ```scala
 val q = query:
     from(Post)
-        .groupBy(p => (p.channelId, p.title))
-        .map(p => (p.channelId, p.title, count()))
+        .groupBy(p => (cid = p.channelId, title = p.title))
+        .map((g, p) => (g.cid, g.title, count()))
 ```
 
 生成的SQL为：
@@ -61,13 +63,15 @@ GROUP BY
     "t1"."channel_id"
 ```
 
+sqala也会在这样的查询中生成编译错误。
+
 如果我们只想在一个分组中返回任意的`title`字段值，使用`ANY_VALUE`聚合函数即可，在sqala中对应的方法为`anyValue`：
 
 ```scala
 val q = query:
     from(Post)
         .groupBy(p => p.channelId)
-        .map(p => (p.channelId, anyValue(p.title), count()))
+        .map((g, p) => (g, anyValue(p.title), count()))
 ```
 
 ## 分组后过滤
@@ -78,8 +82,8 @@ val q = query:
 val q = query:
     from(Post)
         .groupBy(p => p.channelId)
-        .having(p => count() > 1)
-        .map(p => (p.channelId, count()))
+        .having((g, p) => count() > 1)
+        .map((g, p) => (g, count()))
 ```
 
 生成的SQL为：
@@ -128,16 +132,15 @@ val q = query:
     from(Person)
         .groupByCube: p =>
             (
-                `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
-                p.nation,
-                p.gender
-            )
-        .map: p =>
-            (
-                age = 
-                    `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
+                age = `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
                 nation = p.nation,
-                gender = p.gender,
+                gender = p.gender
+            )
+        .map: (g, p) =>
+            (
+                age = g.age
+                nation = g.nation,
+                gender = g.gender,
                 count = count()
             )
 ```
@@ -160,6 +163,8 @@ GROUP BY
     )
 ```
 
+可以看到，分组使用命名元组可以极大程度简化代码。
+
 需要注意的是，即使数据中没有可空字段，但`CUBE`还是会生成本来不存在的空值，这是`CUBE`的语义决定的，因此，sqala会将此查询结果推断成：
 
 ```scala
@@ -169,20 +174,19 @@ val q = query:
     from(Person)
         .groupByCube: p =>
             (
-                `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
-                p.nation,
-                p.gender
-            )
-        .map: p =>
-            (
-                age = 
-                    `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
+                age = `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
                 nation = p.nation,
-                gender = p.gender,
+                gender = p.gender
+            )
+        .map: (g, p) =>
+            (
+                age = g.age
+                nation = g.nation,
+                gender = g.gender,
                 count = count()
             )
 
-// 返回类型为List[(age: Option[String], nation: Option[String], gender: Option[String], count: Option[Long])]
+// 返回类型为List[(age: Option[String], nation: Option[String], gender: Option[String], count: Long]]
 val result = db.fetch(q)
 ```
 
@@ -195,21 +199,18 @@ val q = query:
     from(Person)
         .groupByCube: p =>
             (
-                `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
-                p.nation,
-                p.gender
-            )
-        .map: p =>
-            (
-                age = 
-                    `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
-                groupingAge = grouping(
-                    `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年"
-                ),
+                age = `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
                 nation = p.nation,
-                groupingNation = grouping(p.nation),
-                gender = p.gender,
-                groupingGender = grouping(p.gender),
+                gender = p.gender
+            )
+        .map: (g, p) =>
+            (
+                age = g.age,
+                groupingAge = grouping(g.age),
+                nation = g.nation,
+                groupingNation = grouping(g.nation),
+                gender = g.gender,
+                groupingGender = grouping(g.gender),
                 count = count()
             )
 ```
@@ -254,11 +255,11 @@ SQL的`GROUP BY ROLLUP(a, b, c)`将会在分组中生成逐级分组，也就是
 
 SQL的`GROUP BY GROUPING SETS`分组将按指定的分组集来产生分组结果，比如我们想做到类似`ROLLUP`的效果，则需要写成：
 
-`GROUP BY GROUPING SETS((), a, (a, b), (a, b, c))`空分组集使用`()`来生成，为了做到这一点，sqala中的`groupBySets`方法接收一个分组的嵌套元组，空分组集使用`Unit`类型的字面量`()`来指定：
+`GROUP BY GROUPING SETS((), a, (a, b), (a, b, c))`空分组集使用`()`来生成，为了做到这一点，sqala中的`groupBySets`方法接收一个初始的分组集，和该分组集产生的分组的嵌套元组，空分组集使用`Unit`类型的字面量`()`来指定：
 
 ```scala
 val q = query:
     from(Entity)
-        .groupBySets(e => ((), e.a, (e.a, e.b), (e.a, e.b, e.c)))
-        .map(e => (e.a, e.b, e.c, count()))
+        .groupBySets(e => (a = e.a, b = e.b, c = e.c))(g => ((), g.a, (g.a, g.b), (g.a, g.b, g.c)))
+        .map((g, e) => (g.a, g.b, g.c, count()))
 ```
