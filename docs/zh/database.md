@@ -229,7 +229,7 @@ val result = db.find(q)
 
 ## 查询行数
 
-`db.fetchSize`获取查询的结果行数，返回`Long`类型结果，为了提高此类查询的性能和结果准确性，此方法会自动优化查询：
+`db.fetchCount`获取查询的结果行数，返回`Long`类型结果，为了提高此类查询的性能和结果准确性，此方法会自动优化查询：
 
 1. **移除冗余信息**：首先去掉最外层查询中的`ORDER BY`和`LIMIT`，这在查询总行数的场景中是不必要的，只会拖慢数据库响应速度，或影响结果准确性；
 2. **简单查询优化**：如果最外层查询是`SELECT`查询，且不包含`DISTINCT`、`GROUP BY`等信息，直接将查询列表替换为`COUNT(*)`；
@@ -241,12 +241,12 @@ import sqala.static.dsl.*
 val q = query:
     from(User)
 
-val result: Long = db.fetchSize(q)
+val result: Long = db.fetchCount(q)
 ```
 
 ## 查询存在性
 
-`db.fetchExists`方法查询数据存在性，在不关心实际数据和条数，只关心数据是否存在的场景中使用，通常性能优于`db.fetchSize`后判断返回数是否大于0：
+`db.fetchExists`方法查询数据存在性，在不关心实际数据和条数，只关心数据是否存在的场景中使用，通常性能优于`db.fetchCount`后判断返回数是否大于0：
 
 ```scala
 import sqala.static.dsl.*
