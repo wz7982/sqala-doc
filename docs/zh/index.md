@@ -48,14 +48,14 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
 4. **支持主键查询**：按主键查询数据无需创建DSL，直接从实体类配置中读取主键类型并创建查询：
 
     ```scala
-    // 回类型为：List[User]
+    // 返回类型为：List[User]
     val result = db.fetchByPrimaryKey[User](1)
     ```
 
 5. **支持命名查询**：简单查询无需创建DSL，sqala支持从方法名称中获取查询参数类型，并生成查询，而且无需预先定义方法：
 
     ```scala
-    // 回类型为：List[User]
+    // 返回类型为：List[User]
     val result = db.fetchByIdAndNameOrderByIdDesc[User](1, "小黑")
     ```
 
