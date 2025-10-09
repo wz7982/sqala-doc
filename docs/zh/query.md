@@ -355,5 +355,5 @@ sqala支持`forUpdate`、`forUpdateNoWait`、`forUpdateSkipLocked`、`forShare`�
 
 ```scala
 val q = query:
-    from(users).forShareSkipLocked
+    from(User).forShareSkipLocked
 ```
