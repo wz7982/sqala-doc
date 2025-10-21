@@ -39,13 +39,13 @@ UNION ALL
 
 ## 集合操作的类型推导
 
-sqala会最大限度兼容两个参与集合操作的查询的类型。但要求其必须字段数量完全一致，但不要求两个查询的返回类型完全一致，只需要能在类型上兼容即可。
+sqala会最大限度兼容两个参与集合操作的查询的类型。要求其必须字段数量完全一致，但不要求两个查询的返回类型完全一致，只需要能在类型上兼容即可。
 
-假如前一个查询返回类型为`List[Option[Int], String, Long]`，
+假如前一个查询行类型为`(Option[Int], String, Long)`，
 
-后一个查询的返回类型为`List[Double, Option[String], Option[Int]]`，
+后一个查询的行类型为`(Double, Option[String], Option[Int])`，
 
-则返回类型会推导为`List[Option[Double], Option[String], Option[Long]]`。
+则返回类型会推导为`List[(Option[Double], Option[String], Option[Long])]`。
 
 sqala在追求类型安全的同时，也会极力追求便利性。
 

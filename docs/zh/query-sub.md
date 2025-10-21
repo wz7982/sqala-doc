@@ -136,7 +136,7 @@ WHERE
 ```scala
 val q = query:
     from(User).filter: u =>
-        exists(from(User).filter(uu => uu.name == u.name))
+        exists(from(User).filter(uu => uu.name == u.name && uu.id != u.id))
     .map(u => u.name)
 ```
 
@@ -155,7 +155,7 @@ WHERE
         FROM
             "user" AS "t2"
         WHERE
-            "t2"."name" = "t1"."name"
+            "t2"."name" = "t1"."name" AND "t2"."id" <> "t1"."id"
     )
 ```
 
@@ -166,7 +166,7 @@ WHERE
 ```scala
 val q = query:
     from(Post).filter: p =>
-        p.id = any(
+        p.id.in(
             from(Comment).map(c => c.postId)
         )
 ```
