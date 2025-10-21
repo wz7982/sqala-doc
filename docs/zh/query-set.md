@@ -70,7 +70,7 @@ val q = query:
     FROM
         "user" AS "t1"
     WHERE
-        "t1"."id" = 1
+        "t1"."id" >= 5
 )
 INTERSECT ALL
 (
@@ -80,7 +80,7 @@ INTERSECT ALL
     FROM
         "user" AS "t2"
     WHERE
-        "t2"."id" = 2
+        "t2"."id" <= 10
 )
 ```
 
@@ -103,7 +103,7 @@ val q = query:
     FROM
         "user" AS "t1"
     WHERE
-        "t1"."id" = 1
+        "t1"."id" >= 5
 )
 EXCEPT ALL
 (
@@ -113,6 +113,6 @@ EXCEPT ALL
     FROM
         "user" AS "t2"
     WHERE
-        "t2"."id" = 2
+        "t2"."id" <= 10
 )
 ```
