@@ -171,12 +171,12 @@ sqala supports multiple `primaryKey` fields in an entity class but only one `aut
 
 ## Custom Names
 
-If the entity class and database table do not conform to the camelCase to snake_case field name mapping rule, you can use the `table` and `column` annotations to manually manage names:
+If the entity class and database table do not conform to the camelCase to snake_case field name mapping rule, you can use the `entityTable` and `column` annotations to manually manage names:
 
 ```scala
 import sqala.metadata.*
 
-@table("department")
+@entityTable("department")
 case class Department(
     @autoInc @column("id") id: Int,
     managerId: Option[Int],

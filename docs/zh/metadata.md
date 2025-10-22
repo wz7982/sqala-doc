@@ -450,12 +450,12 @@ sqala支持一个实体类中有多个`primaryKey`字段，但只支持一个`au
 
 ## 自定义名称
 
-如果实体类和数据库表不符合驼峰风格字段名映射到蛇形风格规则的话，可以使用`table`和`column`注解手动管理名称：
+如果实体类和数据库表不符合驼峰风格字段名映射到蛇形风格规则的话，可以使用`entityTable`和`column`注解手动管理名称：
 
 ```scala
 import sqala.static.metadata.*
 
-@table("T_SOME_TABLE")
+@entityTable("T_SOME_TABLE")
 case class SomeTable(
     @autoInc @column("ID") id: Int
 )
