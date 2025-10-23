@@ -31,7 +31,7 @@ val q = query:
 
 生成的SQL为：
 
-```scala
+```sql
 SELECT
     "t1"."x" AS "c1",
     "t1"."ordinal" AS "c2"
