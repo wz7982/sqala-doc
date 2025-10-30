@@ -27,7 +27,7 @@ export default defineConfig({
               { text: '入门', link: 'introduction' },
               { text: '元数据配置', link: 'metadata' },
               { text: '数据库交互', link: 'database' },
-              { text: '使用方法名创查询', link: 'query-named' },
+              { text: '使用方法名创查询', link: 'query-by-name' },
               { text: '级联映射', link: 'cascade' },
               {
                 text: '查询',
