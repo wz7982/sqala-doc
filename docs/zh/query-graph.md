@@ -43,7 +43,7 @@ val q = query:
                     personB = p.b.name,
                     meetingDate = p.f.meetingDate
                 )
-            )
+        )
 ```
 
 生成的SQL为：
