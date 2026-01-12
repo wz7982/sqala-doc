@@ -4,7 +4,7 @@ sqala支持空间和向量方面的专用操作，为专业场景提供支持。
 
 ## 空间操作
 
-sqala支持ISO/IEC 13249中定义的部分标准时间操作，支持MySQL和PostgreSQL的PostGIS插件。
+sqala支持ISO/IEC 13249中定义的部分标准空间操作，支持MySQL和PostgreSQL的PostGIS插件。
 
 |     函数                |      对应的SQL函数             |
 |:-----------------------:|:-----------------------------:|
