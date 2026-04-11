@@ -38,7 +38,7 @@ object DB:
 
 `MysqlDialect`、`PostgresqlDialect`、`OracleDialect`、`H2Dialect`，均可从`sqala.static.metadata`中导入。
 
-第二个参数**很重要**，由于sqala支持的SQL表达式很全面，而不是所有的字符串（比如`INTERVAL`表达式、`TIME`字面量、JSON功能的JSON path等）都能使用JDBC预编译语句参数化，所以sqala自己管理转义字符，**避免SQL注入**，第一个参数如果为`true`则采用标准SQL的转义模式。
+第二个参数**很重要**，由于sqala支持的SQL表达式很全面，而不是所有的字符串（比如`INTERVAL`表达式、`TIME`字面量、JSON功能的JSON path等）都能使用JDBC预编译语句参数化，所以sqala选择自己管理转义字符，**避免SQL注入**，第一个参数如果为`true`则采用标准SQL的转义模式。
 
 如果您不确定您的数据库是何种转义模式，可以在数据库中发送查询`SELECT '//'`，如果数据库返回`//`则填`true`，如果为`/`则填`false`。
 
@@ -295,7 +295,7 @@ val result = db.page(q, pageSize, pageNo, pageNo == 1)
 
 ## 执行语句
 
-对于非查询类语句（比如DML、DDL等），使用`db.execute`方法执行，并返回`Int`类型的受影响行数，DML类语句构建请参考[增删改DSL](./update.md)：
+对于非查询类语句，使用`db.execute`方法执行，并返回`Int`类型的受影响行数，此类语句构建请参考[增删改DSL](./update.md)：
 
 ```scala
 val result: Int = db.execute(...)
@@ -365,7 +365,7 @@ try {
 import sqala.jdbc.*
 
 def insert(row: User)(using JdbcTransactionContext): Int =
-    transaction.executeReturnKey(insert(row)).head.toInt
+    transaction.insertAndReturn(row).head.toInt
 
 def delete(id: Int)(using JdbcTransactionContext): Int =
     transaction.execute(delete[User].where(d => d.id == id))

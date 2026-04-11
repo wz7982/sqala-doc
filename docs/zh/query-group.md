@@ -186,7 +186,7 @@ val q = query:
                 count = count()
             )
 
-// 返回类型为List[(age: Option[String], nation: Option[String], gender: Option[String], count: Long]]
+// 返回类型为List[(age: Option[String], nation: Option[String], gender: Option[String], count: Long)]
 val result = db.fetch(q)
 ```
 

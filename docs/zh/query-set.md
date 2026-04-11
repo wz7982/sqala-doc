@@ -86,7 +86,7 @@ INTERSECT ALL
 
 ## 差集
 
-SQL中`EXCEPT`和`EXCEPT ALL`代表交集操作。sqala中使用`except`和`exceptAll`方法连接两个查询：
+SQL中`EXCEPT`和`EXCEPT ALL`代表差集操作。sqala中使用`except`和`exceptAll`方法连接两个查询：
 
 ```scala
 val q = query:
