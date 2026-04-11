@@ -64,7 +64,9 @@ sqala支持如下的连接类型：
 
 以上方法除了`crossJoin`外均配合`on`方法，在`from`中使用。
 
-两表连接：
+**需要注意的是，sqala的表连接方法不是常规的`from.join.on`形式，而是把`join`作为`from`的参数处理，这可能有些反直觉，但却是符合SQL标准语义的，而且在子查询表、函数表、透视表等复杂情况下可以提供更统一的调用形式。**
+
+两表连接形式为：
 
 ```scala
 val q = query:
@@ -91,7 +93,7 @@ FROM
     INNER JOIN "post" AS "t2" ON "t1"."id" = "t2"."channel_id"
 ```
 
-三表连接：
+三表连接形式为：
 
 ```scala
 val q = query:

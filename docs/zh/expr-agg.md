@@ -72,7 +72,7 @@ FROM
 
 :::
 
-另外，SQL标准中还有两个特殊聚合函数`PERCENTILE_CONT`和`PERCENTILE_DISC`，用于计算百分位。
+另外，SQL标准中还有两个特殊聚合函数`PERCENTILE_CONT`和`PERCENTILE_DISC`，用于计算百分比。
 
 `percentileCont`/`percentileDisc`函数的参数为百分比，范围是`0` - `1`，第二个参数为需要聚合表达式的排序规则。
 

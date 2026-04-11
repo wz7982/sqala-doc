@@ -42,13 +42,13 @@ val q = query:
 
 ## 按列表生成OR条件
 
-对于某些早期版本的数据库，可能无法在`IN`中使用索引，因此我们可以使用`OR`连接条件的方式，我们可以这样构造这样的动态查询：
+我们可以这样构建，一组使用`OR`连接的`LIKE`条件，这个例子可以看到sqala构建查询的灵活性：
 
 ```scala
-val list = List(1, 2, 3)
+val list = List("a", "b", "c")
 
 val q = query:
-    from(User).filter(u => list.map(i => u.id == i).reduce((x, y) => x || y))
+    from(User).filter(u => list.map(i => u.name.contains(i)).reduce((x, y) => x || y))
 ```
 
 ## 封装共用操作

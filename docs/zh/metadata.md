@@ -321,7 +321,7 @@ val q = query:
     from(User).filter(d => d.id == 1)
 ```
 
-## 自定义字段类型
+## 支持的字段类型
 
 sqala内置支持的基础字段类型为：
 
@@ -346,7 +346,9 @@ sqala内置支持的基础字段类型为：
 |MultiPoint             |MultiLineString        |MultiPolygon            |
 |GeometryCollection     |Geometry               |                        |
 
-所以在上面的例子中，我们使用`Int`来接收帖子和评论表的`state`字段，但是使用`Int`管理这样的枚举字段，既不安全，魔法数值也没有实际意义，因此我们更希望使用Scala3的`enum`来管理这样的字段：
+## 自定义字段类型
+
+在上面的例子中，我们使用`Int`来接收帖子和评论表的`state`字段，但是使用`Int`管理这样的枚举字段，既不安全，魔法数值也没有实际意义，因此我们更希望使用Scala3的`enum`来管理这样的字段：
 
 ```scala
 enum DataState:
