@@ -22,7 +22,7 @@ val q = query:
 
 ## JSON_VALUE
 
-`jsonValue`方法用于提取一个JSON PATH对应的表达式，并转为字符串类型，类似与PostgreSQL的`->>`运算符：
+`jsonValue`方法用于提取一个JSON PATH对应的表达式，并转为字符串类型，类似于PostgreSQL的`->>`运算符：
 
 ```scala
 val q = query:
