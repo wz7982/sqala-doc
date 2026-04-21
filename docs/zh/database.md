@@ -4,41 +4,24 @@
 
 sqala需要一个继承了`javax.sql.DataSource`的连接池作为连接管理器，您可以使用自己喜欢的连接池，如Hikari、Druid、DBCP、C3P0等。
 
-我们首先需要为连接池类型实现`sqala.jdbc.JdbcConnection`：
+我们需要创建一个`sqala.jdbc.JdbcContext`实例，这个实例为了避免资源泄露，最好放在某个`object`单例对象中：
 
 ```scala
-import sqala.jdbc.JdbcConnection
-
-// 类型参数是您使用的连接池类型
-given JdbcConnection[SomeDataSource] with
-    // 使用init方法创建连接池
-    def init(url: String, username: String, password: String, driverClassName: String): SomeDataSource =
-        val dataSource: SomeDataSource = ???
-        dataSource.setUrl("...")
-        dataSource.setMaxConnection(1)
-        // ... 其他连接池初始化代码
-        dataSource
-```
-
-然后，我们创建一个`sqala.jdbc.JdbcContext`实例，这个实例为了避免资源泄露，最好放在某个`object`单例对象中：
-
-```scala
-import sqala.jdbc.{JdbcConnection, JdbcContext}
-import sqala.metadata.MysqlDialect
+import sqala.jdbc.JdbcContext
+import sqala.printer.PostgresqlDialect
 
 object DB:
-    given JdbcConnection[SomeDataSource] with
-        // 省略连接池构建代码
-
-    // 您可以从环境变量，配置文件，或者是静态字符串中获取这些连接信息，传入JdbcContext的构造器中
-    val db = JdbcContext[SomeDataSource](MysqlDialect, true, url, username, password, driver)
+    // 第一个参数是连接池，您可以使用自己喜欢的连接池
+    // 第二个参数是数据库方言
+    // 第三个参数是是否启用SQL标准转义
+    val db = JdbcContext(dataSource, PostgresqlDialect, true)
 ```
 
-连接上下文构造的第一个参数是数据库使用的方言，目前sqala内置支持四种方言：
+除了连接池外，连接上下文构造的第二个参数是数据库使用的方言，目前sqala内置支持四种方言：
 
-`MysqlDialect`、`PostgresqlDialect`、`OracleDialect`、`H2Dialect`，均可从`sqala.static.metadata`中导入。
+`MysqlDialect`、`PostgresqlDialect`、`OracleDialect`、`H2Dialect`，均可从`sqala.printer`中导入。
 
-第二个参数**很重要**，由于sqala支持的SQL表达式很全面，而不是所有的字符串（比如`INTERVAL`表达式、`TIME`字面量、JSON功能的JSON path等）都能使用JDBC预编译语句参数化，所以sqala选择自己管理转义字符，**避免SQL注入**，第一个参数如果为`true`则采用标准SQL的转义模式。
+第三个参数**很重要**，由于sqala支持的SQL表达式很全面，而不是所有的字符串（比如`INTERVAL`表达式、`TIME`字面量、JSON功能的JSON path等）都能使用JDBC预编译语句参数化，所以sqala选择自己管理转义字符，**避免SQL注入**，第一个参数如果为`true`则采用标准SQL的转义模式。
 
 如果您不确定您的数据库是何种转义模式，可以在数据库中发送查询`SELECT '//'`，如果数据库返回`//`则填`true`，如果为`/`则填`false`。
 

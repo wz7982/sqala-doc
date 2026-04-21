@@ -4,23 +4,24 @@ sqala提供了静态且类型安全的DSL用于构建查询，但也支持在一
 
 ## 动态排序
 
-sqala对于过滤操作提供了`filterIf`，但对于排序没有提供类似的操作，但我们可以在`sortBy`的函数里编写类似这样的代码，以达到动态排序目的：
+sqala对于过滤操作提供了`filterIf`，但对于排序没有提供类似的操作，但我们可以这样达到动态排序目的：
 
 ```scala
 // 假设是用户传参
 val key: String = ???
 
 val q = query:
-    from(Post).sortBy: p =>
-        key match
-            case "likeCount" => p.likeCount.desc
-            case "viewCount" => p.viewCount.desc
-            case _ => p.id.asc
+    val baseQuery = from(Post)
+
+    key match
+        case "likeCount" => baseQuery.sortBy(p => p.likeCount.desc)
+        case "viewCount" => baseQuery.sortBy(p => p.viewCount.desc)
+        case _ => baseQuery.sortBy(p => p.id.desc)
 ```
 
 ## 动态分组
 
-对于`groupBy`这样类型要求比较严格的方法，我们可以以外置控制流的方式来做到动态查询：
+我们可以这样做动态查询：
 
 ```scala
 case class Data(dim1: Int, dim2: Int, dim3: Int, measure: Int)
@@ -36,7 +37,7 @@ val q = query:
         baseQuery.groupBy(d => d.dim2)
     else
         baseQuery.groupBy(d => d.dim3)
-        
+
     grouping.map((g, d) => (g, sum(d.measure)))
 ```
 
