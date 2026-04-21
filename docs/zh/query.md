@@ -35,6 +35,56 @@ FROM
 
 在`db.fetch`之后会自动返回`List[User]`类型的结果。
 
+## 动态表名
+
+在某些业务场景中，可能有一些结构相同，但只有表名不同的表，sqala支持在创建查询时使用`withName`方法更换表名：
+
+```scala
+val q = query:
+    from(User.withName("user_1"))
+```
+
+生成的SQL为：
+
+```sql
+SELECT
+    "t1"."id" AS "c1",
+    "t1"."name" AS "c2"
+FROM
+    "user_1" AS "t1"
+```
+
+`withName`不会影响返回结果类型。
+
+## 排除列
+
+在某些业务场景中，可能有一些表字段（通常是长文本类字段）经常不参与查询，但同时表字段较多，此时如果使用`.map`显式写出需要查询的字段，会比较繁琐，这种场景下可以使用`exclude`方法，来排除某些字段：
+
+```scala
+val q = query:
+    from(Post.exclude[("title", "createTime")])
+```
+
+`exclude`的参数是类型参数，使用一个字面量类型元组传递排除的字段列表，如果只需要排除一个字段，则使用`Tuple1["columnName"]`形式。
+
+生成的SQL为：
+
+```sql
+SELECT
+    "t1"."id" AS "c1",
+    "t1"."author_id" AS "c2",
+    "t1"."channel_id" AS "c3",
+    "t1"."view_count" AS "c4",
+    "t1"."like_count" AS "c5",
+    "t1"."state" AS "c6"
+FROM
+    "post" AS "t1"
+```
+
+可以看到，此时查询中不会出现排除的字段。
+
+同时`exclude`方法会影响返回类型，sqala会从现有字段和排除字段中计算出一个命名元组类型，因此`exclude`操作也是类型安全的，而在`db.fetch`之后sqala推导出的返回类型为`List[(id: Int, authorId: Int, channelId: Int, viewCount: Int, likeCount: Int, state: DataState)]`
+
 ## 过滤
 
 `filter`/`where`方法用于过滤数据，其对应到SQL的`WHERE`子句，您可以像使用集合库一样使用sqala的过滤方法：
@@ -103,62 +153,14 @@ val q = query:
 
 由于sqala使用内置SQL语法树来管理SQL语句，所以您无需像某些查询库那样手动拼接`WHERE TRUE`或`WHERE 1 = 1`，sqala总是会为您生成语法正确的SQL。
 
-## 排序
+### 语义检查
 
-`sortBy`/`orderBy`方法用于过滤数据，其对应到SQL的`ORDER BY`子句。
-
-[表达式](./expr.md)配合排序规则作为`sortBy`/`orderBy`的参数，如无显式指定排序规则，sqala会将其处理成`ASC`：
+如果过滤条件中含有聚合函数或窗口函数等不能放在`WHERE`子句中的表达式，sqala会在此情况下返回编译错误：
 
 ```scala
 val q = query:
-    from(User).sortBy(u => (u.name, u.id.desc))
-```
-
-生成的SQL如下：
-
-```sql
-SELECT
-    "t1"."id" AS "c1",
-    "t1"."name" AS "c2"
-FROM
-    "user" AS "t1"
-ORDER BY
-    "t1"."name" ASC,
-    "t1"."id" DESC
-```
-
-`sortBy`/`orderBy`方法不会改变查询的返回类型。
-
-多个`sortBy`/`orderBy`方法调用会依次拼接，因此以上写法等价于：
-
-```scala
-val q = query:
-    from(User).sortBy(u => u.name).sortBy(u => u.id.desc)
-```
-
-sqala支持的排序规则有：
-
-| 排序规则        | 对应SQL          |
-|:--------------:|:----------------:|
-|`asc`           |`ASC`             |
-|`ascNullsFirst` |`ASC NULLS FIRST` |
-|`ascNullsLast`  |`ASC NULLS LAST`  |
-|`desc`          |`DESC`            |
-|`descNullsFirst`|`DESC NULLS FIRST`|
-|`descNullsLast` |`DESC NULLS LAST` |
-
-对于MySQL数据库这样不支持`ASC NULLS LAST`语义的数据库方言，sqala会生成这样的SQL：
-
-```sql
-SELECT
-    `t1`.`id` AS `c1`,
-    `t1`.`name` AS `c2`
-FROM
-    `user` AS `t1`
-ORDER BY
-    `t1`.`name` ASC,
-    CASE WHEN `t1`.`id` IS NULL THEN 1 ELSE 0 END ASC,
-    `t1`.`id` ASC
+    // 编译错误
+    from(User).filter(u => u.id > count())
 ```
 
 ## 投影
@@ -222,7 +224,7 @@ FROM
 
 ### 投影到命名元组
 
-命名元组是Scala 3.7版本新特性，sqala充分利用了该特性，在较复杂的场景下（比如关联结果和只需要部分字段的情况），您可以直接使用命名元组管理投影，而无需预先创建数据接收DTO，避免大量的样板代码，并可以直接使用字段名来类型安全地引用返回字段，良好的字段命名也可以充当代码中的自解释文档：
+sqala充分利用了Scala 3.7版本的新特性命名元组，在较复杂的场景下（比如关联结果和只需要部分字段的情况），您可以直接使用命名元组管理投影，而无需预先创建数据接收DTO，避免大量的样板代码，并可以直接使用字段名来类型安全地引用返回字段，良好的字段命名也可以充当代码中的自解释文档：
 
 ```scala
 val q = query:
@@ -236,6 +238,16 @@ val result = db.fetch(q)
 
 for r <- result do
     println(r.name)
+```
+
+### 语义检查
+
+如果投影中同时含有列和聚合函数等不兼容的表达式，sqala将会返回编译错误：
+
+```scala
+val q = query:
+    // 编译错误
+    from(User).map(u => (name = u.name, count = count()))
 ```
 
 ## 使用for推导式
@@ -320,6 +332,95 @@ SELECT DISTINCT
     "t1"."name" AS "c1"
 FROM
     "user" AS "t1"
+```
+
+## 排序
+
+`sortBy`/`orderBy`方法用于过滤数据，其对应到SQL的`ORDER BY`子句。
+
+[表达式](./expr.md)配合排序规则作为`sortBy`/`orderBy`的参数，如无显式指定排序规则，sqala会将其处理成`ASC`：
+
+```scala
+val q = query:
+    from(User).sortBy(u => (u.name, u.id.desc))
+```
+
+生成的SQL如下：
+
+```sql
+SELECT
+    "t1"."id" AS "c1",
+    "t1"."name" AS "c2"
+FROM
+    "user" AS "t1"
+ORDER BY
+    "t1"."name" ASC,
+    "t1"."id" DESC
+```
+
+`sortBy`/`orderBy`方法不会改变查询的返回类型。
+
+多个`sortBy`/`orderBy`方法调用会依次拼接，因此以上写法等价于：
+
+```scala
+val q = query:
+    from(User).sortBy(u => u.name).sortBy(u => u.id.desc)
+```
+
+sqala支持的排序规则有：
+
+| 排序规则        | 对应SQL          |
+|:--------------:|:----------------:|
+|`asc`           |`ASC`             |
+|`ascNullsFirst` |`ASC NULLS FIRST` |
+|`ascNullsLast`  |`ASC NULLS LAST`  |
+|`desc`          |`DESC`            |
+|`descNullsFirst`|`DESC NULLS FIRST`|
+|`descNullsLast` |`DESC NULLS LAST` |
+
+对于MySQL数据库这样不支持`ASC NULLS LAST`语义的数据库方言，sqala会生成这样的SQL：
+
+```sql
+SELECT
+    `t1`.`id` AS `c1`,
+    `t1`.`name` AS `c2`
+FROM
+    `user` AS `t1`
+ORDER BY
+    `t1`.`name` ASC,
+    CASE WHEN `t1`.`id` IS NULL THEN 1 ELSE 0 END ASC,
+    `t1`.`id` ASC
+```
+
+### 投影后排序
+
+我们可以在调用`map`投影后创建排序：
+
+```scala
+val q = query:
+    from(User).map(u => u.name).sortBy(u => u.id.desc)
+```
+
+此时`sortBy`方法的Lambda参数仍然代表当前操作的表。
+
+但如果是`mapDistinct`情况则有不同，由于SQL不允许在`SELECT DISTINCT`之后的`ORDER BY`中出现未在`SELECT`中出现的表达式，因此以下SQL是不合法的：
+
+```sql
+SELECT DISTINCT
+    "t1"."name" AS "c1"
+FROM
+    "user" AS "t1"
+ORDER BY
+    "t1"."id" DESC
+```
+
+所以sqala在`mapDistinct`后的`sortBy`方法中，Lambda参数类型实际代表当前投影到的类型：
+
+```scala
+val q = query:
+    from(User)
+        .mapDistinct(u => (mappedId = u.id, mappedName = u.name))
+        .sortBy(u => u.mappedName.desc)
 ```
 
 ## 使用内存集合创建查询

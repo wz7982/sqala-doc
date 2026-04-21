@@ -82,7 +82,7 @@ val q = query:
         .map(c => (id = c.id, parentId = c.parentId, content = c.content, level = level()))
 ```
 
-`sortBy`/`orderBy`和`sortSiblingsBy`/`orderSiblingsBy`分别用于处理总排序，和单独处理每一层数据的排序：
+`sortSiblingsBy`/`orderSiblingsBy`用于单独处理每一层数据的排序：
 
 ```scala
 val postId = 1
@@ -124,11 +124,11 @@ val q = query:
     withRecursive(
         from(Comment)
             .filter(c => c.parentId.isNull)
-            .map: c => 
+            .map: c =>
                 (
-                    id = c.id, 
-                    content = c.content, 
-                    parentId = Option.empty[Int], 
+                    id = c.id,
+                    content = c.content,
+                    parentId = Option.empty[Int],
                     parentContent = Option.empty[String],
                     level = 1
                 )
@@ -136,18 +136,18 @@ val q = query:
         from(Comment.join(t).on((c, prior) => c.parentId == prior.id))
             .map: (c, prior) =>
                 (
-                    id = c.id, 
-                    content = c.content, 
-                    parentId = prior.id, 
+                    id = c.id,
+                    content = c.content,
+                    parentId = prior.id,
                     parentContent = prior.content,
                     level = prior.level + 1
                 )
     )(t =>
         from(t).map: cte =>
             (
-                id = cte.id, 
-                content = cte.content, 
-                parentId = cte.parentId, 
+                id = cte.id,
+                content = cte.content,
+                parentId = cte.parentId,
                 parentContent = cte.parentContent,
                 level = cte.level
             )
