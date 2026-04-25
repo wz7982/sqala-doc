@@ -459,7 +459,7 @@ val q = query:
 
 ## 自定义查询量词
 
-某些数据库方言支持除了SQL标准的`ALL`或`DISTINCT`以外查询量词，比如PostgreSQL的`SELECT DISTINCT ON (...)`，而sqala的功能是基于标准SQL，所以不支持这些方言量词，但我们可以通过`rawQuantifier`字符串插值器配合`mapQuantified`方法自定义查询：
+某些数据库方言支持除了SQL标准的`ALL`或`DISTINCT`以外查询量词，比如PostgreSQL的`SELECT DISTINCT ON (...)`，而sqala的功能是基于标准SQL创建，所以不支持这些方言量词，但我们可以通过`rawQuantifier`字符串插值器配合`mapQuantified`方法自定义查询：
 
 ```scala
 val q = query:

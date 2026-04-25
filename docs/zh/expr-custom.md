@@ -38,16 +38,3 @@ val q = query:
     from(Post)
         .map(p => jsonObject("id" value p.id) ->> "id")
 ```
-
-## 原生表达式
-
-某些数据库方言中可能含有无法被sqala表达式系统概括的特殊语法，比如MySQL的全文检索语法，这种场景我们可以使用`rawExpr`字符串插值器来创建原生表达式，然后使用`as`方法声明表达式类型：
-
-```scala
-val word = "abc"
-val q = query:
-    from(Post)
-        .filter(p => rawExpr"MATCH(${p.title}) AGAINST(${word})".as[Boolean])
-```
-
-表达式插值器支持值、[表达式](./expr.md)和他们组成的元组，字符串中无需手动拼接引号，圆括号等符号，sqala会自动处理并进行安全转义。
