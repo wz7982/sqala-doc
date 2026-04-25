@@ -322,6 +322,27 @@ FROM
     "user" AS "t1"
 ```
 
+## 自定义查询量词
+
+某些数据库方言支持除了SQL标准的`ALL`或`DISTINCT`以外查询量词，比如PostgreSQL的`SELECT DISTINCT ON (...)`，而sqala的功能是基于标准SQL创建的，所以不内置支持这些方言量词，但我们可以通过`rawQuantifier`字符串插值器配合`mapQuantified`方法自定义查询：
+
+```scala
+val q = query:
+    from(User)
+        .mapQuantified(u => rawQuantifier"DISTINCT ON ${(u.id, u.name)}")(u => u.name)
+```
+
+生成的SQL为：
+
+```sql
+SELECT DISTINCT ON ("t1"."id", "t1"."name")
+    "t1"."name" AS "c1"
+FROM
+    "user" AS "t1"
+```
+
+量词插值器支持值、[表达式](./expr.md)和他们组成的元组，字符串中无需手动拼接引号，圆括号等符号，sqala会自动处理并进行安全转义。
+
 ## 使用内存集合创建查询
 
 sqala支持使用内存中的集合创建查询，后续作为子查询、和连接表使用：
