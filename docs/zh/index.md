@@ -83,7 +83,19 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
 
 2. 请确保Scala版本在`3.8.2`及以上。
 
-3. 尽量使用Scala官方的metals插件配合VSCode、Vim等工具使用，以获得更好的编写体验。
+3. 推荐使用Scala官方的metals插件配合VSCode、Vim等工具使用，以获得更好的编写体验。
+
+## 并发模型和错误处理
+
+sqala使用同步JDBC，推荐配合JVM 21+的虚拟线程使用。
+
+虚拟线程让同步代码获得异步级并发性能，但无需引入Effect系统的复杂度。
+
+sqala目前使用异常机制处理数据库错误。
+
+待 Scala3的实验性特性[CanThrow Capabilities](https://nightly.scala-lang.org/docs/reference/experimental/canthrow.html)成熟后，将升级为编译期可追溯的错误类型。
+
+届时同步代码同时具备：简洁语法、虚拟线程高并发、以及类型安全错误管理。
 
 ## 使用场景建议
 
