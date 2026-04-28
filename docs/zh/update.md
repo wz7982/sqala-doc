@@ -27,3 +27,15 @@ val u = update[A].set(a => a.x := a.x + 1)
 ```scala
 val d = delete[Department].where(_.id == 1)
 ```
+
+## 新增或更新
+
+`db.save`方法用于按主键决定是否新增或更新，在各主流数据库中生成的SQL为：
+
+| 数据库类型 | 生成 SQL |
+|------------|----------|
+| PostgreSQL | `INSERT INTO ... ON CONFLICT ... DO UPDATE SET` |
+| MySQL | `INSERT INTO ... ON DUPLICATE KEY UPDATE` |
+| Oracle | `MERGE INTO` |
+| SQLServer | `MERGE INTO` |
+| SQLite | `INSERT OR REPLACE INTO` |

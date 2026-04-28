@@ -59,7 +59,7 @@ sqala也会自动管理子查询的表别名和列别名，您无需为此浪费
 ```scala
 val q = query:
     from(Post).filter: p =>
-        p.likeCount > 
+        p.likeCount >
             from(Post)
                 .filter(pp => pp.channelId == p.channelId)
                 .map(pp => avg(pp.likeCount))
@@ -95,7 +95,7 @@ sqala支持多字段参与比较，因此，我们也可以方便地统计“点
 ```scala
 val q = query:
     from(Post).filter: p =>
-        (p.likeCount, p.viewCount) > 
+        (p.likeCount, p.viewCount) >
             from(Post)
                 .filter(pp => pp.channelId == p.channelId)
                 .map(pp => (avg(pp.likeCount), avg(pp.viewCount)))
@@ -264,15 +264,26 @@ WHERE
     )
 ```
 
+### 兼容性
+
+带量词的子查询在各主流数据库最新版本实测支持程度如下：
+
+| 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
+|------|------------|-------|--------|-----------|--------|
+| `exists` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `in` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `any` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `all` | ✅ | ✅ | ✅ | ✅ | ❌ |
+
 ## 标量子查询
 
 返回一行一列的子查询可以在`map`/`select`中使用，比如我们查询“一个用户的ID和他发的任意一个帖子标题”：
 
 ```scala
 val q = query:
-    from(User).map: u => 
+    from(User).map: u =>
         (
-            u.id, 
+            u.id,
             from(Post).filter(p => p.authorId == p.id).map(p => anyValue(p.title))
         )
 ```

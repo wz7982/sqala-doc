@@ -35,6 +35,15 @@ FROM
 
 在`db.fetch`之后会自动返回`List[User]`类型的结果。
 
+各数据库方言生成的标识符的引号为：
+
+| 数据库类型 | 引号        |
+|------------|-------------|
+| PostgreSQL | `""`        |
+| MySQL      | ` `` `      |
+| Oracle     | `""`        |
+| SQLServer  | `[]`        |
+
 ## 动态表名
 
 在某些业务场景中，可能有一些结构相同，但只有表名不同的表，sqala支持在创建查询时使用`withName`方法更换表名：
@@ -270,14 +279,24 @@ val q = query:
 
 `take`/`limit`和`drop`/`offset`对应SQL的`LIMIT`、`OFFSET`等操作，并自动进行了方言适配。
 
-由于`MySQL`不允许单独使用`OFFSET`子句，因此在单独调用`drop`/`offset`时，`LIMIT`值为`Long.MaxValue`。
-
 ```scala
 val q = query:
     from(User).drop(2).take(3)
 ```
 
-此操作不同方言下差异较大，因此我们不单独使用PostgreSQL为例，而是列出各种方言生成情况。
+此外，sqala支持标准SQL的`FETCH n ROWS WITH TIES`子句，将`take`/`limit`改为`takeWithTies`/`limitWithTies`即可。
+
+限制结果集操作在不同数据库方言下差异较大，下面列出各主流数据库方言适配情况，标记为❌的则是数据库本身不支持此操作，由于`MySQL`和`SQLite`不允许单独使用`OFFSET`子句，因此在单独调用`drop`/`offset`时，`LIMIT`值为`Long.MaxValue`：
+
+| 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
+|------|------------|-------|--------|-----------|--------|
+| `drop(m)` | `OFFSET m` | `LIMIT m, 9223372036854775807` | `OFFSET m ROWS` | `OFFSET m ROWS` | `LIMIT 9223372036854775807 OFFSET m` |
+| `take(n)` | `LIMIT n` | `LIMIT n` | `FETCH NEXT n ROWS ONLY` | `FETCH NEXT n ROWS ONLY` | `LIMIT n` |
+| `drop(m).take(n)` | `LIMIT n OFFSET m` | `LIMIT m, n` | `OFFSET m ROWS FETCH NEXT n ROWS ONLY` | `OFFSET m ROWS FETCH NEXT n ROWS ONLY` | `LIMIT n OFFSET m` |
+| `takeWithTies(n)` | `FETCH NEXT n ROWS WITH TIES` | `❌` | `FETCH NEXT n ROWS WITH TIES` | `❌` | `❌` |
+| `drop(m).takeWithTies(n)` | `OFFSET m ROWS FETCH NEXT n ROWS WITH TIES` | `❌` | `OFFSET m ROWS FETCH NEXT n ROWS WITH TIES` | `❌` | `❌` |
+
+<!-- 此操作不同方言下差异较大，因此我们不单独使用PostgreSQL为例，而是列出各种方言生成情况。
 
 ::: code-group
 
@@ -314,7 +333,7 @@ OFFSET 2 ROWS FETCH NEXT 3 ROWS ONLY
 
 |方法名     |SQL语句                |MySQL |PostgreSQL|Oracle|H2|
 |:---------:|:--------------------:|:------:|:------:|:------:|:------:|
-|`takeWithTies`|`FETCH NEXT n ROWS WITH TIES`|❌|✅     |✅      |✅ |
+|`takeWithTies`|`FETCH NEXT n ROWS WITH TIES`|❌|✅     |✅      |✅ | -->
 
 ## 去重
 
@@ -367,30 +386,16 @@ val q = query:
     from(User).sortBy(u => u.name).sortBy(u => u.id.desc)
 ```
 
-sqala支持的排序规则有：
+sqala支持的排序规则和各主流数据库的支持程度如下：
 
-| 排序规则        | 对应SQL          |
-|:--------------:|:----------------:|
-|`asc`           |`ASC`             |
-|`ascNullsFirst` |`ASC NULLS FIRST` |
-|`ascNullsLast`  |`ASC NULLS LAST`  |
-|`desc`          |`DESC`            |
-|`descNullsFirst`|`DESC NULLS FIRST`|
-|`descNullsLast` |`DESC NULLS LAST` |
-
-对于MySQL数据库这样不支持`ASC NULLS LAST`语义的数据库方言，sqala会生成这样的SQL：
-
-```sql
-SELECT
-    `t1`.`id` AS `c1`,
-    `t1`.`name` AS `c2`
-FROM
-    `user` AS `t1`
-ORDER BY
-    `t1`.`name` ASC,
-    CASE WHEN `t1`.`id` IS NULL THEN 1 ELSE 0 END ASC,
-    `t1`.`id` ASC
-```
+| 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
+|------|------------|-------|--------|-----------|--------|
+| `x.asc` | `x ASC` | `x ASC` | `x ASC` | `x ASC` | `x ASC` |
+| `x.ascNullsFirst` | `x ASC NULLS FIRST` | `x ASC` | `x ASC NULLS FIRST` | `x ASC` | `x ASC NULLS FIRST` |
+| `x.ascNullsLast` | `x ASC NULLS LAST` | `CASE WHEN x IS NULL THEN 1 ELSE 0 END ASC, x ASC` | `x ASC NULLS LAST` | `CASE WHEN x IS NULL THEN 1 ELSE 0 END ASC, x ASC` | `x ASC NULLS LAST` |
+| `x.desc` | `x DESC` | `x DESC` | `x DESC` | `x DESC` | `x DESC` |
+| `x.descNullsFirst` | `x DESC NULLS FIRST` | `CASE WHEN x IS NULL THEN 1 ELSE 0 END DESC, x DESC` | `x DESC NULLS FIRST` | `CASE WHEN x IS NULL THEN 1 ELSE 0 END DESC, x DESC` | `x DESC NULLS FIRST` |
+| `x.descNullsLast` | `x DESC NULLS LAST` | `x DESC` | `x DESC NULLS LAST` | `x DESC` | `x DESC NULLS LAST` |
 
 ### 投影后排序
 
@@ -446,16 +451,35 @@ FROM
     ) AS "t1"("id", "name")
 ```
 
-**请注意你使用的数据库版本是否支持`VALUES`查询功能**。
+此功能使用数据库的`VALUES`查询实现，各主流数据库最新版本实测支持程度如下：
+
+| 数据库类型 | VALUES 支持 |
+|------------|-------------|
+| PostgreSQL | ✅ |
+| MySQL | ✅ |
+| Oracle | ✅ |
+| SQLServer | ✅ |
+| SQLite | ❌ |
 
 ## 查询锁
 
-sqala支持`forUpdate`、`forUpdateNoWait`、`forUpdateSkipLocked`、`forShare`、`forShareNoWait`、`forShareSkipLocked`等方法给查询加锁，对应数据库的相应加锁子句，但某些数据库可能未支持此操作，请确认后使用：
+sqala支持`forUpdate`等方法给查询加锁，对应数据库的相应加锁子句：
 
 ```scala
 val q = query:
     from(User).forShareSkipLocked
 ```
+
+查询加锁不是SQL标准内容，但大部分数据库的语法类似，因此sqala参照PostgreSQL和MySQL功能进行支持，加锁方法和各主流数据库最新版本实测支持程度如下：
+
+| 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
+|------|------------|-------|--------|-----------|--------|
+| `forUpdate` | `FOR UPDATE` | `FOR UPDATE` | `FOR UPDATE` | ❌ | ❌ |
+| `forUpdateNoWait` | `FOR UPDATE NOWAIT` | `FOR UPDATE NOWAIT` | `FOR UPDATE NOWAIT` | ❌ | ❌ |
+| `forUpdateSkipLocked` | `FOR UPDATE SKIP LOCKED` | `FOR UPDATE SKIP LOCKED` | `FOR UPDATE SKIP LOCKED` | ❌ | ❌ |
+| `forShare` | `FOR SHARE` | `FOR SHARE` | ❌ | ❌ | ❌ |
+| `forShareNoWait` | `FOR SHARE NOWAIT` | `FOR SHARE NOWAIT` | ❌ | ❌ | ❌ |
+| `forShareSkipLocked` | `FOR SHARE SKIP LOCKED` | `FOR SHARE SKIP LOCKED` | ❌ | ❌ | ❌ |
 
 ## 自定义查询量词
 

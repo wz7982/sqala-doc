@@ -39,3 +39,15 @@ val q = query:
 val q = query:
     from(Entity).filter(e => (e.d1, e.d2).overlaps(e.d3, e.d4))
 ```
+
+## 时间数据类型
+
+sqala默认使用`java.time.*`下面的时间类型作为内置时间类型，各时间类型的值在生成SQL时规则如下：
+
+| 时间类型 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
+|----------|------------|-------|--------|-----------|--------|
+| `LocalDate` | `DATE '2020-01-01'` | `DATE '2020-01-01'` | `TO_DATE('2020-01-01', 'YYYY-MM-DD')` | `CAST('2020-01-01 00:00:00.123456789' AS DATE)` | `DATE('2020-01-01')` |
+| `LocalDateTime` | `TIMESTAMP '2020-01-01 00:00:00.123456789'` | `TIMESTAMP '2020-01-01 00:00:00.123456789'` | `TO_TIMESTAMP('2020-01-01 00:00:00.123456789', 'YYYY-MM-DD HH24:MI:SS.FF9')` | `CAST('2020-01-01 00:00:00.123456789' AS DATETIME2)` | `DATETIME('2020-01-01 00:00:00.123456789')` |
+| `LocalTime` | `TIME '00:00:00'` | `TIME '00:00:00'` | ❌ | ❌ | ❌ |
+| `OffsetDateTime` | `TIMESTAMP WITH TIME ZONE '2020-01-01 00:00:00.123456789 +08:00'` | ❌ | `TO_TIMESTAMP_TZ('2020-01-01 00:00:00.123456789 +08:00', 'YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM')` | `CAST('2020-01-01 00:00:00.123456789 +08:00' AS DATETIMEOFFSET)` | ❌ |
+| `OffsetTime` | `TIME WITH TIME ZONE '00:00:00 +08:00'` | ❌ | ❌ | ❌ | ❌ |

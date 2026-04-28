@@ -1,8 +1,6 @@
-# 空间和向量操作
+# 空间操作
 
-sqala支持空间和向量方面的专用操作，为专业场景提供支持。
-
-## 空间操作
+## 空间函数
 
 sqala支持ISO/IEC 13249中定义的部分标准空间操作，支持MySQL和PostgreSQL的PostGIS插件。
 
@@ -28,14 +26,3 @@ sqala支持ISO/IEC 13249中定义的部分标准空间操作，支持MySQL和Pos
 |`stUnion(a, b)`          |`ST_Union(a, b)`               |
 |`stDifference(a, b)`     |`ST_Difference(a, b)`          |
 |`stSymDifference(a, b)`  |`ST_SymDifference(a, b)`       |
-
-## 向量操作
-
-随着AI应用日渐火热，各种关系型数据库也陆续推出了向量运算功能，sqala也支持了向量运算符并做了一些数据库兼容工作，将字段类型设置成`sqala.metadata.Vector`即可应用此类运算符，方法名和转换规则如下：
-
-|   方法                  | 含义      | PostgreSQL(pgvector插件) | Oracle 23ai       | MySQL 9.0(HeatWave)          |
-|:-----------------------:|:---------:|:----------------------:|:------------------:|:----------------------------:|
-|`euclideanDistance(a, b)`|欧氏距离   |`a <-> b`                |`L2_DISTANCE(a, b)` | `DISTANCE(a, b, 'EUCLIDEAN')`|
-|`cosineDistance(a, b)`   |余弦距离   |`a <=> b`                |`COSINE_DISTANCE(a, b)`|`DISTANCE(a, b, 'COSINE')` |
-|`dotDistance(a, b)`      | 负内积    |`a <#> b`                |`INNER_PRODUCT(a, b) * -1`|`DISTANCE(a, b, 'DOT')` |
-|`manhattanDistance(a, b)`|曼哈顿距离 |`a <+> b`                |`L1_DISTANCE(a, b)`    | ❌                        |

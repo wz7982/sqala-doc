@@ -51,11 +51,11 @@ CREATE TABLE `comment` (
 );
 
 INSERT INTO `user` (`name`) VALUES
-('小黑'), ('小白'), ('小红'), ('小蓝'), 
+('小黑'), ('小白'), ('小红'), ('小蓝'),
 ('小绿'), ('小紫'), ('小黄'), ('小青');
 
 INSERT INTO `channel` (`name`) VALUES
-('美食'), ('健康'), ('旅行'), ('摄影'), 
+('美食'), ('健康'), ('旅行'), ('摄影'),
 ('读书'), ('电影'), ('运动'), ('音乐');
 
 INSERT INTO `post` (`title`, `author_id`, `channel_id`, `create_time`, `view_count`, `like_count`, `state`) VALUES
@@ -135,11 +135,11 @@ CREATE TABLE "comment" (
 );
 
 INSERT INTO "user" ("name") VALUES
-('小黑'), ('小白'), ('小红'), ('小蓝'), 
+('小黑'), ('小白'), ('小红'), ('小蓝'),
 ('小绿'), ('小紫'), ('小黄'), ('小青');
 
 INSERT INTO "channel" ("name") VALUES
-('美食'), ('健康'), ('旅行'), ('摄影'), 
+('美食'), ('健康'), ('旅行'), ('摄影'),
 ('读书'), ('电影'), ('运动'), ('音乐');
 
 INSERT INTO "post" ("title", "author_id", "channel_id", "create_time", "view_count", "like_count", "state") VALUES
@@ -219,14 +219,14 @@ CREATE TABLE "comment" (
 );
 
 INSERT INTO "user" ("name") VALUES
-('小黑'), ('小白'), ('小红'), ('小蓝'), 
+('小黑'), ('小白'), ('小红'), ('小蓝'),
 ('小绿'), ('小紫'), ('小黄'), ('小青');
 
 INSERT INTO "channel" ("name") VALUES
-('美食'), ('健康'), ('旅行'), ('摄影'), 
+('美食'), ('健康'), ('旅行'), ('摄影'),
 ('读书'), ('电影'), ('运动'), ('音乐');
 
-INSERT INTO "post" ("title", "author_id", "channel_id", "create_time", "view_count", "like_count", "state") VALUES 
+INSERT INTO "post" ("title", "author_id", "channel_id", "create_time", "view_count", "like_count", "state") VALUES
 ('红烧肉做法', 1, 1, TO_TIMESTAMP('2024-03-01 10:00:00', 'YYYY-MM-DD HH24:MI:SS'), 1250, 45, 1),
 ('意大利面技巧', 2, 1, TO_TIMESTAMP('2024-03-02 14:30:00', 'YYYY-MM-DD HH24:MI:SS'), 890, 32, 1),
 ('烘焙入门', 3, 1, TO_TIMESTAMP('2024-03-03 09:15:00', 'YYYY-MM-DD HH24:MI:SS'), 670, 28, 1),
@@ -243,7 +243,7 @@ INSERT INTO "post" ("title", "author_id", "channel_id", "create_time", "view_cou
 ('音乐欣赏', 8, 8, TO_TIMESTAMP('2024-03-14 15:25:00', 'YYYY-MM-DD HH24:MI:SS'), 350, 19, 1),
 ('已删除帖', 1, 1, TO_TIMESTAMP('2024-03-15 10:00:00', 'YYYY-MM-DD HH24:MI:SS'), 50, 2, 0);
 
-INSERT INTO "comment" ("post_id", "author_id", "content", "create_time", "parent_id", "like_count", "state") VALUES 
+INSERT INTO "comment" ("post_id", "author_id", "content", "create_time", "parent_id", "like_count", "state") VALUES
 (1, 2, '看起来很好吃', TO_TIMESTAMP('2024-03-01 11:00:00', 'YYYY-MM-DD HH24:MI:SS'), 0, 8, 1),
 (1, 3, '怎么做出来的', TO_TIMESTAMP('2024-03-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'), 1, 5, 1),
 (1, 4, '需要什么材料', TO_TIMESTAMP('2024-03-01 13:00:00', 'YYYY-MM-DD HH24:MI:SS'), 2, 3, 1),
@@ -267,6 +267,174 @@ INSERT INTO "comment" ("post_id", "author_id", "content", "create_time", "parent
 (2, 7, '罗勒叶重要', TO_TIMESTAMP('2024-03-02 19:00:00', 'YYYY-MM-DD HH24:MI:SS'), 8, 3, 1),
 (2, 8, '煮面加盐更好', TO_TIMESTAMP('2024-03-02 20:00:00', 'YYYY-MM-DD HH24:MI:SS'), 15, 2, 1),
 (1, 5, '已删除评论', TO_TIMESTAMP('2024-03-01 18:00:00', 'YYYY-MM-DD HH24:MI:SS'), 0, 0, 0);
+```
+
+```sql [SQLServer]
+CREATE TABLE [user] (
+    [id] INT IDENTITY(1,1) PRIMARY KEY,
+    [name] NVARCHAR(50) NOT NULL
+);
+
+CREATE TABLE [channel] (
+    [id] INT IDENTITY(1,1) PRIMARY KEY,
+    [name] NVARCHAR(50) NOT NULL
+);
+
+CREATE TABLE [post] (
+    [id] INT IDENTITY(1,1) PRIMARY KEY,
+    [title] NVARCHAR(100) NOT NULL,
+    [author_id] INT NOT NULL,
+    [channel_id] INT NOT NULL,
+    [create_time] DATETIME2 NOT NULL,
+    [view_count] INT NOT NULL,
+    [like_count] INT NOT NULL,
+    [state] INT NOT NULL
+);
+
+CREATE TABLE [comment] (
+    [id] INT IDENTITY(1,1) PRIMARY KEY,
+    [post_id] INT NOT NULL,
+    [author_id] INT NOT NULL,
+    [content] NVARCHAR(200) NOT NULL,
+    [create_time] DATETIME2 NOT NULL,
+    [parent_id] INT DEFAULT 0,
+    [like_count] INT NOT NULL,
+    [state] INT NOT NULL
+);
+
+INSERT INTO [user] ([name]) VALUES
+(N'小黑'), (N'小白'), (N'小红'), (N'小蓝'),
+(N'小绿'), (N'小紫'), (N'小黄'), (N'小青');
+
+INSERT INTO [channel] ([name]) VALUES
+(N'美食'), (N'健康'), (N'旅行'), (N'摄影'),
+(N'读书'), (N'电影'), (N'运动'), (N'音乐');
+
+INSERT INTO [post] ([title], [author_id], [channel_id], [create_time], [view_count], [like_count], [state]) VALUES
+(N'红烧肉做法', 1, 1, '2024-03-01 10:00:00', 1250, 45, 1),
+(N'意大利面技巧', 2, 1, '2024-03-02 14:30:00', 890, 32, 1),
+(N'烘焙入门', 3, 1, '2024-03-03 09:15:00', 670, 28, 1),
+(N'夏日凉菜', 1, 1, '2024-03-04 16:45:00', 530, 19, 1),
+(N'火锅底料', 4, 1, '2024-03-05 11:20:00', 480, 22, 1),
+(N'健身计划', 5, 2, '2024-03-06 13:10:00', 980, 38, 1),
+(N'营养搭配', 6, 2, '2024-03-07 15:30:00', 850, 29, 1),
+(N'旅行', 7, 3, '2024-03-08 10:45:00', 720, 31, 1),
+(N'自驾', 8, 3, '2024-03-09 14:20:00', 610, 24, 1),
+(N'人像摄影', 4, 4, '2024-03-10 09:30:00', 550, 26, 1),
+(N'好书推荐', 5, 5, '2024-03-11 16:15:00', 490, 21, 1),
+(N'电影推荐', 6, 6, '2024-03-12 11:40:00', 420, 18, 1),
+(N'跑步训练', 7, 7, '2024-03-13 13:50:00', 380, 16, 1),
+(N'音乐欣赏', 8, 8, '2024-03-14 15:25:00', 350, 19, 1),
+(N'已删除帖', 1, 1, '2024-03-15 10:00:00', 50, 2, 0);
+
+INSERT INTO [comment] ([post_id], [author_id], [content], [create_time], [parent_id], [like_count], [state]) VALUES
+(1, 2, N'看起来很好吃', '2024-03-01 11:00:00', 0, 8, 1),
+(1, 3, N'怎么做出来的', '2024-03-01 12:00:00', 1, 5, 1),
+(1, 4, N'需要什么材料', '2024-03-01 13:00:00', 2, 3, 1),
+(1, 5, N'可以用电饭锅吗', '2024-03-01 14:00:00', 3, 2, 1),
+(1, 6, N'期待更多分享', '2024-03-01 15:00:00', 1, 4, 1),
+(2, 1, N'煮的时间很关键', '2024-03-02 15:30:00', 0, 6, 1),
+(2, 4, N'酱料选择重要', '2024-03-02 16:00:00', 6, 4, 1),
+(2, 5, N'推荐橄榄油', '2024-03-02 17:00:00', 7, 3, 1),
+(2, 6, N'不同面条时间不同', '2024-03-02 18:00:00', 8, 2, 1),
+(3, 2, N'需要很多耐心', '2024-03-03 10:15:00', 0, 7, 1),
+(3, 4, N'温度控制重要', '2024-03-03 11:15:00', 10, 5, 1),
+(4, 3, N'很适合夏天', '2024-03-04 17:45:00', 0, 4, 1),
+(5, 2, N'自制更健康', '2024-03-05 12:20:00', 0, 3, 1),
+(6, 3, N'贵在坚持', '2024-03-06 14:10:00', 0, 5, 1),
+(7, 4, N'搭配很重要', '2024-03-07 16:30:00', 0, 4, 1),
+(8, 5, N'美食很多', '2024-03-08 11:45:00', 0, 7, 1),
+(9, 6, N'自驾很自由', '2024-03-09 15:20:00', 0, 5, 1),
+(10, 7, N'需要多练习', '2024-03-10 10:30:00', 0, 6, 1),
+(1, 7, N'加土豆一起炖', '2024-03-01 16:00:00', 4, 1, 1),
+(1, 8, N'炒色是关键', '2024-03-01 17:00:00', 13, 2, 1),
+(2, 7, N'罗勒叶重要', '2024-03-02 19:00:00', 8, 3, 1),
+(2, 8, N'煮面加盐更好', '2024-03-02 20:00:00', 15, 2, 1),
+(1, 5, N'已删除评论', '2024-03-01 18:00:00', 0, 0, 0);
+```
+
+```sql [SQLite]
+CREATE TABLE "user" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL
+);
+
+CREATE TABLE "channel" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL
+);
+
+CREATE TABLE "post" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "title" TEXT NOT NULL,
+    "author_id" INTEGER NOT NULL,
+    "channel_id" INTEGER NOT NULL,
+    "create_time" TEXT NOT NULL,
+    "view_count" INTEGER NOT NULL,
+    "like_count" INTEGER NOT NULL,
+    "state" INTEGER NOT NULL
+);
+
+CREATE TABLE "comment" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "post_id" INTEGER NOT NULL,
+    "author_id" INTEGER NOT NULL,
+    "content" TEXT NOT NULL,
+    "create_time" TEXT NOT NULL,
+    "parent_id" INTEGER DEFAULT 0,
+    "like_count" INTEGER NOT NULL,
+    "state" INTEGER NOT NULL
+);
+
+INSERT INTO "user" ("name") VALUES
+('小黑'), ('小白'), ('小红'), ('小蓝'),
+('小绿'), ('小紫'), ('小黄'), ('小青');
+
+INSERT INTO "channel" ("name") VALUES
+('美食'), ('健康'), ('旅行'), ('摄影'),
+('读书'), ('电影'), ('运动'), ('音乐');
+
+INSERT INTO "post" ("title", "author_id", "channel_id", "create_time", "view_count", "like_count", "state") VALUES
+('红烧肉做法', 1, 1, '2024-03-01 10:00:00', 1250, 45, 1),
+('意大利面技巧', 2, 1, '2024-03-02 14:30:00', 890, 32, 1),
+('烘焙入门', 3, 1, '2024-03-03 09:15:00', 670, 28, 1),
+('夏日凉菜', 1, 1, '2024-03-04 16:45:00', 530, 19, 1),
+('火锅底料', 4, 1, '2024-03-05 11:20:00', 480, 22, 1),
+('健身计划', 5, 2, '2024-03-06 13:10:00', 980, 38, 1),
+('营养搭配', 6, 2, '2024-03-07 15:30:00', 850, 29, 1),
+('旅行', 7, 3, '2024-03-08 10:45:00', 720, 31, 1),
+('自驾', 8, 3, '2024-03-09 14:20:00', 610, 24, 1),
+('人像摄影', 4, 4, '2024-03-10 09:30:00', 550, 26, 1),
+('好书推荐', 5, 5, '2024-03-11 16:15:00', 490, 21, 1),
+('电影推荐', 6, 6, '2024-03-12 11:40:00', 420, 18, 1),
+('跑步训练', 7, 7, '2024-03-13 13:50:00', 380, 16, 1),
+('音乐欣赏', 8, 8, '2024-03-14 15:25:00', 350, 19, 1),
+('已删除帖', 1, 1, '2024-03-15 10:00:00', 50, 2, 0);
+
+INSERT INTO "comment" ("post_id", "author_id", "content", "create_time", "parent_id", "like_count", "state") VALUES
+(1, 2, '看起来很好吃', '2024-03-01 11:00:00', 0, 8, 1),
+(1, 3, '怎么做出来的', '2024-03-01 12:00:00', 1, 5, 1),
+(1, 4, '需要什么材料', '2024-03-01 13:00:00', 2, 3, 1),
+(1, 5, '可以用电饭锅吗', '2024-03-01 14:00:00', 3, 2, 1),
+(1, 6, '期待更多分享', '2024-03-01 15:00:00', 1, 4, 1),
+(2, 1, '煮的时间很关键', '2024-03-02 15:30:00', 0, 6, 1),
+(2, 4, '酱料选择重要', '2024-03-02 16:00:00', 6, 4, 1),
+(2, 5, '推荐橄榄油', '2024-03-02 17:00:00', 7, 3, 1),
+(2, 6, '不同面条时间不同', '2024-03-02 18:00:00', 8, 2, 1),
+(3, 2, '需要很多耐心', '2024-03-03 10:15:00', 0, 7, 1),
+(3, 4, '温度控制重要', '2024-03-03 11:15:00', 10, 5, 1),
+(4, 3, '很适合夏天', '2024-03-04 17:45:00', 0, 4, 1),
+(5, 2, '自制更健康', '2024-03-05 12:20:00', 0, 3, 1),
+(6, 3, '贵在坚持', '2024-03-06 14:10:00', 0, 5, 1),
+(7, 4, '搭配很重要', '2024-03-07 16:30:00', 0, 4, 1),
+(8, 5, '美食很多', '2024-03-08 11:45:00', 0, 7, 1),
+(9, 6, '自驾很自由', '2024-03-09 15:20:00', 0, 5, 1),
+(10, 7, '需要多练习', '2024-03-10 10:30:00', 0, 6, 1),
+(1, 7, '加土豆一起炖', '2024-03-01 16:00:00', 4, 1, 1),
+(1, 8, '炒色是关键', '2024-03-01 17:00:00', 13, 2, 1),
+(2, 7, '罗勒叶重要', '2024-03-02 19:00:00', 8, 3, 1),
+(2, 8, '煮面加盐更好', '2024-03-02 20:00:00', 15, 2, 1),
+(1, 5, '已删除评论', '2024-03-01 18:00:00', 0, 0, 0);
 ```
 :::
 
@@ -335,16 +503,15 @@ sqala内置支持的基础字段类型为：
 
 其中`Option`和`Array`均支持跟以上类型组合使用，比如`Option[Array[Option[Int]]]`。
 
-此外，为了支持SQL中的`JSON`数据和向量、空间数据，在`sqala.static.metadata`包中定义了下面的数据类型（这些类型均定义为`opaque type X = String`，以降低运行时开销）。
+此外，为了支持SQL中的`JSON`数据和空间数据，在`sqala.static.metadata`包中定义了下面的数据类型。
 
 但除了`Json`类型之外，由于JDBC没有此类数据类型的标准，各数据库驱动实现差异较大，所以sqala没有内置反序列化实现，需要在构建查询时配合对应类型的SQL函数等操作转为基础数据类型：
 
 |字段类型                |字段类型               |字段类型                 |
-|:---------------------:|:---------------------:|:---------------------:|
-|Json                   |Vector                 |                       |
+|:---------------------:|:---------------------:|:----------------------:|
 |Point                  |LineString             |Polygon                 |
 |MultiPoint             |MultiLineString        |MultiPolygon            |
-|GeometryCollection     |Geometry               |                        |
+|GeometryCollection     |Geometry               |Json                    |
 
 ## 自定义字段类型
 

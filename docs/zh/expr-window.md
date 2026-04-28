@@ -32,7 +32,7 @@ val q = query:
 
 ```scala
 val q = query:
-    from(Post).map: p => 
+    from(Post).map: p =>
         sum(p.likeCount)
             .over(
                 partitionBy(p.authorId)
@@ -45,7 +45,7 @@ val q = query:
 
 ```scala
 val q = query:
-    from(Post).map: p => 
+    from(Post).map: p =>
         sum(p.likeCount)
             .over(
                 partitionBy(p.authorId)
@@ -56,22 +56,47 @@ val q = query:
 
 边界支持`currentRow`、`unboundedPreceding`、`unboundedFollowing`、`n.Preceding`、`n.Following`。
 
+我们可以使用`excludeCurrentRow`、`excludeTies`、`excludeGroup`排除组间特定行：
+
+```scala
+val q = query:
+    from(Post).map: p =>
+        sum(p.likeCount)
+            .over(
+                partitionBy(p.authorId)
+                    .orderBy(p.id.desc)
+                    .rowsBetween(currentRow, 1.preceding)
+                    .excludeCurrentRow
+            )
+```
+
 sqala内置支持的窗口函数有：
 
-|     函数           |      对应的SQL函数      |
-|:-----------------:|:-----------------------:|
-|`rank()`           |`RANK()`                 |
-|`denseRank()`      |`DENSE_RANK()`           |
-|`percentRank()`    |`PERCENT_RANK()`         |
-|`cumeDist()`       |`CUME_DIST()`            |
-|`rowNumber()`      |`ROW_NUMBER()`           |
-|`ntile(n)`         |`NTILE(n)`               |
-|`firstValue(a)`    |`FIRST_VALUE(a)`         |
-|`lastValue(a)`     |`LAST_VALUE(a)`          |
-|`nthValue(a, n)`   |`NTH_VALUE(a, n)`        |
-|`lag(a)`           |`LAG(a)`                 |
-|`lag(a, n)`        |`LAG(a, n)`              |
-|`lag(a, n, d)`     |`LAG(a, n, d)`           |
-|`lead(a)`          |`LEAD(a)`                |
-|`lead(a, n)`       |`LEAD(a, n)`             |
-|`lead(a, n, d)`    |`LEAD(a, n, d)`          |
+| 函数                                       | 对应的 SQL 函数                                       |
+|--------------------------------------------|------------------------------------------------------|
+| `rank()`                                   | `RANK()`                                             |
+| `denseRank()`                              | `DENSE_RANK()`                                       |
+| `percentRank()`                            | `PERCENT_RANK()`                                     |
+| `cumeDist()`                               | `CUME_DIST()`                                        |
+| `rowNumber()`                              | `ROW_NUMBER()`                                       |
+| `ntile(n)`                                 | `NTILE(n)`                                           |
+| `firstValue(a)`                            | `FIRST_VALUE(a)`                                     |
+| `firstValueIgnoreNulls(a)`                 | `FIRST_VALUE(a) IGNORE NULLS`                        |
+| `lastValue(a)`                             | `LAST_VALUE(a)`                                      |
+| `lastValueIgnoreNulls(a)`                  | `LAST_VALUE(a) IGNORE NULLS`                         |
+| `nthValue(a, n)`                           | `NTH_VALUE(a, n)`                                    |
+| `nthValueIgnoreNulls(a, n)`                | `NTH_VALUE(a, n) IGNORE NULLS`                       |
+| `nthValueFromLast(a, n)`                   | `NTH_VALUE(a, n) FROM LAST`                          |
+| `nthValueFromLastIgnoreNulls(a, n)`        | `NTH_VALUE(a, n) FROM LAST IGNORE NULLS`             |
+| `lag(a)`                                   | `LAG(a)`                                             |
+| `lag(a, n)`                                | `LAG(a, n)`                                          |
+| `lag(a, n, d)`                             | `LAG(a, n, d)`                                       |
+| `lagIgnoreNulls(a)`                        | `LAG(a) IGNORE NULLS`                                |
+| `lagIgnoreNulls(a, n)`                     | `LAG(a, n) IGNORE NULLS`                             |
+| `lagIgnoreNulls(a, n, d)`                  | `LAG(a, n, d) IGNORE NULLS`                          |
+| `lead(a)`                                  | `LEAD(a)`                                            |
+| `lead(a, n)`                               | `LEAD(a, n)`                                         |
+| `lead(a, n, d)`                            | `LEAD(a, n, d)`                                      |
+| `leadIgnoreNulls(a)`                       | `LEAD(a) IGNORE NULLS`                               |
+| `leadIgnoreNulls(a, n)`                    | `LEAD(a, n) IGNORE NULLS`                            |
+| `leadIgnoreNulls(a, n, d)`                 | `LEAD(a, n, d) IGNORE NULLS`                         |

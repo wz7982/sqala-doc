@@ -1,10 +1,10 @@
 # 函数表
 
-sqala支持SQL中的函数表功能，可以把函数调用结果当做表使用。
+sqala支持SQL中的函数表功能（目前仅PostgreSQL支持标准函数表操作），可以把函数调用结果当做表使用。
 
 ## UNNEST
 
-`unnest`对应SQL标准的函数表`UNNEST`（**目前仅PostgreSQL支持**），作用是把数组字段平铺，作为一个表使用，我们使用字段`x`进行后续操作：
+`unnest`对应SQL标准的函数表`UNNEST`，作用是把数组字段平铺，作为一个表使用，我们使用字段`x`进行后续操作：
 
 ```scala
 val q = query:
@@ -75,10 +75,10 @@ case class GenerateSeries(x: Int)
 然后创建函数表：
 
 ```scala
-def generateSeries(start: Int, end: Int)(using QueryContext) = 
+def generateSeries(start: Int, end: Int)(using QueryContext) =
     createTableFunction[GenerateSeries](
-        "generate_series", 
-        start.asExpr :: end.asExpr :: Nil, 
+        "generate_series",
+        start.asExpr :: end.asExpr :: Nil,
         false
     )
 ```
