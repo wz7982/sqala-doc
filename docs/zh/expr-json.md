@@ -82,3 +82,15 @@ val q = query:
 val q = query:
     from(Post).map(p => jsonArrayAgg(p.title))
 ```
+
+## 兼容性
+
+JSON操作各主流数据库最新版本实测支持程度如下（MySQL不支持`IS JSON`操作）：
+
+| 数据库类型 | JSON 操作 |
+|------------|-------------|
+| PostgreSQL | ✅ |
+| MySQL | ✅ |
+| Oracle | ✅ |
+| SQLServer | ❌ |
+| SQLite | ❌ |

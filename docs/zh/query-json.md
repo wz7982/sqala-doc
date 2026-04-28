@@ -1,6 +1,6 @@
 # JSON表
 
-`JSON_TABLE`是SQL中较新的标准，用于将嵌套JSON数据平铺成关系型数据库能处理的关系表，在PostgreSQL 17等较新数据库版本中支持，sqala也对JSON表进行了支持。
+`JSON_TABLE`是SQL中较新的标准，用于将嵌套JSON数据平铺成关系型数据库能处理的关系表，sqala也对JSON表进行了支持。
 
 `jsonTable`方法用于生成一个JSON表，第一个参数是JSON数据，第二个参数是基础的JSON PATH，第三个参数是列定义：
 
