@@ -193,3 +193,15 @@ SELECT
 FROM
     "__cte__" AS "__cte__"
 ```
+
+## 兼容性
+
+递归CTE各主流数据库最新版本实测支持程度如下：
+
+| 数据库类型 | CTE 支持 |
+|------------|----------|
+| PostgreSQL | ✅ |
+| MySQL | ✅ |
+| Oracle | ✅ |
+| SQLServer | ✅ |
+| SQLite | ✅ |

@@ -9,6 +9,8 @@ val q = query:
     from(Post).map(p => sum(p.likeCount))
 ```
 
+sqala内置的聚合函数有：
+
 |     函数           |      对应的SQL函数      |
 |:-----------------:|:-----------------------:|
 |`count()`          |`COUNT(*)`               |
@@ -36,7 +38,15 @@ val q = query:
 |`regrSyy(a, b)`    |`REGR_SYY(a, b)`         |
 |`regrSxy(a, b)`    |`REGR_SXY(a, b)`         |
 
-此外，sqala支持标准sql的聚合函数`LISTAGG`，用于聚合字符串，但PostgreSQL和MySQL不支持此函数，因此，sqala在PostgreSQL中翻译为`STRING_AGG`，在MySQL中翻译为`GROUP_CONCAT`，sqala在提供`listAgg`方法外，也提供了同义词`stringAgg`和`groupConcat`。
+聚合函数不允许嵌套调用，sqala会在此情况进行语义检测，因此以下用法会返回编译错误：
+
+```scala
+val q = query:
+    // 编译错误
+    from(Post).map(p => count(sum(p.likeCount)))
+```
+
+此外，sqala支持标准sql的聚合函数`LISTAGG`，用于聚合字符串，sqala在提供`listAgg`方法外，也提供了同义词`stringAgg`和`groupConcat`。
 
 `listAgg`函数的第一个参数为需要聚合的表达式，第二个参数为分隔符，第三个参数为排序规则：
 
@@ -45,32 +55,15 @@ val q = query:
     from(Post).map(p => listAgg(p.title, ",", p.id.asc))
 ```
 
-生成的SQL为：
+此函数在各主流数据库中生成的SQL为：
 
-::: code-group
-
-```sql [Oracle]
-SELECT
-    LISTAGG("t1"."title", ',') WITHIN GROUP (ORDER BY "t1"."id" ASC) AS "c1"
-FROM
-    "post" "t1"
-```
-
-```sql [PostgreSQL]
-SELECT
-    STRING_AGG("t1"."title", ',' ORDER BY "t1"."id" ASC) AS "c1"
-FROM
-    "post" AS "t1"
-```
-
-```sql [MySQL]
-SELECT
-    GROUP_CONCAT(`t1`.`title` ORDER BY `t1`.`id` ASC SEPARATOR ',') AS `c1`
-FROM
-    `post` AS `t1`
-```
-
-:::
+| 数据库类型 | LISTAGG 兼容 |
+|------------|---------------|
+| PostgreSQL | `STRING_AGG(x, ',' ORDER BY y)` |
+| MySQL | `GROUP_CONCAT(x ORDER BY y SEPARATOR ',')` |
+| Oracle | `LISTAGG(x, ',') WITHIN GROUP (ORDER BY y)` |
+| SQLServer | `STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y)` |
+| SQLite | `GROUP_CONCAT(x, ',' ORDER BY y)` |
 
 另外，SQL标准中还有两个特殊聚合函数`PERCENTILE_CONT`和`PERCENTILE_DISC`，用于计算百分比。
 

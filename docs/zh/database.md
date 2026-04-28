@@ -17,9 +17,16 @@ object DB:
     val db = JdbcContext(dataSource, PostgresqlDialect, true)
 ```
 
-除了连接池外，连接上下文构造的第二个参数是数据库使用的方言，目前sqala内置支持四种方言：
+除了连接池外，连接上下文构造的第二个参数是数据库使用的方言，目前sqala内置支持以下方言（均可从`sqala.printer`中导入）：
 
-`MysqlDialect`、`PostgresqlDialect`、`OracleDialect`、`H2Dialect`，均可从`sqala.printer`中导入。
+| 方言              |
+|:-----------------:|
+|`PostgresqlDialect`|
+|`MysqlDialect`     |
+|`OracleDialect`    |
+|`SqlserverDialect` |
+|`SqliteDialect`    |
+|`H2Dialect`        |
 
 第三个参数**很重要**，由于sqala支持的SQL表达式很全面，而不是所有的字符串（比如`INTERVAL`表达式、`TIME`字面量、JSON功能的JSON path等）都能使用JDBC预编译语句参数化，所以sqala选择自己管理转义字符，**避免SQL注入**，第一个参数如果为`true`则采用标准SQL的转义模式。
 

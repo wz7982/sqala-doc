@@ -98,3 +98,13 @@ FROM
         )
     ) AS "t2"
 ```
+
+JSON表各主流数据库最新版本实测支持程度如下：
+
+| 数据库 | JSON_TABLE 支持 |
+|--------|-----------------|
+| PostgreSQL | ✅ |
+| MySQL | ✅ |
+| Oracle | ✅ |
+| SQLServer | ❌ |
+| SQLite | ❌ |

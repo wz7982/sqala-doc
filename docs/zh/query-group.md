@@ -157,8 +157,8 @@ FROM
     "person" AS "t1"
 GROUP BY
     CUBE(
-        CASE WHEN "t1"."age" <= 30 THEN '青少年' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN '中年' ELSE '老年' END, 
-        "t1"."nation", 
+        CASE WHEN "t1"."age" <= 30 THEN '青少年' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN '中年' ELSE '老年' END,
+        "t1"."nation",
         "t1"."gender"
     )
 ```
@@ -230,8 +230,8 @@ FROM
     "person" AS "t1"
 GROUP BY
     CUBE(
-        CASE WHEN CASE WHEN "t1"."age" <= 30 THEN '青少年' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN '中年' ELSE '老年' END, 
-        "t1"."nation", 
+        CASE WHEN CASE WHEN "t1"."age" <= 30 THEN '青少年' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN '中年' ELSE '老年' END,
+        "t1"."nation",
         "t1"."gender"
     )
 ```
@@ -263,3 +263,13 @@ val q = query:
         .groupBySets(e => (a = e.a, b = e.b, c = e.c))(g => ((), g.a, (g.a, g.b), (g.a, g.b, g.c)))
         .map((g, e) => (g.a, g.b, g.c, count()))
 ```
+
+### 兼容性
+
+多维分组各主流数据库最新版本实测支持程度如下：
+
+| 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
+|------|------------|-------|--------|-----------|--------|
+| `groupByCube` | ✅ | ❌ | ✅ | ✅ | ❌ |
+| `groupByRollup` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `groupBySets` | ✅ | ❌ | ✅ | ✅ | ❌ |

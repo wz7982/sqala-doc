@@ -24,7 +24,6 @@ export default defineConfig({
           '/': {
             base: '/',
             items: [
-              // { text: '入门', link: 'introduction' },
               { text: '元数据配置', link: 'metadata' },
               { text: '数据库交互', link: 'database' },
               { text: '使用方法名创查询', link: 'query-by-name' },
@@ -56,7 +55,7 @@ export default defineConfig({
                   { text: '窗口函数', link: 'expr-window' },
                   { text: '时间操作', link: 'expr-time' },
                   { text: 'JSON操作', link: 'expr-json' },
-                  { text: '空间和向量操作', link: 'expr-spatial' },
+                  { text: '空间操作', link: 'expr-spatial' },
                   { text: '自定义表达式', link: 'expr-custom' },
                 ]
               },

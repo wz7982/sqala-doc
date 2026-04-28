@@ -116,3 +116,16 @@ EXCEPT ALL
         "t2"."id" <= 10
 )
 ```
+
+## 兼容性
+
+集合操作各主流数据库最新版本实测支持程度如下：
+
+| 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
+|------|------------|-------|--------|-----------|--------|
+| `union` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `unionAll` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `intersect` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `intersectAll` | ✅ | ✅ | ✅ | ❌ | ❌ |
+| `except` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `exceptAll` | ✅ | ✅ | ✅ | ❌ | ❌ |
