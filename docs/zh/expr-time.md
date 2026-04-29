@@ -27,7 +27,7 @@ sqala支持的时间单位有：`year`, `month`, `day`, `hour`, `minute`, `secon
 
 ## 抽取时间
 
-时间类型表达式配合`year`等扩展方法用于抽取时间字段中的一个时间单位，返回数值类型：
+时间类型表达式配合`year`等扩展方法用于抽取时间字段中的一个时间单位，对应SQL的`EXTRACT`表达式，返回数值类型：
 
 ```scala
 val q = query:
