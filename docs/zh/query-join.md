@@ -7,7 +7,7 @@
 sqala也像数据库一样，支持在`from`中传入多个表：
 
 ```scala
-val q = query:
+val q =
     from(Channel, Post, Comment)
         .filter((cl, p, ct) => cl.id == p.channelId && p.id == ct.postId)
         .take(10)
@@ -69,7 +69,7 @@ sqala支持如下的连接类型：
 两表连接形式为：
 
 ```scala
-val q = query:
+val q =
     from:
         Channel.join(Post).on((c, p) => c.id == p.channelId)
 ```
@@ -96,7 +96,7 @@ FROM
 三表连接形式为：
 
 ```scala
-val q = query:
+val q =
     from:
         Channel
         .join(Post).on((c, p) => c.id == p.channelId)
@@ -140,7 +140,7 @@ FROM
 因此如果将外连接的情况，比如：
 
 ```scala
-val q = query:
+val q =
     from:
         Channel
         .leftJoin(Post).on((c, p) => c.id == p.channelId)
@@ -150,7 +150,7 @@ val q = query:
 还机械地推导为`List[(Channel, Post, Comment)]`类型，在连接数据库反序列化的时候将不再安全，sqala在这种情况下会智能地将返回类型推导为：
 
 ```scala
-val q = query:
+val q =
     from:
         Channel
         .leftJoin(Post).on((c, p) => c.id == p.channelId)
@@ -163,7 +163,7 @@ val result = db.fetch(q)
 如果把第一个连接形式改为`rightJoin`，返回类型则自动推导为：
 
 ```scala
-val q = query:
+val q =
     from:
         Channel
         .rightJoin(Post).on((c, p) => c.id == p.channelId)
@@ -176,7 +176,7 @@ val result = db.fetch(q)
 如果我们引用可空侧的字段，比如：
 
 ```scala
-val q = query:
+val q =
     from:
         Channel
         .rightJoin(Post).on((c, p) => c.id == p.channelId)
@@ -187,7 +187,7 @@ val q = query:
 即使原本实体类中`Comment`的`id`字段为`Int`，是一个非空字段，但sqala仍会聪明地将返回类型推导为：
 
 ```scala
-val q = query:
+val q =
     from:
         Channel
         .rightJoin(Post).on((c, p) => c.id == p.channelId)
@@ -201,7 +201,7 @@ val result = db.fetch(q)
 但是如果原本字段本身就是`Option`可空字段，sqala也不会多此一举，产生诸如`Option[Option[T]]`的类型：
 
 ```scala
-val q = query:
+val q =
     from:
         Channel
         .rightJoin(Post).on((c, p) => c.id == p.channelId)
@@ -219,7 +219,7 @@ sqala这样的推导策略在尽力简化返回类型的同时，保持类型安
 sqala跟SQL一样，支持灵活调整连接顺序，而不是只支持A先连接B再连接C这样的操作：
 
 ```scala
-val q = query:
+val q =
     from:
         Channel.join(
             Post.leftJoin(Comment).on((p, c) => p.id == c.postId)
@@ -265,7 +265,7 @@ FROM
 `LATERAL`是SQL中一个强大的功能，其可以在`FROM`的表中引用前一个表的字段，为每行数据产生一个新的关联结果集，比如我们需要处理这样一个需求：“分别统计每个频道里点赞数前2的帖子，并汇总到一个列表中”，就可以使用`LATERAL`功能，sqala也为此类需求带来了开箱即用的工具：
 
 ```scala
-val q = query:
+val q =
     from:
         Channel.joinLateral(c =>
             from(Post)

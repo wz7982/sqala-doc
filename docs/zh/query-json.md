@@ -5,7 +5,7 @@
 `jsonTable`方法用于生成一个JSON表，第一个参数是JSON数据，第二个参数是基础的JSON PATH，第三个参数是列定义：
 
 ```scala
-val q = query:
+val q =
     from:
         jsonTable(
             """{"a": 1, "obj": {"b": "abc", "c": 2}}""",
@@ -58,7 +58,7 @@ val result = db.fetch(q)
 ```scala
 case class Entity(json: Json)
 
-val q = query:
+val q =
     from:
         Entity.crossJoinLateral(e =>
             jsonTable(

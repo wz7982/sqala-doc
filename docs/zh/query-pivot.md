@@ -9,7 +9,7 @@ case class City(country: String, name: String, year: Int, population: Int)
 我们可以这样写行转列查询：
 
 ```scala
-val q = query:
+val q =
     from(City).map: c =>
         sum(`if` (c.country == "CN") `then` c.population `else` 0)
 ```
@@ -17,7 +17,7 @@ val q = query:
 但当统计的维度、度量多起来的时候，这样的查询会十分繁琐，因此sqala支持透视表功能，我们可以简化透视表查询编写难度：
 
 ```scala
-val q = query:
+val q =
     from:
         City.pivot(c =>
             c.agg(sum = sum(c.population), count = count())
@@ -90,7 +90,7 @@ val result = db.fetch(1)
 我们可以直接用新生成的字段名在后续查询中使用：
 
 ```scala
-val q = query:
+val q =
     from:
         City.pivot(c =>
             c.agg(sum = sum(c.population), count = count())
@@ -114,7 +114,7 @@ for r <- result do
 透视表支持分组操作，参数依旧是命名元组：
 
 ```scala
-val q = query:
+val q =
     from:
         City.pivot(c =>
             c

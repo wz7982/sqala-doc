@@ -14,7 +14,7 @@ sqala对以上四种子查询均进行了支持。
 一个投影到**命名元组**的查询，在sqala里可以作为子查询使用：
 
 ```scala
-val q = query:
+val q =
     from:
         from(User).map(u => (col1 = u.id, col2 = u.name))
 ```
@@ -22,7 +22,7 @@ val q = query:
 表子查询必须投影到元组是因为，sqala会自动从命名元组中抽取信息，并为子查询生成字段，我们可以在后续子句中使用：
 
 ```scala
-val q = query:
+val q =
     from:
         from(User).map(u => (col1 = u.id, col2 = u.name))
     .filter: q =>
@@ -57,7 +57,7 @@ sqala也会自动管理子查询的表别名和列别名，您无需为此浪费
 比如我们需要统计“点赞数比同频道帖子的平均点赞数更高的帖子”，则可以：
 
 ```scala
-val q = query:
+val q =
     from(Post).filter: p =>
         p.likeCount >
             from(Post)
@@ -93,7 +93,7 @@ WHERE
 sqala支持多字段参与比较，因此，我们也可以方便地统计“点赞数和浏览量都比同频道帖子的平均点赞数和浏览数更高的帖子”，可以：
 
 ```scala
-val q = query:
+val q =
     from(Post).filter: p =>
         (p.likeCount, p.viewCount) >
             from(Post)
@@ -134,7 +134,7 @@ WHERE
 `EXISTS`子查询用于检测存在性，但不关心`EXISTS`中的实际数据，比如我们统计“同名的用户”：
 
 ```scala
-val q = query:
+val q =
     from(User).filter: u =>
         exists(from(User).filter(uu => uu.name == u.name && uu.id != u.id))
     .map(u => u.name)
@@ -164,7 +164,7 @@ WHERE
 `IN`子查询用于查找子查询中数据包含外侧表对应字段数据的条目，比如我们统计“有评论的帖子”：
 
 ```scala
-val q = query:
+val q =
     from(Post).filter: p =>
         p.id.in(
             from(Comment).map(c => c.postId)
@@ -199,7 +199,7 @@ WHERE
 SQL中`ANY`或`SOME`子查询的语义为，只要子查询中的**存在任意一条**数据与外侧类匹配，则表示匹配成功，上面的`IN`子查询也可以写成：
 
 ```scala
-val q = query:
+val q =
     from(Post).filter: p =>
         p.id == any(
             from(Comment).map(c => c.postId)
@@ -234,7 +234,7 @@ WHERE
 SQL中`ALL`或`SOME`子查询的语义为，只要子查询中的**所有**数据都与外侧类匹配，才表示匹配成功，`<> ALL`与`NOT IN`子查询等价：
 
 ```scala
-val q = query:
+val q =
     from(Post).filter: p =>
         p.id != all(
             from(Comment).map(c => c.postId)
@@ -280,7 +280,7 @@ WHERE
 返回一行一列的子查询可以在`map`/`select`中使用，比如我们查询“一个用户的ID和他发的任意一个帖子标题”：
 
 ```scala
-val q = query:
+val q =
     from(User).map: u =>
         (
             u.id,

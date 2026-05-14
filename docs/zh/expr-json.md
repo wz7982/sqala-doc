@@ -7,7 +7,7 @@ sqala支持SQL标准的JSON操作，但目前没有支持PostgreSQL和MySQL的`-
 `isJson`方法用于判断字段是否为有效的JSON格式：
 
 ```scala
-val q = query:
+val q =
     from(Post).filter(p => p.content.isJson)
 ```
 
@@ -16,7 +16,7 @@ val q = query:
 `json`方法用于将字符串类型表达式转换为JSON表达式：
 
 ```scala
-val q = query:
+val q =
     from(Post).map(p => json(p.content))
 ```
 
@@ -25,7 +25,7 @@ val q = query:
 `jsonValue`方法用于提取一个JSON PATH对应的表达式，并转为字符串类型，类似于PostgreSQL的`->>`运算符：
 
 ```scala
-val q = query:
+val q =
     from(Post).map(p => jsonValue(p.content, "$.a"))
 ```
 
@@ -34,7 +34,7 @@ val q = query:
 `jsonQuery`方法用于提取一个JSON PATH对应的表达式，并转为JSON类型，类似与PostgreSQL的`->`运算符：
 
 ```scala
-val q = query:
+val q =
     from(Post).map(p => jsonQuery(p.content, "$.a"))
 ```
 
@@ -43,7 +43,7 @@ val q = query:
 `jsonExists`方法用于检测JSON PATH是否存在：
 
 ```scala
-val q = query:
+val q =
     from(Post).filter(p => jsonExists(p.content, "$.a"))
 ```
 
@@ -52,7 +52,7 @@ val q = query:
 `jsonObject`用于构建一个JSON对象：
 
 ```scala
-val q = query:
+val q =
     from(Post).map(p => jsonObject("id" value p.id, "title" value p.title))
 ```
 
@@ -61,7 +61,7 @@ val q = query:
 `jsonArray`用于构建一个JSON数组：
 
 ```scala
-val q = query:
+val q =
     from(Post).map(p => jsonArray(p.id, p.title))
 ```
 
@@ -70,7 +70,7 @@ val q = query:
 `jsonObjectAgg`用于将数据聚合成JSON对象：
 
 ```scala
-val q = query:
+val q =
     from(Post).map(p => jsonObjectAgg(p.id, p.title))
 ```
 
@@ -79,7 +79,7 @@ val q = query:
 `jsonArrayAgg`用于将数据聚合成JSON数组：
 
 ```scala
-val q = query:
+val q =
     from(Post).map(p => jsonArrayAgg(p.title))
 ```
 

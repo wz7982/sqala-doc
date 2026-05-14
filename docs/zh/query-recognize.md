@@ -15,7 +15,7 @@ case class StockPrice(
 数据表的`matchRecognize`方法用于创建模式识别：
 
 ```scala
-val q = query:
+val q =
     from:
         StockPrice.matchRecognize: s =>
             // 分组和排序，类似窗口函数

@@ -19,7 +19,7 @@ val friendGraph = createGraph(name = "friend_graph")(
 然后使用`graphTable`创建图查询：
 
 ```scala
-val q = query:
+val q =
     from:
         graphTable(friendGraph)(g =>
             g.`match`:

@@ -7,7 +7,7 @@ sqala提供了`over`方法，用于创建窗口，其参数为窗口的分组规
 使用`partitionBy`方法创建窗口的分组规则，并配合`over`使用：
 
 ```scala
-val q = query:
+val q =
     from(Post)
         .map(p => sum(p.likeCount).over(partitionBy(p.authorId)))
 ```
@@ -15,7 +15,7 @@ val q = query:
 `partitionBy`之后可以使用`orderBy`方法创建窗口的排序规则：
 
 ```scala
-val q = query:
+val q =
     from(Post)
         .map(p => sum(p.likeCount).over(partitionBy(p.authorId).orderBy(p.id.desc)))
 ```
@@ -23,7 +23,7 @@ val q = query:
 `over`中也可以没有`partitionBy`：
 
 ```scala
-val q = query:
+val q =
     from(Post)
         .map(p => sum(p.likeCount).over(orderBy(p.id.desc)))
 ```
@@ -31,7 +31,7 @@ val q = query:
 `over`中也支持窗口函数框架，`range`、`rows`、`groups`参数是单个边界信息，`rangeBetween`、`rowsBetween`、`groupsBetween`参数是两个边界信息：
 
 ```scala
-val q = query:
+val q =
     from(Post).map: p =>
         sum(p.likeCount)
             .over(
@@ -44,7 +44,7 @@ val q = query:
 或
 
 ```scala
-val q = query:
+val q =
     from(Post).map: p =>
         sum(p.likeCount)
             .over(
@@ -59,7 +59,7 @@ val q = query:
 我们可以使用`excludeCurrentRow`、`excludeTies`、`excludeGroup`排除组间特定行：
 
 ```scala
-val q = query:
+val q =
     from(Post).map: p =>
         sum(p.likeCount)
             .over(

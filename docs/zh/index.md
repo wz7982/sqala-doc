@@ -9,7 +9,7 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
     ```scala
     case class User(id: Int, name: String)
 
-    val q = query:
+    val q =
         from(User)
             .filter(u => u.id == 1)
             .map(u => u.name)
@@ -21,7 +21,7 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
 2. **使用Scala3新特性命名元组管理查询**：无需为投影、关联结果预先创建DTO，也无需`Map[String, Any]`，使用`.`调用返回字段且类型安全：
 
     ```scala
-    val q = query:
+    val q =
         from(User).map(u => (id = u.id))
 
     // 返回类型为：List[(id: Int)]
@@ -48,17 +48,21 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
 5. **极致的类型安全**：sqala使用类型系统建模SQL语义，因此sqala的类型检查不仅可以拦截诸如“字段不存在”，“比较运算符两侧类型不兼容”等简单的错误，还可以拦截更多语义错误：
 
     ```scala
-    val q1 = query:
+    val q1 =
         // 编译错误：WHERE子句不能包含聚合函数
         from(A).filter(a => a.x > count())
 
-    val q2 = query:
+    val q2 =
         // 编译错误：a.x需要在分组中，或是在聚合函数中出现
         from(A).map(a => (a.x, count()))
 
-    val q3 = query:
+    val q3 =
         // 编译错误：作为表达式的子查询返回多行数据
         from(A).map(a => from(A).map(_.a))
+
+    val q4 =
+        // 编译错误：WHERE子句中的子查询聚合了外层列
+        from(A).filter(a => a.y == from(A).map(aa => count(a.x)))
 
     // 等等
     ```
