@@ -41,10 +41,9 @@ case class Demo(
 db.insert(Demo(0L, "sqala", "Scala's sql lib"))
 
 val result = db.find:
-    query:
-        from(Demo)
-            .filter(_.key == "sqala")
-            .map(d => (key = d.key, value = d.value))
+    from(Demo)
+        .filter(_.key == "sqala")
+        .map(d => (key = d.key, value = d.value))
 
 println(result)
 ```

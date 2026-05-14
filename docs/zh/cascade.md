@@ -60,7 +60,7 @@ case class CommentVO(
 这样，我们就可以通过`toView`方法将平铺结构转换成级联结构：
 
 ```scala
-val q = query:
+val q =
     from:
         Channel
             .leftJoin(Post).on((c, p) => c.id == p.channelId)

@@ -183,7 +183,7 @@ val result: List[Entity] = db.fetchByPrimaryKeys[Entity](keys)
 ```scala
 import sqala.static.dsl.*
 
-val q = query:
+val q =
     from(User)
 
 // 返回类型自动推导为List[User]
@@ -195,7 +195,7 @@ val result = db.fetch(q)
 ```scala
 import sqala.static.dsl.*
 
-val q = query:
+val q =
     from(User)
 
 val result: List[SomeType] = db.fetchTo[SomeType](q)
@@ -208,7 +208,7 @@ val result: List[SomeType] = db.fetchTo[SomeType](q)
 ```scala
 import sqala.static.dsl.*
 
-val q = query:
+val q =
     from(User)
 
 // 返回类型自动推导为Option[User]
@@ -228,7 +228,7 @@ val result = db.find(q)
 ```scala
 import sqala.static.dsl.*
 
-val q = query:
+val q =
     from(User)
 
 val result: Long = db.fetchCount(q)
@@ -241,7 +241,7 @@ val result: Long = db.fetchCount(q)
 ```scala
 import sqala.static.dsl.*
 
-val q = query:
+val q =
     from(User)
 
 val result: Boolean = db.fetchExists(q)
@@ -266,7 +266,7 @@ case class Page[T](
 ```scala
 import sqala.static.dsl.*
 
-val q = query:
+val q =
     from(User)
 
 val result = db.page(q, 10, 1)
@@ -277,7 +277,7 @@ val result = db.page(q, 10, 1)
 ```scala
 import sqala.static.dsl.*
 
-val q = query:
+val q =
     from(User)
 
 val result = db.page(q, pageSize, pageNo, pageNo == 1)
@@ -298,7 +298,7 @@ val result: Int = db.execute(...)
 ```scala
 import sqala.static.dsl.*
 
-val q = query:
+val q =
     from(User)
 
 db.cursorFetch(q, 100): c =>
@@ -323,7 +323,7 @@ case class Cursor[T](
 ```scala
 import sqala.static.dsl.*
 
-val q = query:
+val q =
     from(User)
 
 val sql = db.showSql(q)

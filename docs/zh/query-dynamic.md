@@ -48,17 +48,20 @@ val q = query:
 ```scala
 val list = List("a", "b", "c")
 
-val q = query:
+val q =
     from(User).filter(u => list.map(i => u.name.contains(i)).reduce((x, y) => x || y))
 ```
 
 ## 封装共用操作
 
-由于sqala的各种操作实际上都是产生一个对象，因此我们可以很容易地将其封装在方法内，但请注意，这样的封装方法需要`(using QueryContext)`：
+由于sqala的各种操作实际上都是产生一个对象，因此我们可以很容易地将其封装在方法内，但请注意，这样的封装方法需要`(using QueryContext[L])`：
 
 ```scala
-def joinTable(using QueryContext) = Post.join(Comment).on((p, c) => p.id == c.postId)
+// L参数是sqala内部处理使用的，表示查询所在层级
+def joinTable[L <: Int](using QueryContext[L]) = 
+    Post.join(Comment).on((p, c) => p.id == c.postId)
 
+// 使用query方法提供查询构建上下文
 val q1 = query:
     from(joinTable).filter((p, _) => p.id == 1)
 

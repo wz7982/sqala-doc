@@ -401,7 +401,7 @@ sqala无需像其他查询库那样额外定义一个表结构对象，在创建
 ```scala
 import sqala.static.dsl.*
 
-val q = query:
+val q =
     from(User).filter(d => d.id == 1)
 ```
 
@@ -459,7 +459,7 @@ case class Post(
 ```scala
 import sqala.static.dsl.*
 
-val q = query:
+val q =
     from(Post).filter(p => p.state == DataState.Active)
 ```
 
@@ -535,12 +535,12 @@ sqala支持一个实体类中有多个`primaryKey`字段，但只支持一个`au
 
 ## 自定义名称
 
-如果实体类和数据库表不符合驼峰风格字段名映射到蛇形风格规则的话，可以使用`entityTable`和`column`注解手动管理名称：
+如果实体类和数据库表不符合驼峰风格字段名映射到蛇形风格规则的话，可以使用`table`和`column`注解手动管理名称：
 
 ```scala
 import sqala.static.metadata.*
 
-@entityTable("T_SOME_TABLE")
+@table("T_SOME_TABLE")
 case class SomeTable(
     @autoInc @column("ID") id: Int
 )

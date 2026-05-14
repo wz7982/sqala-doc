@@ -7,14 +7,15 @@
 `createFunction`方法用于创建SQL函数，参数是函数名和参数列表`List[Expr[?, ?]]`，我们以MySQL的`LEFT`函数为例：
 
 ```scala
-def left(x: Expr[String, ?], n: Int)(using QueryContext) =
-    createFunction("LEFT", x :: n.asExpr :: Nil)
+// L参数是sqala内部处理使用的，表示查询所在层级
+def left[L <: Int](x: Expr[String, ?], n: Int)(using QueryContext[L]) =
+    createFunction[Option[String], L]("LEFT", x :: n.asExpr :: Nil)
 ```
 
 我们就可以在查询中使用了：
 
 ```scala
-val q = query:
+val q =
     from(Post)
         .map(p => left(p.title, 10))
 ```
@@ -26,15 +27,16 @@ sqala支持更细致的自定义，但需要对SQL语法树结构有一定程度
 `createBinaryExpr`用于自定义SQL二元运算符，我们以PostgreSQL的`->>`为例：
 
 ```scala
-extension (x: Expr[Json, ?])(using QueryContext)
+// L参数是sqala内部处理使用的，表示查询所在层级
+extension [L <: Int](x: Expr[Json, ?])(using QueryContext[L])
     def ->>(k: String) =
-        createBinaryExpr(x, "->>", k.asExpr)
+        createBinaryExpr[Boolean, L](x, "->>", k.asExpr)
 ```
 
 我们就可以在查询中使用了：
 
 ```scala
-val q = query:
+val q =
     from(Post)
         .map(p => jsonObject("id" value p.id) ->> "id")
 ```

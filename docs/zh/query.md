@@ -21,6 +21,13 @@ val q = query:
     from(User)
 ```
 
+`from`方法也会提供查询上下文，所以`query`通常可以省略（显式调用`query`可以在复杂查询构建中标明查询作用域）。
+
+```scala
+val q =
+    from(User)
+```
+
 sqala会自动生成表别名和列别名，避免冲突，并自动为标识符添加对应数据库的引号，避免字段名等信息与数据库关键字冲突等恼人的情况。并且，sqala会自动格式化生成的查询语句，方便调试。
 
 生成的SQL为：
@@ -44,33 +51,12 @@ FROM
 | Oracle     | `""`        |
 | SQLServer  | `[]`        |
 
-## 动态表名
-
-在某些业务场景中，可能有一些结构相同，但只有表名不同的表，sqala支持在创建查询时使用`withName`方法更换表名：
-
-```scala
-val q = query:
-    from(User.withName("user_1"))
-```
-
-生成的SQL为：
-
-```sql
-SELECT
-    "t1"."id" AS "c1",
-    "t1"."name" AS "c2"
-FROM
-    "user_1" AS "t1"
-```
-
-`withName`不会影响返回结果类型。
-
 ## 排除列
 
 在某些业务场景中，可能有一些表字段（通常是长文本类字段）经常不参与查询，但同时表字段较多，此时如果使用`.map`显式写出需要查询的字段，会比较繁琐，这种场景下可以使用`exclude`方法，来排除某些字段：
 
 ```scala
-val q = query:
+val q =
     from(Post.exclude[("title", "createTime")])
 ```
 
@@ -101,7 +87,7 @@ FROM
 ```scala
 val id = 4
 
-val q = query:
+val q =
     from(User).filter(u => u.id > id)
 ```
 
@@ -126,7 +112,7 @@ sqala会自动处理传入字符串，**避免SQL注入**。
 ```scala
 val id = 4
 
-val q = query:
+val q =
     from(User).filter(u => u.id > id).filter(u => u.name.startsWith("小"))
 ```
 
@@ -147,7 +133,7 @@ WHERE
 ```scala
 val id = 4
 
-val q = query:
+val q =
     from(User).filter(u => u.id > id && u.name.startsWith("小"))
 ```
 
@@ -156,7 +142,7 @@ val q = query:
 ```scala
 val name: Option[String] = None
 
-val q = query:
+val q =
     from(User).filterIf(name.isDefined)(u => u.name == name)
 ```
 
@@ -167,7 +153,7 @@ val q = query:
 如果过滤条件中含有聚合函数或窗口函数等不能放在`WHERE`子句中的表达式，sqala会在此情况下返回编译错误：
 
 ```scala
-val q = query:
+val q =
     // 编译错误
     from(User).filter(u => u.id > count())
 ```
@@ -179,7 +165,7 @@ val q = query:
 ### 投影到表达式
 
 ```scala
-val q = query:
+val q =
     from(User).map(u => u.name)
 ```
 
@@ -197,7 +183,7 @@ FROM
 sqala允许像数据库一样，可空类型和非空类型混合运算，数值类型混合运算等，因此以下写法：
 
 ```scala
-val q = query:
+val q =
     from(User).map(u => u.id + Option.empty[Long])
 ```
 
@@ -215,7 +201,7 @@ FROM
 ### 投影到元组
 
 ```scala
-val q = query:
+val q =
     from(User).map(u => (u.id, u.name))
 ```
 
@@ -236,7 +222,7 @@ FROM
 sqala充分利用了Scala 3.7版本的新特性命名元组，在较复杂的场景下（比如关联结果和只需要部分字段的情况），您可以直接使用命名元组管理投影，而无需预先创建数据接收DTO，避免大量的样板代码，并可以直接使用字段名来类型安全地引用返回字段，良好的字段命名也可以充当代码中的自解释文档：
 
 ```scala
-val q = query:
+val q =
     from(User).map(u => (name = u.name))
 ```
 
@@ -254,7 +240,7 @@ for r <- result do
 如果投影中同时含有列和聚合函数等不兼容的表达式，sqala将会返回编译错误：
 
 ```scala
-val q = query:
+val q =
     // 编译错误
     from(User).map(u => (name = u.name, count = count()))
 ```
@@ -264,14 +250,14 @@ val q = query:
 sqala支持将只使用了`filter`和`map`操作的简单查询写成`for`推导式，您只需要绑定一次查询参数名，以提高可读性：
 
 ```scala
-val q = query:
+val q =
     from(User).filter(u => u.id > 1).map(u => u.name)
 ```
 
 可以简写成：
 
 ```scala
-val q = query:
+val q =
     for u <- from(User) if u.id > 1 yield u.name
 ```
 
@@ -280,7 +266,7 @@ val q = query:
 `take`/`limit`和`drop`/`offset`对应SQL的`LIMIT`、`OFFSET`等操作，并自动进行了方言适配。
 
 ```scala
-val q = query:
+val q =
     from(User).drop(2).take(3)
 ```
 
@@ -340,7 +326,7 @@ OFFSET 2 ROWS FETCH NEXT 3 ROWS ONLY
 `mapDistinct`/`selectDistinct`用于统计去重后的结果集，由于sqala需要在需要`ALL`、`DISTINCT`等量词的情况下统一风格，因此没有采用类似Scala集合库的`.map.distinct`调用形式：
 
 ```scala
-val q = query:
+val q =
     from(User).mapDistinct(u => u.name)
 ```
 
@@ -360,7 +346,7 @@ FROM
 [表达式](./expr.md)配合排序规则作为`sortBy`/`orderBy`的参数，如无显式指定排序规则，sqala会将其处理成`ASC`：
 
 ```scala
-val q = query:
+val q =
     from(User).sortBy(u => (u.name, u.id.desc))
 ```
 
@@ -382,7 +368,7 @@ ORDER BY
 多个`sortBy`/`orderBy`方法调用会依次拼接，因此以上写法等价于：
 
 ```scala
-val q = query:
+val q =
     from(User).sortBy(u => u.name).sortBy(u => u.id.desc)
 ```
 
@@ -402,7 +388,7 @@ sqala支持的排序规则和各主流数据库的支持程度如下：
 我们可以在调用`map`投影后创建排序：
 
 ```scala
-val q = query:
+val q =
     from(User).map(u => u.name).sortBy(u => u.id.desc)
 ```
 
@@ -422,7 +408,7 @@ ORDER BY
 所以sqala在`mapDistinct`后的`sortBy`方法中，Lambda参数类型实际代表当前投影到的类型：
 
 ```scala
-val q = query:
+val q =
     from(User)
         .mapDistinct(u => (mappedId = u.id, mappedName = u.name))
         .sortBy(u => u.mappedName.desc)
@@ -435,7 +421,7 @@ sqala支持使用内存中的集合创建查询，后续作为子查询、和连
 ```scala
 val users = List(User(1, "小黑"), User(2, "小白"))
 
-val q = query:
+val q =
     from(users)
 ```
 
@@ -466,7 +452,7 @@ FROM
 sqala支持`forUpdate`等方法给查询加锁，对应数据库的相应加锁子句：
 
 ```scala
-val q = query:
+val q =
     from(User).forShareSkipLocked
 ```
 
@@ -480,24 +466,3 @@ val q = query:
 | `forShare` | `FOR SHARE` | `FOR SHARE` | ❌ | ❌ | ❌ |
 | `forShareNoWait` | `FOR SHARE NOWAIT` | `FOR SHARE NOWAIT` | ❌ | ❌ | ❌ |
 | `forShareSkipLocked` | `FOR SHARE SKIP LOCKED` | `FOR SHARE SKIP LOCKED` | ❌ | ❌ | ❌ |
-
-## 自定义查询量词
-
-某些数据库方言支持除了SQL标准的`ALL`或`DISTINCT`以外查询量词，比如PostgreSQL的`SELECT DISTINCT ON (...)`，而sqala的功能是基于标准SQL创建，所以不支持这些方言量词，但我们可以通过`rawQuantifier`字符串插值器配合`mapQuantified`方法自定义查询：
-
-```scala
-val q = query:
-    from(User)
-        .mapQuantified(u => rawQuantifier"DISTINCT ON ${(u.id, u.name)}")(u => u.name)
-```
-
-生成的SQL为：
-
-```sql
-SELECT DISTINCT ON ("t1"."id", "t1"."name")
-    "t1"."name" AS "c1"
-FROM
-    "user" AS "t1"
-```
-
-量词插值器支持值、[表达式](./expr.md)和他们组成的元组，字符串中无需手动拼接引号，圆括号等符号，sqala会自动处理并进行安全转义。
