@@ -3,6 +3,8 @@
 sqala支持使用原生SQL，需要使用`sql`插值器：
 
 ```scala
+import sqala.dynamic.native.sql
+
 val x = 1
 val y = "abc"
 
@@ -12,6 +14,8 @@ val nativeSql = sql"select * from t where x = $x and y = $y"
 `sql`插值器支持`+`运算，方便进行条件拼接：
 
 ```scala
+import sqala.dynamic.native.sql
+
 val x = 1
 val y = "abc"
 

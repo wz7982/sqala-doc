@@ -37,7 +37,7 @@ export default defineConfig({
                   { text: '分组查询', link: 'query-group' },
                   { text: '集合操作', link: 'query-set' },
                   { text: '子查询', link: 'query-sub' },
-                  { text: '动态构建查询', link: 'query-dynamic' },
+                  { text: '条件构建查询', link: 'query-cond' },
                   { text: '递归查询', link: 'query-recursive' },
                   { text: '透视表', link: 'query-pivot' },
                   { text: 'JSON表', link: 'query-json' },
@@ -60,6 +60,7 @@ export default defineConfig({
                 ]
               },
               { text: '增删改DSL', link: 'update' },
+              { text: '动态查询', link: 'dynamic' },
               { text: '原生SQL', link: 'native' },
             ],
           },
