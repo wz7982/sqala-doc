@@ -60,6 +60,8 @@ case class CommentVO(
 这样，我们就可以通过`toView`方法将平铺结构转换成级联结构：
 
 ```scala
+import sqala.metadata.toView
+
 val q =
     from:
         Channel

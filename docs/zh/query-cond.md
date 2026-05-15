@@ -1,6 +1,6 @@
-# 动态构建查询
+# 条件构建查询
 
-sqala提供了静态且类型安全的DSL用于构建查询，但也支持在一定程度上构建动态查询，以下是一些常用用例。
+sqala提供了静态且类型安全的DSL用于构建查询，但也支持在一定程度上使用不同条件构建查询，以下是一些常用用例。
 
 ## 动态排序
 
@@ -58,7 +58,7 @@ val q =
 
 ```scala
 // L参数是sqala内部处理使用的，表示查询所在层级
-def joinTable[L <: Int](using QueryContext[L]) = 
+def joinTable[L <: Int](using QueryContext[L]) =
     Post.join(Comment).on((p, c) => p.id == c.postId)
 
 // 使用query方法提供查询构建上下文
