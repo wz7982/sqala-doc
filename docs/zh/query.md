@@ -51,6 +51,17 @@ FROM
 | Oracle     | `""`        |
 | SQLServer  | `[]`        |
 
+## 生成SQL
+
+`sql`方法用于生成SQL字符串，参数是方言和转义模式（参考[数据库交互](./database.md)）:
+
+```scala
+val q =
+    from(User)
+
+val sql = q.sql(PostgresqlDialect, true)
+```
+
 ## 排除列
 
 在某些业务场景中，可能有一些表字段（通常是长文本类字段）经常不参与查询，但同时表字段较多，此时如果使用`.map`显式写出需要查询的字段，会比较繁琐，这种场景下可以使用`exclude`方法，来排除某些字段：
