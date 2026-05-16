@@ -132,7 +132,7 @@ val q =
     from(Person)
         .groupByCube: p =>
             (
-                age = `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
+                age = caseWhen(p.age <= 30)("青少年").when(p.age <= 60 && p.age > 30)("中年").otherwise("老年"),
                 nation = p.nation,
                 gender = p.gender
             )
@@ -174,7 +174,7 @@ val q =
     from(Person)
         .groupByCube: p =>
             (
-                age = `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
+                age = caseWhen(p.age <= 30)("青少年").when(p.age <= 60 && p.age > 30)("中年").otherwise("老年"),
                 nation = p.nation,
                 gender = p.gender
             )
@@ -199,7 +199,7 @@ val q =
     from(Person)
         .groupByCube: p =>
             (
-                age = `if` (p.age <= 30) `then` "青少年" `else if` (p.age <= 60 && p.age > 30) `then` "中年" `else` "老年",
+                age = caseWhen(p.age <= 30)("青少年").when(p.age <= 60 && p.age > 30)("中年").otherwise("老年"),
                 nation = p.nation,
                 gender = p.gender
             )

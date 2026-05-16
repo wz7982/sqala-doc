@@ -22,19 +22,19 @@ val friendGraph = createGraph(name = "friend_graph")(
 val q =
     from:
         graphTable(friendGraph)(g =>
-            g.`match`:
+            g.`matching`:
                 // is方法用于匹配标签类型，g的字段是我们在createGraph中定义的点和边的字段
                 // 为了不与Scala关键字<-和标准库方法->冲突，以及避免优先级问题，sqala的图匹配符号使用||括起来
                 // 支持的连接符有-、~、<-、->、<~、~>
 
                 // 边可以有自己的过滤条件和量词
-                // 量词支持+ * ? 
-                // least(n) 对应{n,} 
-                // most(n) 对应{,n} 
-                // between(m, n) 对应{m, n} 
+                // 量词支持+ * ?
+                // least(n) 对应{n,}
+                // most(n) 对应{,n}
+                // between(m, n) 对应{m, n}
                 // at(n) 对应{n}
                 ("a" is g.person) |-| ("f" is g.friends.filter(f => f.personAId > 1).between(1, 10)) |->| ("b" is g.person)
-            // p的字段是`match`中使用字符串定义的标签名，sqala会自动生成对应的字段
+            // p的字段是`matching`中使用字符串定义的标签名，sqala会自动生成对应的字段
             .filter(p => p.a.id > 1)
             // 定义返回字段，使用命名元组
             .columns: p =>

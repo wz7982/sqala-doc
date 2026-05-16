@@ -11,7 +11,7 @@ case class City(country: String, name: String, year: Int, population: Int)
 ```scala
 val q =
     from(City).map: c =>
-        sum(`if` (c.country == "CN") `then` c.population `else` 0)
+        sum(caseWhen(c.country == "CN")(c.population).otherwise(0))
 ```
 
 但当统计的维度、度量多起来的时候，这样的查询会十分繁琐，因此sqala支持透视表功能，我们可以简化透视表查询编写难度：
@@ -21,14 +21,14 @@ val q =
     from:
         City.pivot(c =>
             c.agg(sum = sum(c.population), count = count())
-            .`for`(
+            .by(
                 c.country.within(cn = "CN", us = "US"),
                 c.year.within(`2024` = 2024, `2025` = 2025)
             )
         )
 ```
 
-`agg`用于指定聚合函数列表，参数是一个**命名元组**，`for`方法用于填写用于行转列的计算规则，参数是多个`within`调用，其参数也是**命名元组**。
+`agg`用于指定聚合函数列表，参数是一个**命名元组**，`by`方法用于填写用于行转列的计算规则，参数是多个`within`调用，其参数也是**命名元组**。
 
 `PIVOT`不是SQL标准功能，但sqala会将其生成符合标准的SQL，生成的SQL为：
 
@@ -94,7 +94,7 @@ val q =
     from:
         City.pivot(c =>
             c.agg(sum = sum(c.population), count = count())
-            .`for`(
+            .by(
                 c.country.within(cn = "CN", us = "US"),
                 c.year.within(`2024` = 2024, `2025` = 2025)
             )
@@ -120,7 +120,7 @@ val q =
             c
             .groupBy((country = c.country))
             .agg(sum = sum(c.population), count = count())
-            .`for`(
+            .by(
                 c.country.within(cn = "CN", us = "US"),
                 c.year.within(`2024` = 2024, `2025` = 2025)
             )

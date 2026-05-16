@@ -354,8 +354,8 @@ import sqala.jdbc.*
 
 try {
     val result = db.executeTransaction {
-        transaction.execute(...)
-        transaction.execute(...)
+        db.execute(...)
+        db.execute(...)
     }
     println(result)
 } catch {
@@ -363,18 +363,16 @@ try {
 }
 ```
 
-**需要注意的是，在事务方法体内不要使用`db`这样的显式数据上下文，而是用`transaction`对象来执行事务操作**。
-
 利用Scala3的上下文抽象机制，我们可以方便地将事务上下文在不同方法之间共享（需要使用事务的方法上标记`using JdbcTransactionContext`），也就是编译期类型安全的**依赖注入**：
 
 ```scala
 import sqala.jdbc.*
 
 def insert(row: User)(using JdbcTransactionContext): Int =
-    transaction.insertAndReturn(row).head.toInt
+    db.insertAndReturn(row).head.toInt
 
 def delete(id: Int)(using JdbcTransactionContext): Int =
-    transaction.execute(delete[User].where(d => d.id == id))
+    db.execute(delete[User].where(d => d.id == id))
 
 def insertAndDelete(row: User)(using JdbcTransactionContext): Int =
     val id = insertDepartment(row)
@@ -408,8 +406,8 @@ import sqala.jdbc.*
 
 try {
     val result = db.executeTransactionWithIsolation(TransactionIsolation.ReadUncommitted) {
-        transaction.execute(...)
-        transaction.execute(...)
+        db.execute(...)
+        db.execute(...)
     }
     println(result)
 } catch {
