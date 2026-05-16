@@ -22,7 +22,7 @@ val friendGraph = createGraph(name = "friend_graph")(
 val q =
     from:
         graphTable(friendGraph)(g =>
-            g.`matching`:
+            g.matching:
                 // is方法用于匹配标签类型，g的字段是我们在createGraph中定义的点和边的字段
                 // 为了不与Scala关键字<-和标准库方法->冲突，以及避免优先级问题，sqala的图匹配符号使用||括起来
                 // 支持的连接符有-、~、<-、->、<~、~>
