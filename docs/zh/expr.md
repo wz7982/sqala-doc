@@ -253,11 +253,17 @@ val q =
 
 ## 条件表达式
 
-`if`/`then`/`else`等方法对应SQL的`CASE WHEN THEN ELSE END`表达式，由于这些都是Scala的关键字，因此需要使用反引号括起来，参数同样兼容`Expr`、值、子查询：
+`caseWhen`/`when`/`otherwise`等方法对应SQL的`CASE WHEN THEN ELSE END`表达式，参数同样兼容`Expr`、值、子查询：
 
 ```scala
 val q =
-    from(User).map(u => `if` (u.id == 1) `then` 1 `else if` (u.id == 2) `then` u.id `else` Option.empty[Int])
+    from(User).map(u => caseWhen(u.id == 1)(1).when(u.id == 2)(u.id).otherWise(Option.empty[Int]))
+```
+
+生成的SQL表达式为：
+
+```sql
+CASE WHEN "t1"."id" = 1 THEN 1 WHEN "t1"."id" = 2 THEN "t1"."id" ELSE CAST(NULL AS INTEGER)
 ```
 
 `coalesce`对应SQL的`COALESCE`表达式，用于返回参数中第一个非空值，但为了易用性，sqala也支持`ifNull`作为同义词：

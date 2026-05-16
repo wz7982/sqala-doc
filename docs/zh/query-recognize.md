@@ -37,21 +37,21 @@ val q =
             // 定义模式，SQL中使用空格连接两个模式，sqala使用~，匹配或使用|
             // permute(p1, p2, p3) 对应PERMUTE(p1, p2, p3)
             // exclusion(p) 对应{- p -}
-            // 量词支持+ * ? 
-            // least(n) 对应{n,} 
-            // most(n) 对应{,n} 
-            // between(m, n) 对应{m, n} 
+            // 量词支持+ * ?
+            // least(n) 对应{n,}
+            // most(n) 对应{,n}
+            // between(m, n) 对应{m, n}
             // at(n) 对应{n}
             .pattern(d => d.start ~ d.down.+ ~ d.bottom ~ d.up.+)
             // 支持afterMatchSkipToNextRow、afterMatchSkipPastLastRow、afterMatchSkipToFirst、afterMatchSkipToLast、afterMatchSkipTo(p)
             .afterMatchSkipTo(d => d.up)
             // 定义度量，即MATCH_RECOGNIZE表最后返回的字段，使用命名元组
             .measures: d =>
-                (   
+                (
                     startTime = d.start.tradeTime,
                     bottomTime = d.bottom.tradeTime,
                     // 支持RUNNING和FINAL获取模式
-                    endTime = `final`(last(d.up.tradeTime)),
+                    endTime = finalized(last(d.up.tradeTime)),
                     // 获取匹配到的编号使用matchNumber方法
                     matchNum = matchNumber(),
                     // 获取匹配到的标签名称使用classifier方法
