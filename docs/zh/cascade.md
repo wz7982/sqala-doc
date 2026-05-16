@@ -27,7 +27,7 @@ case class CommentVO(
 为了减少样板代码，sqala支持使用宏，通过注解生成将平铺结果查询到级联结构的代码，核心注解有两个：
 
 ```scala
-import sqala.static.metadata.*
+import sqala.metadata.*
 
 @view(prefix = "channel", key = "id")
 case class ChannelVO(

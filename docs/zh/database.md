@@ -70,74 +70,6 @@ class Service:
 
 配置好连接信息后，我们就可以使用sqala连接到数据库执行查询了。
 
-## 新增数据
-
-sqala支持直接使用实体对象生成数据库的`INSERT`语句，使用`db.insert`即可简单的插入操作：
-
-```scala
-val user = User(0, "小明")
-
-val result: Int = db.insert(user)
-```
-
-在实体类中配置了`autoInc`注解的字段不会在SQL语句中出现，所以对应字段的值可以随意填写。
-
-`db.insert`方法返回值为受影响行数。
-
-如果是一个实体集合，我们可以用`db.insertBatch`方法来批量写入：
-
-```scala
-val users = List(User(0, "小明"), User(0, "小刚"))
-
-val result: Int = db.insertBatch(users)
-```
-
-如果希望在插入后，拿到数据库生成的自增主键，我们可以使用`db.insertAndReturn`：
-
-```scala
-val user = User(0, "小明")
-
-val result: User = db.insertAndReturn(user)
-```
-
-`db.insertAndReturn`会在数据库执行插入数据成功后，将数据库返回的主键值绑定到一个**新的实体对象**上，而**不会**像一些Java查询库那样直接**原地修改**原来的实体对象。
-
-对于更复杂的新增数据需求，请参考[增删改DSL](./update.md)部分。
-
-## 更新数据
-
-sqala支持使用实体对象来**按主键**更新其他字段的值，请确保实体类上使用`primaryKey`或`autoInc`注解配置了主键字段，然后使用`db.update`方法更新数据：
-
-```scala
-val user = User(0, "小明")
-
-val result: Int = db.update(user)
-```
-
-`db.update`返回受影响行数。
-
-对于可空字段的不同处理方式，`db.update`支持一个额外的参数`skipNone`，默认为`false`，也就是说，sqala的默认策略是将`None`值映射为数据库的`NULL`更新，如果设置`skipNone`为`true`，则会在生成SQL时跳过值为`None`的字段：
-
-```scala
-val user = User(1, "小明")
-
-val result: Int = db.update(user, skipNone = true)
-```
-
-对于更复杂的更新数据需求，请参考[增删改DSL](./update.md)部分。
-
-## 新增或更新数据
-
-对于“按主键值决定新增还是更新数据”的需求，sqala使用`db.save`方法来解决：
-
-```scala
-val user = User(1, "小明")
-
-val result: Int = db.save(user)
-```
-
-此操作已经做了方言兼容，会在不同数据库中生成不同的命令。
-
 ## 按主键查询数据
 
 sqala支持直接使用主键查询数据，，请确保实体类上使用`primaryKey`或`autoInc`注解配置了主键字段，然后使用`db.findByPrimaryKey`方法查询数据：
@@ -281,6 +213,90 @@ val q =
     from(User)
 
 val result = db.page(q, pageSize, pageNo, pageNo == 1)
+```
+
+## 新增数据
+
+sqala支持直接使用实体对象生成数据库的`INSERT`语句，使用`db.insert`即可简单的插入操作：
+
+```scala
+val user = User(0, "小明")
+
+val result: Int = db.insert(user)
+```
+
+在实体类中配置了`autoInc`注解的字段不会在SQL语句中出现，所以对应字段的值可以随意填写。
+
+`db.insert`方法返回值为受影响行数。
+
+如果是一个实体集合，我们可以用`db.insertBatch`方法来批量写入：
+
+```scala
+val users = List(User(0, "小明"), User(0, "小刚"))
+
+val result: Int = db.insertBatch(users)
+```
+
+如果希望在插入后，拿到数据库生成的自增主键，我们可以使用`db.insertAndReturn`：
+
+```scala
+val user = User(0, "小明")
+
+val result: User = db.insertAndReturn(user)
+```
+
+`db.insertAndReturn`会在数据库执行插入数据成功后，将数据库返回的主键值绑定到一个**新的实体对象**上，而**不会**像一些Java查询库那样直接**原地修改**原来的实体对象。
+
+对于更复杂的新增数据需求，请参考[增删改DSL](./update.md)部分。
+
+## 更新数据
+
+sqala支持使用实体对象来**按主键**更新其他字段的值，请确保实体类上使用`primaryKey`或`autoInc`注解配置了主键字段，然后使用`db.update`方法更新数据：
+
+```scala
+val user = User(0, "小明")
+
+val result: Int = db.update(user)
+```
+
+`db.update`返回受影响行数。
+
+对于可空字段的不同处理方式，`db.update`支持一个额外的参数`skipNone`，默认为`false`，也就是说，sqala的默认策略是将`None`值映射为数据库的`NULL`更新，如果设置`skipNone`为`true`，则会在生成SQL时跳过值为`None`的字段：
+
+```scala
+val user = User(1, "小明")
+
+val result: Int = db.update(user, skipNone = true)
+```
+
+对于更复杂的更新数据需求，请参考[增删改DSL](./update.md)部分。
+
+## 新增或更新数据
+
+对于“按主键值决定新增还是更新数据”的需求，sqala使用`db.save`方法来解决：
+
+```scala
+val user = User(1, "小明")
+
+val result: Int = db.save(user)
+```
+
+此操作已经做了方言兼容，会在不同数据库中生成不同的命令。
+
+## 按主键删除数据
+
+sqala支持直接使用主键删除数据，，请确保实体类上使用`primaryKey`或`autoInc`注解配置了主键字段，然后使用`db.deleteByPrimary`方法查询数据：
+
+```scala
+val result: Int = db.deleteByPrimaryKey[User](1)
+```
+
+使用方法与`findByPrimaryKey`类似。
+
+也可以使用`db.deleteByPrimaryKeys`方法批量删除：
+
+```scala
+val result: Int = db.deleteByPrimaryKey[User](List(1, 2, 3))
 ```
 
 ## 执行语句
