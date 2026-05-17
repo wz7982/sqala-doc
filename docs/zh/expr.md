@@ -74,7 +74,7 @@ sqala支持以下的符号关系运算符：
 
 ```scala
 val q =
-    from(User).filter(u => u.id == "小黑")
+    from(User).filter(u => u.name == "小黑")
 ```
 
 由于sqala有强大的类型兼容性，因此运算符的右侧不仅可以是值，也可以是其他表达式或子查询，这种情况常用于连接条件中：
@@ -84,18 +84,36 @@ val q =
     from(User).filter(u => u.id == u.id)
 ```
 
+`==`等运算符不要求两侧类型一致，只需要在SQL标准中允许兼容：
+
+```scala
+val q =
+    from(User).filter(u => u.id == Option(1L))
+
+val q =
+    from(Post).filter(p => u.createTime > "2020-01-01 00:00:00")
+```
+
+但是如果两侧类型不兼容，sqala则会在编译期禁止：
+
+```scala
+val q =
+    // 编译错误
+    from(User).filter(u => u.id == "abc")
+```
+
 但由于Scala的限制，`==`和`!=`左侧如果不是`Expr`类型，则会产生编译错误，所以sqala提供了`===`和`<>`应对此类情况（其他运算符不受此影响）：
 
 ```scala
 val q =
-    from(User).filter(u => "小黑" === u.id)
+    from(User).filter(u => "小黑" === u.name)
 ```
 
 或是显式使用`asExpr`将值转为`Expr`类型：
 
 ```scala
 val q =
-    from(User).filter(u => "小黑".asExpr == u.id)
+    from(User).filter(u => "小黑".asExpr == u.name)
 ```
 
 ### IS NULL
@@ -104,7 +122,7 @@ val q =
 
 ```scala
 val q =
-    from(User).filter(u => u.id.isNull)
+    from(User).filter(u => u.name.isNull)
 ```
 
 ### IN
@@ -134,16 +152,15 @@ val q =
     from(User).filter(u => u.id.in(list))
 ```
 
-但当类型不符时：
+但当类型不符时，将会返回编译错误：
 
 ```scala
 val list: List[String] = List("a", "b", "c")
 
 val q =
+    // 编译错误
     from(User).filter(u => u.id.in(list))
 ```
-
-将会返回编译错误。
 
 ### LIKE
 
@@ -218,6 +235,11 @@ val q2 =
 val q3 =
     from(User).filter: u =>
         (u.id, u.name).in(from(User).map(uu => (uu.id, uu.name)))
+
+// 类型兼容的表达式、值、子查询可以在比较时任意混合
+val q4 =
+    from(User).filter: u =>
+        (u.id, u.name) === (Option(1L), from(User).map(uu => uu.id).take(1))
 ```
 
 ## 数值运算
