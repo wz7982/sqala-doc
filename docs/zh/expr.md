@@ -235,12 +235,17 @@ val q2 =
 val q3 =
     from(User).filter: u =>
         (u.id, u.name).in(from(User).map(uu => (uu.id, uu.name)))
+```
 
-// 类型兼容的表达式、值、子查询可以在比较时任意混合
+类型兼容的表达式、值、子查询可以在比较时任意混合：
+
+```scala
 val q4 =
     from(User).filter: u =>
         (u.id, u.name) === (Option(1L), from(User).map(uu => uu.name).take(1))
 ```
+
+在上面的例子中`u.id`和`u.name`的类型是`Expr[...]`，`Option(1L)`的类型是`Option[Long]`，子查询的类型是`Query[...]`，sqala通过统一的`trait AsExpr`为这些类型提供了兼容性保证，而传统编程语言中的“方法重载”，在此场景会组合数爆炸，因此无法实现这样符合直觉的调用形式。
 
 ## 数值运算
 
