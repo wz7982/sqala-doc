@@ -1,8 +1,10 @@
 # 动态查询
 
-在拖拽式报表平台等场景中，往往表名和列名都是动态的，而且经常需要生成复杂查询，在这种场景下，sqala提供的类型安全查询反而会成为阻碍，但使用字符串拼接方式又往往低效且容易出错，在这种场景下，sqala提供了一套动态查询构建器，动态构建器内部也沿用了sqala底层的SQL语法树等基础设施，因此也提供了SQL安全转义，且保证生成的SQL语法正确。
+在拖拽式报表平台等场景中，往往表名、列名、查询结构都是动态的，在编译期一无所知，而且经常需要生成带有多层子查询的甚至上千行的复杂查询，而传统的静态ORM和MyBatis为代表的XML模板无法胜任此场景的动态SQL构建，实际应用中我们往往需要：要么使用非常容易出错的字符串拼接；要么接入Calcite等重量级数据库内核前端。
 
-需要注意的是，动态查询构建器不使用[静态查询](./query.md)的集合高阶函数风格，此风格在动态查询构建场景并不适用。
+在这种场景下，sqala提供了一个全新的解决方案：为动态查询构建场景专门设计一套DSL，动态构建器减少了[静态查询](./query.md)场景的类型安全校验，但内部也沿用了sqala底层的SQL语法树等基础设施，因此也提供了SQL安全转义，且保证生成的SQL语法正确，调用形式既不像字符串拼接那样容易出错，也不像手动拼接语法树那样繁琐。
+
+需要注意的是，动态查询构建场景与[静态查询](./query.md)的场景完全不同，为了区分两种使用场景，sqala采用了完全不同的DSL风格，以更好的贴合使用场景，并且作为视觉区分。
 
 动态查询构建器可以从`import sqala.dynamic.dsl.*`导入。
 
@@ -51,6 +53,36 @@ val q =
     from(table("a")).select(column("a", "x").as("col1"))
 
 val sql = q.sql(PostgresqlDialect, true)
+```
+
+## 获取查询树
+
+在动态构建场景下，往往需要对生成的SQL进行一些优化或者转换工作，但这些工作是无法在SQL字符串层面展开的，此时我们可以使用`ast`方法来查看sqala生成的查询语法树，如果您有编译器和数据库内核相关领域知识，可以查看`sqala.ast`包的相关定义，就可以使用sqala生成的语法树进行查询优化或转换工作：
+
+```scala
+val q =
+    from(table("a")).select(column("a", "x").as("col1"))
+
+val queryTree: sqala.ast.statement.SqlQuery = q.ast
+```
+
+当然，表和表达式也支持`ast`方法：
+
+```scala
+val t = table("a")
+val tableTree: sqala.ast.table.SqlTable = t.ast
+
+val e = column("c") == value(1)
+val exprTree: sqala.ast.expr.SqlExpr = e.ast
+```
+
+在查询树转换完毕后，我们可以这样来生成SQL：
+
+```scala
+val printer = PostgresqlDialect.printer(standardEscapeStrings)
+// 或是printTable、printExpr等方法，您可以自行查看sqala.printer.SqlPrinter中的相关定义
+printer.printQuery(queryTree)
+val sql = printer.sql
 ```
 
 ## 过滤
