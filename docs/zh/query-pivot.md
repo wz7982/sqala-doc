@@ -68,6 +68,8 @@ FROM
 | SQLServer | ❌ |
 | SQLite | ✅ |
 
+如果sqala选择在MySQL等数据库中降级模拟为`SUM(CASE WHEN ...)`，则无法保证每个聚合函数处理的语义都正确，所以sqala选择不进行降级模拟，MySQL和SqlServer数据库用户可以等待数据库本身跟进相关标准。
+
 sqala会自动从命名的所有组合中**生成新的字段名**，所以这个操作也是类型安全的，以上查询将返回下面的类型：
 
 ```scala
