@@ -236,7 +236,7 @@ val q3 =
     from(User).filter: u =>
         (u.id, u.name).in(from(User).map(uu => (uu.id, uu.name)))
 
-// 类型兼容的字段、表达式、子查询可以在比较时任意混合
+// 类型兼容的表达式、值、子查询可以在比较时任意混合
 val q4 =
     from(User).filter: u =>
         (u.id, u.name) === (Option(1L), from(User).map(uu => uu.id).take(1))
