@@ -239,7 +239,7 @@ val q3 =
 // 类型兼容的表达式、值、子查询可以在比较时任意混合
 val q4 =
     from(User).filter: u =>
-        (u.id, u.name) === (Option(1L), from(User).map(uu => uu.id).take(1))
+        (u.id, u.name) === (Option(1L), from(User).map(uu => uu.name).take(1))
 ```
 
 ## 数值运算
