@@ -293,45 +293,6 @@ val q =
 | `takeWithTies(n)` | `FETCH NEXT n ROWS WITH TIES` | `❌` | `FETCH NEXT n ROWS WITH TIES` | `❌` | `❌` |
 | `drop(m).takeWithTies(n)` | `OFFSET m ROWS FETCH NEXT n ROWS WITH TIES` | `❌` | `OFFSET m ROWS FETCH NEXT n ROWS WITH TIES` | `❌` | `❌` |
 
-<!-- 此操作不同方言下差异较大，因此我们不单独使用PostgreSQL为例，而是列出各种方言生成情况。
-
-::: code-group
-
-```sql [PostgreSQL]
-SELECT
-    "t1"."id" AS "c1",
-    "t1"."name" AS "c2"
-FROM
-    "user" AS "t1"
-LIMIT 3 OFFSET 2
-```
-
-```sql [MySQL]
-SELECT
-    `t1`.`id` AS `c1`,
-    `t1`.`name` AS `c2`
-FROM
-    `user` AS `t1`
-LIMIT 2, 3
-```
-
-```sql [Oracle]
-SELECT
-    "t1"."id" AS "c1",
-    "t1"."name" AS "c2"
-FROM
-    "user" "t1"
-OFFSET 2 ROWS FETCH NEXT 3 ROWS ONLY
-```
-
-:::
-
-除了简单的`take`外，sqala支持SQL标准的`FETCH`子句，其方法转换规则和经实测的各数据库支持程度如下：
-
-|方法名     |SQL语句                |MySQL |PostgreSQL|Oracle|H2|
-|:---------:|:--------------------:|:------:|:------:|:------:|:------:|
-|`takeWithTies`|`FETCH NEXT n ROWS WITH TIES`|❌|✅     |✅      |✅ | -->
-
 ## 去重
 
 `mapDistinct`/`selectDistinct`用于统计去重后的结果集，由于sqala需要在需要`ALL`、`DISTINCT`等量词的情况下统一风格，因此没有采用类似Scala集合库的`.map.distinct`调用形式：
