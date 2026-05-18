@@ -94,6 +94,19 @@ val q =
     from(Post).filter(p => u.createTime > "2020-01-01 00:00:00")
 ```
 
+可以在此举出一个极端但能体现sqala类型兼容性的例子，我们有如下实体类：
+
+```scala
+case class TestEntity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int]]]])
+```
+
+实体类的两个字段都是嵌套元组，但是空值策略不同，sqala允许两个字段比较：
+
+```scala
+val q =
+    from(TestEntityUser).filter(e => e.x == e.y)
+```
+
 但是如果两侧类型不兼容，sqala则会在编译期禁止：
 
 ```scala
@@ -291,6 +304,27 @@ val q =
 
 ```sql
 CASE WHEN "t1"."id" = 1 THEN 1 WHEN "t1"."id" = 2 THEN "t1"."id" ELSE CAST(NULL AS INTEGER)
+```
+
+sqala对返回值类型的推导能力极强，在关系运算部分我们定义极端的例子：
+
+```scala
+case class TestEntity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int]]]])
+```
+
+如果我们把两个字段放在条件表达式的两个分支里：
+
+```scala
+val q =
+    from(TestEntity)
+        .map(e => caseWhen(t.x == t.y)(t.x).otherwise(t.y))
+```
+
+在数据库查询后会自动推导返回类型为：
+
+```scala
+// 返回类型为 List[Option[Array[Option[Array[Option[Int]]]]]]
+val result = db.fetch(q)
 ```
 
 `coalesce`对应SQL的`COALESCE`表达式，用于返回参数中第一个非空值，但为了易用性，sqala也支持`ifNull`作为同义词：
