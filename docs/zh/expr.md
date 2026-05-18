@@ -115,6 +115,22 @@ val q =
     from(User).filter(u => u.id == "abc")
 ```
 
+类似的，如果我们把上面的复杂例子的右侧字段最内部改成字符串类型：
+
+```scala
+case class TestEntity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[String]]]])
+```
+
+sqala则不允许两个字段比较：
+
+```scala
+val q =
+    // 编译错误
+    from(TestEntityUser).filter(e => e.x == e.y)
+```
+
+sqala的类型兼容性检查不是停留在表面的一层，而是递归检查整个类型树。
+
 但由于Scala的限制，`==`和`!=`左侧如果不是`Expr`类型，则会产生编译错误，所以sqala提供了`===`和`<>`应对此类情况（其他运算符不受此影响）：
 
 ```scala
