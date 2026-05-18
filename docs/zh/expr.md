@@ -97,14 +97,14 @@ val q =
 可以在此举出一个极端但能体现sqala类型兼容性的例子，我们有如下实体类：
 
 ```scala
-case class TestEntity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int]]]])
+case class Entity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int]]]])
 ```
 
-实体类的两个字段都是嵌套元组，但是空值策略不同，sqala允许两个字段比较：
+实体类的两个字段都是嵌套了两层的`Int`数组，但是空值策略不同，sqala允许这样层数相同且类型兼容的两个数组字段比较：
 
 ```scala
 val q =
-    from(TestEntityUser).filter(e => e.x == e.y)
+    from(Entity).filter(e => e.x == e.y)
 ```
 
 但是如果两侧类型不兼容，sqala则会在编译期禁止：
@@ -118,7 +118,7 @@ val q =
 类似的，如果我们把上面的复杂例子的右侧字段最内部改成字符串类型：
 
 ```scala
-case class TestEntity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[String]]]])
+case class Entity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[String]]]])
 ```
 
 sqala则不允许两个字段比较：
@@ -126,7 +126,7 @@ sqala则不允许两个字段比较：
 ```scala
 val q =
     // 编译错误
-    from(TestEntityUser).filter(e => e.x == e.y)
+    from(Entity).filter(e => e.x == e.y)
 ```
 
 sqala的类型兼容性检查不是停留在表面的一层，而是递归检查整个类型树。
@@ -325,14 +325,14 @@ CASE WHEN "t1"."id" = 1 THEN 1 WHEN "t1"."id" = 2 THEN "t1"."id" ELSE CAST(NULL 
 sqala对返回值类型的推导能力极强，在关系运算部分我们定义极端的例子：
 
 ```scala
-case class TestEntity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int]]]])
+case class Entity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int]]]])
 ```
 
 如果我们把两个字段放在条件表达式的两个分支里：
 
 ```scala
 val q =
-    from(TestEntity)
+    from(Entity)
         .map(e => caseWhen(t.x == t.y)(t.x).otherwise(t.y))
 ```
 
