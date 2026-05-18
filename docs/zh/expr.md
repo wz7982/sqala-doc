@@ -84,13 +84,26 @@ val q =
     from(User).filter(u => u.id == u.id)
 ```
 
-`==`等运算符不要求两侧类型一致，只需要在SQL标准中允许兼容：
+`==`等运算符不要求两侧类型一致，只需要在SQL标准中允许兼容，比如我们知道，数据库允许数值类型之间跨类型比较，也允许可空类型和不可空类型之间直接比较，比如这样的SQL是合法的：
+
+```sql
+SELECT
+    CAST(1 AS INTEGER) = CAST(NULL AS BIGINT)
+```
+
+所以sqala允许这种行为：
 
 ```scala
 val q =
+    // u.id是Expr[Int]，允许和Option[Long]直接比较
     from(User).filter(u => u.id == Option(1L))
+```
 
+我们知道，数据库允许时间类型和字符串之间比较，所以sqala允许时间和字符串类型的表达式直接比较：
+
+```scala
 val q =
+    // u.createTime是Expr[LocalDateTime]，允许和String直接比较
     from(Post).filter(p => u.createTime > "2020-01-01 00:00:00")
 ```
 
@@ -100,14 +113,14 @@ val q =
 case class Entity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int]]]])
 ```
 
-实体类的两个字段都是嵌套了两层的`Int`数组，但是空值策略不同，sqala允许这样层数相同且类型兼容的两个数组字段比较：
+实体类的两个字段都是嵌套了两层的`Int`数组，只有空值策略不同，sqala允许这样**层数相同**且类型兼容的两个数组字段比较：
 
 ```scala
 val q =
     from(Entity).filter(e => e.x == e.y)
 ```
 
-但是如果两侧类型不兼容，sqala则会在编译期禁止：
+但是如果两侧类型不兼容，sqala则会在编译期严格禁止：
 
 ```scala
 val q =
@@ -121,7 +134,7 @@ val q =
 case class Entity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[String]]]])
 ```
 
-sqala则不允许两个字段比较：
+sqala也不允许两个字段比较：
 
 ```scala
 val q =
