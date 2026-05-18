@@ -100,7 +100,7 @@ val q =
 case class TestEntity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int]]]])
 ```
 
-实体类的两个字段都是嵌套元组，但是空值策略不同，sqala运行两个字段比较：
+实体类的两个字段都是嵌套元组，但是空值策略不同，sqala允许两个字段比较：
 
 ```scala
 val q =
