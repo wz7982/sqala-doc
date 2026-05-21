@@ -270,8 +270,8 @@ val q =
         Channel.joinLateral(c =>
             from(Post)
                 .filter(p => c.id == p.channelId)
-                .sortBy(p => p.likeCount.desc)
                 .map(p => (id = p.id, channelId = p.channelId, title = p.title))
+                .sortBy(p => p.likeCount.desc)
                 .take(2)
         ).on((c, p) => c.id == p.channelId)
 ```
