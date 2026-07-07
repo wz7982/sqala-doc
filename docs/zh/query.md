@@ -288,7 +288,7 @@ val q =
 | 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
 |------|------------|-------|--------|-----------|--------|
 | `drop(m)` | `OFFSET m` | `LIMIT m, 9223372036854775807` | `OFFSET m ROWS` | `OFFSET m ROWS` | `LIMIT 9223372036854775807 OFFSET m` |
-| `take(n)` | `LIMIT n` | `LIMIT n` | `FETCH NEXT n ROWS ONLY` | `FETCH NEXT n ROWS ONLY` | `LIMIT n` |
+| `take(n)` | `LIMIT n` | `LIMIT 0, n` | `FETCH NEXT n ROWS ONLY` | `FETCH NEXT n ROWS ONLY` | `LIMIT n` |
 | `drop(m).take(n)` | `LIMIT n OFFSET m` | `LIMIT m, n` | `OFFSET m ROWS FETCH NEXT n ROWS ONLY` | `OFFSET m ROWS FETCH NEXT n ROWS ONLY` | `LIMIT n OFFSET m` |
 | `takeWithTies(n)` | `FETCH NEXT n ROWS WITH TIES` | `❌` | `FETCH NEXT n ROWS WITH TIES` | `❌` | `❌` |
 | `drop(m).takeWithTies(n)` | `OFFSET m ROWS FETCH NEXT n ROWS WITH TIES` | `❌` | `OFFSET m ROWS FETCH NEXT n ROWS WITH TIES` | `❌` | `❌` |
