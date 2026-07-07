@@ -491,7 +491,7 @@ object DataState:
 
 ## 设置主键
 
-sqala支持`primaryKey`和`autoInc`注解标记主键字段和自增主键字段，由于上文中我们创建的示例表主键都是自增主键，因此我们把实体类定义改为：
+sqala支持`primaryKey`和`autoInc`注解标记主键字段和自增字段，由于上文中我们创建的示例表主键都是自增主键，因此我们把实体类定义改为：
 
 ```scala
 import sqala.metadata.*
@@ -499,17 +499,17 @@ import sqala.metadata.*
 import java.time.LocalDateTime
 
 case class User(
-    @autoInc id: Int,
+    @autoInc @primaryKey id: Int,
     name: String
 )
 
 case class Channel(
-    @autoInc id: Int,
+    @autoInc @primaryKey id: Int,
     name: String
 )
 
 case class Post(
-    @autoInc id: Int,
+    @autoInc @primaryKey id: Int,
     title: String,
     authorId: Int,
     channelId: Int,
@@ -520,7 +520,7 @@ case class Post(
 )
 
 case class Comment(
-    @autoInc id: Int,
+    @autoInc @primaryKey id: Int,
     postId: Int,
     authorId: Int,
     content: String,
@@ -542,7 +542,7 @@ import sqala.metadata.*
 
 @table("T_SOME_TABLE")
 case class SomeTable(
-    @autoInc @column("ID") id: Int
+    @autoInc @primaryKey @column("ID") id: Int
 )
 ```
 
