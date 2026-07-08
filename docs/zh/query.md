@@ -419,7 +419,7 @@ FROM
 | SQLServer | ✅ |
 | SQLite | ❌ |
 
-<!-- ## 查询锁
+## 查询锁
 
 sqala支持`forUpdate`等方法给查询加锁，对应数据库的相应加锁子句：
 
@@ -437,4 +437,4 @@ val q =
 | `forUpdateSkipLocked` | `FOR UPDATE SKIP LOCKED` | `FOR UPDATE SKIP LOCKED` | `FOR UPDATE SKIP LOCKED` | ❌ | ❌ |
 | `forShare` | `FOR SHARE` | `FOR SHARE` | ❌ | ❌ | ❌ |
 | `forShareNoWait` | `FOR SHARE NOWAIT` | `FOR SHARE NOWAIT` | ❌ | ❌ | ❌ |
-| `forShareSkipLocked` | `FOR SHARE SKIP LOCKED` | `FOR SHARE SKIP LOCKED` | ❌ | ❌ | ❌ | -->
+| `forShareSkipLocked` | `FOR SHARE SKIP LOCKED` | `FOR SHARE SKIP LOCKED` | ❌ | ❌ | ❌ |
