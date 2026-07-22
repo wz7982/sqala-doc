@@ -356,11 +356,25 @@ val q =
 val result = db.fetch(q)
 ```
 
-`coalesce`对应SQL的`COALESCE`表达式，用于返回参数中第一个非空值，但为了易用性，sqala也支持`ifNull`作为同义词：
+`coalesce`对应SQL的`COALESCE`表达式，用于返回参数中第一个非空值：
 
 ```scala
 val q =
     from(User).map(u => coalesce(u.id, 1))
+```
+
+sqala也支持`ifNull`作为`coalesce`的别名：
+
+```scala
+val q =
+    from(User).map(u => ifNull(u.id, 1))
+```
+
+另外，`COALESCE`作为一个极高频操作，sqala也提供了符合Scala标准库习惯的`getOrElse`方法自动映射到`COALESCE`：
+
+```scala
+val q =
+    from(User).map(u => u.id.getOrElse(1))
 ```
 
 `nullIf`对应SQL的`NULLIF`表达式用于匹配两个值，如果相同则返回`NULL`：
