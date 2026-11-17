@@ -104,6 +104,67 @@ val query =
         .map((c, level) => (id = c.id, content = c.content, rootId = c.rootId, level = level))
 ```
 
+## 排序和分页
+
+递归查询同样支持`sortBy`，它的Lambda参数比普通查询多一个`level`：第一个参数是递归CTE的行，第二个参数是当前层级，因此可以同时按层级和其他字段排序：
+
+```scala
+val postId = 1
+
+val query =
+    from(Comment)
+        .filter(c => c.postId === postId)
+        .connectBy((c, prior) => c.parentId === prior.id)
+        .startWith(c => c.parentId.isEmpty)
+        .map((c, level) => (id = c.id, content = c.content, level = level))
+        .sortBy((c, level) => (level.asc, c.id.desc))
+```
+
+生成的SQL会在CTE之后的最终查询中追加`ORDER BY`：
+
+```sql
+SELECT
+    "t3"."c1" AS "c1",
+    "t3"."c4" AS "c2",
+    "t3"."c5" AS "c3"
+FROM
+    "cte1" AS "t3"
+ORDER BY
+    "t3"."c5" ASC,
+    "t3"."c1" DESC
+```
+
+`drop`和`take`用于对递归查询的最终结果分页，无论是否先调用`sortBy`都可以使用。它们作用在CTE之后的最终查询上，不会影响递归过程：
+
+```scala
+val postId = 1
+
+val query =
+    from(Comment)
+        .filter(c => c.postId === postId)
+        .connectBy((c, prior) => c.parentId === prior.id)
+        .startWith(c => c.parentId.isEmpty)
+        .map((c, level) => (id = c.id, content = c.content, level = level))
+        .sortBy((c, level) => (level.asc, c.id.desc))
+        .drop(10)
+        .take(5)
+```
+
+生成的SQL为：
+
+```sql
+SELECT
+    "t3"."c1" AS "c1",
+    "t3"."c4" AS "c2",
+    "t3"."c5" AS "c3"
+FROM
+    "cte1" AS "t3"
+ORDER BY
+    "t3"."c5" ASC,
+    "t3"."c1" DESC
+LIMIT 5 OFFSET 10
+```
+
 ## 兼容性
 
 递归CTE各主流数据库最新版本实测支持程度如下：

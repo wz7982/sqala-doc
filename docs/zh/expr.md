@@ -21,7 +21,7 @@ val query =
     from(User).map(u => (u.id, 1, "a"))
 ```
 
-sqala的可空值使用`Option`来管理。由于`None`没有实际的类型，普通值位置请使用`Option.empty[T]`构造空值，类型推导才安全；判空请使用`isEmpty`/`!isEmpty`（也兼容`=== None`/`<> None`）：
+sqala的可空值使用`Option`来管理。由于`None`没有实际的类型，普通值位置请使用`Option.empty[T]`构造空值：
 
 ```scala
 val query =
@@ -50,7 +50,7 @@ val query =
         .filter(p => rawExpr"MATCH(${p.title}) AGAINST(${word})".as[Boolean])
 ```
 
-表达式插值器支持值、[表达式](./expr.md)和他们组成的元组，字符串中无需手动拼接引号，圆括号等符号，sqala会自动处理并进行安全转义。
+表达式插值器支持值、[表达式](./expr.md)和他们组成的元组，字符串中无需手动拼接引号等符号，sqala会自动处理并进行安全转义。
 
 ## 关系运算
 
@@ -187,7 +187,7 @@ val query =
     from(User).filter(u => u.id.in(List(1, 2, 3)))
 ```
 
-**由于SQL中`IN ()`通常是语法错误，因此sqala会在空集合时开启优化，将此段表达式优化成`FALSE`**。
+**由于SQL中`IN ()`通常是语法错误，因此sqala会在空集合时开启优化，将此段表达式优化成`1 = 0`**。
 
 `in`方法也可以传入一个表达式元组，此元组同时兼容`Expr`、值、子查询：
 
@@ -320,7 +320,7 @@ sqala的数值运算依然有极其强大的类型兼容性，比如`Expr[Int]`�
 
 sqala还支持`%`运算符，但实际会生成SQL标准的`MOD`函数。
 
-需要特别注意的是，`/`会在生成SQL时把两侧操作数都转换为`DECIMAL(38, 10)`，以保证除法结果是精确的小数，即生成`CAST(x AS DECIMAL(38, 10)) / CAST(y AS DECIMAL(38, 10))`。因此，如果字段本身是`Double`或`Float`，这个转换可能带来精度问题，建议尽量避免在这类字段上直接使用除法，优先使用`DECIMAL`（Scala中的`BigDecimal`）等精确数值类型。
+需要特别注意的是，由于各数据库对于除法操作的处理方式不同，sqala为了兼容性，`/`会在生成SQL时把两侧操作数都转换为`DECIMAL(38, 10)`，以保证除法结果是精确的小数，即生成`CAST(x AS DECIMAL(38, 10)) / CAST(y AS DECIMAL(38, 10))`。因此，如果字段本身是`Double`或`Float`，这个转换可能带来精度问题，建议尽量避免在这类字段上直接使用除法，优先使用`DECIMAL`（Scala中的`BigDecimal`）等精确数值类型。
 
 ## 字符串拼接
 

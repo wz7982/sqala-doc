@@ -410,6 +410,16 @@ val query =
         .sortBy(u => u.mappedName.desc)
 ```
 
+sqala会在编译期检查这一点：如果`sortBy`中的排序表达式没有出现在`mapDistinct`的投影中，会直接返回编译错误：
+
+```scala
+val query =
+    from(User)
+        .mapDistinct(u => u.name)
+        // 编译错误：For mapDistinct, sortBy expressions must appear in map.
+        .sortBy(u => 1)
+```
+
 ## 使用内存集合创建查询
 
 sqala支持使用内存中的集合创建查询，后续作为子查询、和连接表使用：
