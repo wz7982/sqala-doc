@@ -158,6 +158,8 @@ val query =
     from(User).filter(u => "小黑".asExpr === u.name)
 ```
 
+少数情况下，需要让比较结果（`Boolean`）再次参与比较，此时要特别注意运算符优先级。在Scala中，`!=`的优先级低于`<`、`>`，所以`a != b < c`会被解析为`a != (b < c)`；但sqala使用的`<>`以`<`开头，优先级与`<`、`>`相同，因此`a <> b < c`会被解析为`(a <> b) < c`。这种差异在比较结果再次参与比较时可能改变语义，比如`true <> false < true`（这里的`true`、`false`可以理解为返回`Boolean`的表达式）。遇到此类情况，请手动加括号明确分组，例如`true <> (false < true)`。
+
 ### IS NULL
 
 `isEmpty`方法对应SQL的`IS NULL`，用于判断可空表达式是否为空：
@@ -317,6 +319,8 @@ val query =
 sqala的数值运算依然有极其强大的类型兼容性，比如`Expr[Int]`和`Option[Double]`类型的两个表达式进行数值运算，实际上会返回`Expr[Option[Double]]`类型的表达式。
 
 sqala还支持`%`运算符，但实际会生成SQL标准的`MOD`函数。
+
+需要特别注意的是，`/`会在生成SQL时把两侧操作数都转换为`DECIMAL(38, 10)`，以保证除法结果是精确的小数，即生成`CAST(x AS DECIMAL(38, 10)) / CAST(y AS DECIMAL(38, 10))`。因此，如果字段本身是`Double`或`Float`，这个转换可能带来精度问题，建议尽量避免在这类字段上直接使用除法，优先使用`DECIMAL`（Scala中的`BigDecimal`）等精确数值类型。
 
 ## 字符串拼接
 
