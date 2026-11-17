@@ -117,6 +117,51 @@ EXCEPT ALL
 )
 ```
 
+## 排序和分页
+
+集合操作得到的查询同样支持`sortBy`、`drop`和`take`，它们作用在集合操作的整体结果上，而不是某个子查询上：
+
+```scala
+val q1 = from(User).filter(u => u.id >= 5).map(u => (id = u.id, name = u.name))
+val q2 = from(User).filter(u => u.id <= 10).map(u => (id = u.id, name = u.name))
+
+val query =
+    q1.union(q2)
+        .sortBy(c => (c.name.asc, c.id.desc))
+        .drop(10)
+        .take(5)
+```
+
+生成的SQL为：
+
+```sql
+(
+    SELECT
+        "t1"."id" AS "c1",
+        "t1"."name" AS "c2"
+    FROM
+        "user" AS "t1"
+    WHERE
+        "t1"."id" >= 5
+)
+UNION
+(
+    SELECT
+        "t2"."id" AS "c1",
+        "t2"."name" AS "c2"
+    FROM
+        "user" AS "t2"
+    WHERE
+        "t2"."id" <= 10
+)
+ORDER BY
+    "c2" ASC,
+    "c1" DESC
+LIMIT 5 OFFSET 10
+```
+
+`sortBy`的Lambda参数是集合操作结果的返回类型，可以直接使用投影后的字段名。生成的`ORDER BY`会引用集合操作输出列的别名，`drop`和`take`则按方言生成对应的分页子句（示例为PostgreSQL的`LIMIT`和`OFFSET`）。
+
 ## 兼容性
 
 集合操作各主流数据库最新版本实测支持程度如下：

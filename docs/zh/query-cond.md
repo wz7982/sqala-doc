@@ -70,11 +70,13 @@ val q2 =
 
 ## 提升可读性
 
-在同一个查询里，我们可以将子查询等结构提出一个变量来提高代码可读性：
+子查询可以在`filter`等子句的Lambda内部提取为变量，以提高代码可读性：
 
 ```scala
-val avgQuery = from(Post).map(p => avg(p.likeCount))
-
 val query =
-    from(Post).filter(p => p.likeCount > avgQuery)
+    from(Post).filter: p =>
+        val avgQuery = from(Post).map(pp => avg(pp.likeCount))
+        p.likeCount > avgQuery
 ```
+
+注意子查询必须定义在使用它的更深层作用域中，不能先定义在外部再引用，否则会返回编译错误：`A subquery cannot be referenced from an outer or sibling scope; it must be defined in a deeper scope.`

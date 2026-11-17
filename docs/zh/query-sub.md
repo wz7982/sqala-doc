@@ -127,6 +127,26 @@ WHERE
     )
 ```
 
+### 语义检查
+
+作为表达式使用的子查询最多只能返回一行，否则会返回编译错误：
+
+```scala
+val query =
+    // 编译错误：More than one row returned by a subquery used as an expression.
+    from(Post).map(p => from(Post).map(pp => pp.likeCount))
+```
+
+子查询也不能在外层或兄弟作用域中被引用，必须定义在更深的作用域：
+
+```scala
+val sub = from(Comment).map(c => c.id).take(1)
+
+val query =
+    // 编译错误：A subquery cannot be referenced from an outer or sibling scope; it must be defined in a deeper scope.
+    from(Post).map(p => sub)
+```
+
 ## 带量词的子查询
 
 ### EXISTS子查询
@@ -303,22 +323,4 @@ SELECT
     ) AS "c2"
 FROM
     "user" AS "t1"
-```
-
-## 语义检查
-
-作为表达式使用的子查询最多只能返回一行，否则会在编译期报错：
-
-```scala
-val query =
-    // 编译错误：More than one row returned by a subquery used as an expression.
-    from(Post).map(p => from(Post).map(pp => pp.likeCount))
-```
-
-子查询只能引用更深层作用域的列，不能反过来引用外层或兄弟作用域：
-
-```scala
-val query =
-    // 编译错误：A subquery cannot be referenced from an outer or sibling scope; it must be defined in a deeper scope.
-    from(Post).map(p => from(Comment).map(c => c.postId === p.id))
 ```

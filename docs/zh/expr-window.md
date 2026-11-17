@@ -37,7 +37,7 @@ val query =
             .over(
                 partitionBy(p.authorId)
                     .sortBy(p.id.desc)
-                    .rows(currentRow)
+                    .rows(unboundedPreceding)
             )
 ```
 
@@ -50,7 +50,7 @@ val query =
             .over(
                 partitionBy(p.authorId)
                     .sortBy(p.id.desc)
-                    .rowsBetween(currentRow, 1.preceding)
+                    .rowsBetween(1.preceding, currentRow)
             )
 ```
 
@@ -65,7 +65,7 @@ val query =
             .over(
                 partitionBy(p.authorId)
                     .sortBy(p.id.desc)
-                    .rowsBetween(currentRow, 1.preceding)
+                    .rowsBetween(1.preceding, currentRow)
                     .excludeCurrentRow
             )
 ```
@@ -112,3 +112,33 @@ val query =
 ```
 
 窗口函数不能嵌套，错误文案为 `Window function calls cannot be nested.`。
+
+窗口框架的起止边界必须按顺序排列，即`unboundedPreceding` < `n.preceding` < `currentRow` < `n.following` < `unboundedFollowing`，起始边界必须严格位于结束边界之前。`rows`、`range`、`groups`只接收起始边界，结束边界固定为`currentRow`，因此起始边界不能是`currentRow`或`unboundedFollowing`：
+
+```scala
+val q1 =
+    from(Post).map: p =>
+        // 编译错误：Frame starting from current row cannot end at preceding row.
+        sum(p.likeCount).over(
+            partitionBy(p.authorId).sortBy(p.id.desc).rowsBetween(currentRow, 1.preceding)
+        )
+
+val q2 =
+    from(Post).map: p =>
+        // 编译错误：Frame starting from unbounded following cannot end at current row.
+        sum(p.likeCount).over(
+            partitionBy(p.authorId).sortBy(p.id.desc).rows(unboundedFollowing)
+        )
+```
+
+`rows`和`groups`的边界值必须是整数，`range`的边界类型则必须与窗口的排序键兼容（数值排序键对应数值边界，时间排序键对应`INTERVAL`边界），否则会返回编译错误：
+
+```scala
+val q3 =
+    from(Post).map: p =>
+        // 编译错误：Window frame type is incompatible with the ordering expression.
+        sum(p.likeCount).over(
+            partitionBy(p.authorId).sortBy(p.title).rangeBetween(1.preceding, currentRow)
+        )
+```
+
