@@ -1,17 +1,21 @@
 # Native SQL
 
-sqala supports native SQL via `sql` string interpolator.
+sqala supports native SQL through the `sql` interpolator:
 
 ```scala
+import sqala.dynamic.native.sql
+
 val x = 1
 val y = "abc"
 
 val nativeSql = sql"select * from t where x = $x and y = $y"
 ```
 
-`sql` interpolator supports `+` operator for combining conditions:
+The `sql` interpolator supports the `+` operator, which makes conditional composition convenient:
 
 ```scala
+import sqala.dynamic.native.sql
+
 val x = 1
 val y = "abc"
 
@@ -22,7 +26,7 @@ if x > 0 then nativeSql += sql"and x = $x "
 if y.nonEmpty then nativeSql += sql"and y = $y"
 ```
 
-We can use the `fetchTo` method to query native SQL:
+We can use the `fetchTo` method to query with native SQL:
 
 ```scala
 case class Result(x: Int, y: String)
