@@ -1,26 +1,26 @@
 # Getting Started
 
-The following example demonstrates the basic functionality of sqala using the H2 in-memory database. Save the code below as a `.sc` file, for example `demo.sc`, and execute it with the `scala demo.sc` command to see the results:
+The following example uses the H2 in-memory database to demonstrate the basic functionality of sqala. Save the code below as a `.sc` file, for example `demo.sc`, and run it with the `scala demo.sc` command to see the result:
 
 ```scala
-//> using scala 3.7.0
+//> using scala 3.9.0
 //> using dep com.h2database:h2:2.3.232
-//> using dep com.wz7982::sqala-jdbc:0.3.9
+//> using dep com.wz7982::sqala-jdbc:0.8.0
 
-import org.h2.jdbcx.*
+import org.h2.jdbcx.JdbcDataSource
 import sqala.jdbc.*
 import sqala.metadata.*
 import sqala.static.dsl.*
 
 object DB:
     given Logger = Logger(content => println(content))
-    val ds = JdbcDataSource()
-    ds.setURL("jdbc:h2:mem:main")
-    val db = JdbcContext(ds, H2Dialect)
+    val dataSource = JdbcDataSource()
+    dataSource.setURL("jdbc:h2:mem:main")
+    val db = JdbcContext(dataSource, H2Dialect, true)
 
-import DB.{db, ds}
+import DB.{db, dataSource}
 
-ds.getConnection().createStatement().executeUpdate:
+dataSource.getConnection().createStatement().executeUpdate(
     """
     CREATE TABLE `demo` (
         `id` BIGINT PRIMARY KEY AUTO_INCREMENT, 
@@ -28,6 +28,7 @@ ds.getConnection().createStatement().executeUpdate:
         `value` TEXT
     )
     """
+)
 
 case class Demo(
     @autoInc id: Long,
@@ -38,10 +39,9 @@ case class Demo(
 db.insert(Demo(0L, "sqala", "Scala's sql lib"))
 
 val result = db.find:
-    query:
-        from[Demo]
-            .filter(_.key == "sqala")
-            .map(d => (key = d.key, value = d.value))
+    from(Demo)
+        .filter(_.key === "sqala")
+        .map(d => (key = d.key, value = d.value))
 
 println(result)
 ```

@@ -1,57 +1,22 @@
-# CUD Operations
+# CUD DSL
+
+The [database interaction](./database.md) section introduced how to use entity objects to insert and delete data. Besides entity objects, sqala also supports building statements with a CUD DSL, supporting more flexible data processing needs.
 
 ## Insert
 
-sqala supports generating insert statements directly from entity objects:
-
 ```scala
-val department: Department = ???
+val i1 = insert[Department](d => (d.managerId, d.name)).values((1, "IT"))
 
-val i = insert(department)
-```
-
-Supports batch writing using a list of objects:
-
-```scala
-val departments: List[Department] = ???
-
-val i = insert(departments)
-```
-
-Fields marked with `autoInc` will be skipped when generating SQL.
-
-Of course, we can also use DSL to build INSERT statements, allowing for more precise specification of the fields to be inserted:
-
-```scala
-val i1 = insert[Department](d => (d.managerId, d.name)) values (1, "IT")
-
-val i2 = insert[Department](d => (d.managerId, d.name)) values List((1, "IT"), (2, "Legal"))
+val i2 = insert[Department](d => (d.managerId, d.name)).values(List((1, "IT"), (2, "Legal")))
 ```
 
 ## Update
 
-For entity objects with primary key fields marked with `primaryKey` or `autoInc`, SQL for updating by primary key can be directly generated:
-
 ```scala
-// Entity class definition omitted
-val department: Department = ???
-
-val u = update(department)
+val u = update[Department].set(d => d.name := "IT").where(_.id === 1)
 ```
 
-An additional `skipNone` parameter can be passed, which will skip fields with `None` values during the update:
-
-```scala
-val u = update(department, skipNone = true)
-```
-
-We can also use DSL to build UPDATE statements:
-
-```scala
-val u = update[Department].set(d => d.name := "IT").where(_.id == 1)
-```
-
-The right side of `:=` can not only be a simple value but also other expressions:
+The right side of `:=` can be not only a simple value but also another expression:
 
 ```scala
 val u = update[A].set(a => a.x := a.x + 1)
@@ -59,18 +24,18 @@ val u = update[A].set(a => a.x := a.x + 1)
 
 ## Delete
 
-We can use DSL to build DELETE statements:
-
 ```scala
 val d = delete[Department].where(_.id === 1)
 ```
 
-## Insert or Update by Primary Key
+## Insert or Update
 
-We can use the `save` method to generate SQL statements for inserting or updating data using the primary key, provided that the primary key fields are configured on the entity class:
+The `db.save` method decides whether to insert or update based on the primary key. The SQL generated in major databases is:
 
-```scala
-val department: Department = ???
-
-val s = save(department)
-```
+| Database Type | Generated SQL |
+|------------|----------|
+| PostgreSQL | `INSERT INTO ... ON CONFLICT ... DO UPDATE SET` |
+| MySQL | `INSERT INTO ... ON DUPLICATE KEY UPDATE` |
+| Oracle | `MERGE INTO` |
+| SQLServer | `MERGE INTO` |
+| SQLite | `INSERT OR REPLACE INTO` |

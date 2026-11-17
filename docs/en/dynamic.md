@@ -1,189 +1,245 @@
-# Dynamic Query
+# Dynamic Queries
 
-Previously introduced queries are more inclined to be determined at compile time, where sqala can provide type safety and automatic deserialization capabilities. However, in certain applications (such as user-customizable reporting systems), the queries to be executed cannot be known in advance at compile time. We may not even know what tables exist in the database or what fields are in the tables at compile time. To address such scenarios, sqala provides a set of dynamic query DSLs.
+In scenarios such as drag-and-drop report platforms, table names, column names, and query structures are often dynamic and completely unknown at compile time, and it is often necessary to generate complex queries with multiple levels of subqueries, sometimes thousands of lines long. Traditional static ORMs and XML templates represented by MyBatis cannot handle dynamic SQL construction in such scenarios. In practice, we often have to either use error-prone string concatenation or integrate heavyweight database kernel front ends such as Calcite.
 
-First, add the dependency:
+For such scenarios, sqala provides a brand-new solution: a DSL designed specifically for dynamic query construction. The dynamic builder reduces the type-safety checks of [static queries](./query.md), but internally reuses sqala's underlying infrastructure such as the SQL syntax tree, so it also provides safe SQL escaping and guarantees that the generated SQL is syntactically correct. Its calling style is neither as error-prone as string concatenation nor as cumbersome as manually assembling a syntax tree.
 
-```scala
-libraryDependencies += "com.wz7982" % "sqala-dynamic_3" % "latest.integration"
-```
+Note that dynamic query construction is completely different from [static queries](./query.md). To distinguish the two usage scenarios, sqala adopts a completely different DSL style, so that it fits the scenarios better and also serves as a visual distinction.
 
-The dynamic query DSL requires `import sqala.dynamic.dsl.*`.
+You can import the dynamic query builder with `import sqala.dynamic.dsl.*`.
 
-We use the `asTable` method to create a table and incorporate it into the query:
+The dynamic query builder is still **side-effect free**: each method call produces a new query instead of modifying the previous one.
 
-```scala
-import import sqala.dynamic.dsl.*
+## Building Queries
 
-val department = asTable[Department]
-
-val q = select (department.id, department.name) from department where department.id == 1
-```
-
-We can also use the `table` and `column` methods to dynamically create tables and fields that are not known at compile time and incorporate them into the query:
+The `select` method creates a query. Its arguments are usually several query columns created with methods such as `column` and `value`:
 
 ```scala
-import import sqala.dynamic.dsl.*
-
-val q = select (List(column("a"), column("b"))) from table("t") where column("a") == 1
+val query =
+    select(column("a", "x"), column("b", "y"))
 ```
 
-sqala's dynamic queries can not only fill in simple strings, but we can also pass in an SQL fragment. The `unsafeExpr` method will enable an SQL parser and convert it into an SQL syntax tree:
+Tables are passed in through the `from` method. Its arguments are usually several tables created with the `table` method:
 
 ```scala
-val q = select (List(unsafeExpr("a"), unsafeExpr("b"))) from table("t") where unsafeExpr("a = 1") && unsafeExpr("b") == 1
+val query =
+    select(column("a", "x"))
+        .from(table("a"), table("b"))
 ```
 
-**As the name suggests, the `unsafeExpr` method is unsafe and may pose SQL injection risks. Please use it with caution!**
-
-Next, let's delve into the details of sqala's dynamic query constructors.
-
-## SELECT
-
-Use the `select` method to create a `SELECT` statement:
+Table names in dynamic queries are passed as strings, so they can come from external input. sqala safely escapes table names:
 
 ```scala
-val s = select(List(column("a"), column("b") as "column"))
+val tableNames = List("a", "b")
+
+val tables = tableNames.map(n => table(n))
+
+val query =
+    select(column("a", "x"))
+        .from(tables)
 ```
 
-Chaining `select` calls will sequentially concatenate them when generating SQL.
-
-Suppose we have a list of fields obtained at runtime that need to be included in the query, we can write it like this:
+The `as` method assigns an alias to a table or expression:
 
 ```scala
-// Assume the list is obtained at runtime
-val columnList: List[String] = List("a", "b")
-
-val s = select(columnList.map(column(_)))
+val query =
+    select(column("a", "x").as("col1"))
+        .from(table("a").as("t1"), table("b").as("t2"))
 ```
 
-## FROM
-
-Use the `from` method with `table` to generate the `FROM` clause:
-
-```scala
-val s = select (column("a"), column("b")) from table("t")
-```
-
-## WHERE
-
-Use the `where` method to generate the `WHERE` clause:
-
-```scala
-val s = select (column("a"), column("b")) from table("t") where column("a") == 1
-```
-
-Suppose we have a list of values determined at runtime, and we need to use `OR` to concatenate them in the query, we can write it like this:
-
-```scala
-// Assume the list is obtained at runtime
-val values = List("x", "y", "z")
-val condition = values.map(v => column("a") == v).reduce((x, y) => x || y)
-val s = select (column("a")) from table("t") where condition
-```
-
-The generated SQL will look like:
-
-```sql
-SELECT a FROM t WHERE a = 'x' OR a = 'y' OR a = 'z'
-```
-
-Chaining `where` calls will concatenate conditions using `AND`.
-
-## JOIN
-
-Use `join`, `leftJoin`, `rightJoin`, `fullJoin` with the `on` method to generate a `JOIN` table, and then include it in `from`:
-
-```scala
-val t = table("a") join table("b") on column("a.x") == column("b.y")
-val s = select (column("*")) from t
-```
-
-## GROUP BY
-
-Use the `groupBy` method to generate the `GROUP BY` clause:
-
-```scala
-val s = select (List(column("a"), sum(column("b")))) from table("t") groupBy List(column("a"))
-```
-
-Chaining `groupBy` calls will sequentially concatenate them.
-
-Use the `having` method to generate the `HAVING` clause:
-
-```scala
-val s = select (List(column("a"), sum(column("b")))) from table("t") groupBy List(column("a")) having sum(column("b")) > 1
-```
-
-## ORDER BY
-
-Use the `orderBy` method to generate the `GROUP BY` clause, used in conjunction with the `asc` and `desc` methods of expressions:
-
-```scala
-val s = select (List(column("a"), column("b"))) from table("t") orderBy List(column("a").asc, column("b").desc)
-```
-
-Chaining `orderBy` calls will sequentially concatenate them.
-
-## LIMIT
-
-Use the `limit` and `offset` methods to create the `LIMIT` clause:
-
-```scala
-val s = select (List(column("a"), column("b"))) from table("t") limit 10 offset 10
-```
-
-The generated SQL will vary according to the database dialect.
-
-## UNION
-
-Use `union`, `unionAll`, `except`, `exceptAll`, `intersect`, `intersectAll` methods to generate set queries:
-
-```scala
-val s1 = select (column("a")) from table("t1")
-val s2 = select (column("b")) from table("t2")
-val s = s1 union s2
-```
-
-## Subqueries
-
-Subqueries can appear as part of expressions, for example:
-
-```scala
-val subQuery = select (max(column("a"))) from table("t")
-
-val s = select (List(column("a"))) from table("t") where column("a") < subQuery
-```
-
-Additionally, subquery-related predicates such as `IN`, `ANY`, `SOME`, `ALL`, `EXISTS` are also supported.
-
-For subqueries in `FROM`, we need to use the `as` method to alias the fields and the query, and then reference them again:
-
-```scala
-val subQuery = select (List(column("x"), column("y"))) from table("t1") as "q1"
-
-val q = select (List(column("q1.x"), column("q1.y"))) from subQuery
-```
-
-## Expressions
-
-The expressions in the dynamic query constructor mostly have similar usage to the [expressions](./expr) part of static queries, and you can refer to the explanations there. The difference lies in the usage of `CASE` expressions, which are designed to facilitate the dynamic construction of `CASE` at runtime:
-
-```scala
-val caseExpr = `case`(List(column("a") == 1 -> 1, column("a") == 2 -> 2), 0)
-```
-
-To maintain ease of use in highly dynamic query construction scenarios, the expressions in dynamic queries do not adopt a strictly type-safe design.
+Both `select` and `from` can be called multiple times; the calls are concatenated in order.
 
 ## Generating SQL
 
-After creating the query, if we want to send it to JDBC for processing, we also need to obtain the generated SQL. We can use the `sql` method in conjunction with `Dialect` from `sqala.printer` to generate SQL:
+The `sql` method generates a SQL string. Its arguments are the dialect and the escaping mode (see [Database Interaction](./database.md)):
 
 ```scala
-import sqala.printer.Dialect
+val query =
+    select(column("a", "x").as("col1"))
+        .from(table("a"))
 
-val s = select (List(column("a"), column("b"))) from table("t")
-val sql: (String, Array[Any]) = s.sql(MySqlDialect)
+val sql = query.sql(PostgresqlDialect, true)
 ```
 
-The `sql` method returns a tuple, where the first item is the generated SQL statement, and the second parameter is the parameters within it.
+## Getting the Query Tree
+
+In dynamic construction scenarios, you often need to optimize or transform the generated SQL, but such work cannot be done at the SQL string level. In this case, you can use the `ast` method to inspect the query syntax tree generated by sqala. If you have knowledge of compilers and database kernels, you can look at the relevant definitions in the `sqala.ast` package and use the syntax tree generated by sqala for query optimization or transformation:
+
+```scala
+val query =
+    select(column("a", "x").as("col1"))
+        .from(table("a"))
+
+val queryTree: sqala.ast.statement.SqlQuery = query.ast
+```
+
+Of course, tables and expressions also support the `ast` method:
+
+```scala
+val t = table("a")
+val tableTree: sqala.ast.table.SqlTable = t.ast
+
+val e = column("c") === value(1)
+val exprTree: sqala.ast.expr.SqlExpr = e.ast
+```
+
+After transforming the query tree, you can generate SQL like this:
+
+```scala
+val printer = PostgresqlDialect.printer(standardEscapeStrings)
+// Or methods such as printTable and printExpr; see the relevant definitions in sqala.printer.SqlPrinter
+printer.printQuery(queryTree)
+val sql = printer.sql
+```
+
+## Parsing SQL Snippets
+
+Besides building dynamic queries with the DSL, you can also hand a SQL snippet to sqala's built-in parser to produce an expression:
+
+```scala
+val query =
+    select(unsafeExpr("""lower("u"."name") || '!'""").as("name"))
+        .from(table("user").as("u"))
+```
+
+`unsafeExpr` only validates SQL syntax; it performs no semantic or type checking, and does not verify whether the tables, columns, or functions exist. **As the name suggests, this method is "unsafe"**: the input should be a trusted SQL snippet, and user input must never be concatenated directly, otherwise SQL injection risks remain. When you need to include user values, use `value(...)` or the normal DSL.
+
+## Filtering
+
+The `where` method takes an expression to filter data. Values are usually created with `value`, and multiple calls concatenate the expressions with `AND`:
+
+```scala
+val query =
+    select(column("a", "x").as("col1"))
+        .from(table("a"))
+        .where(column("a", "x") === value(1))
+```
+
+Of course, the right-hand side of operators such as `===` can also be another column:
+
+```scala
+val query =
+    select(column("a", "x").as("col1"))
+        .from(table("a"))
+        .where(column("a", "x") === column("a", "y"))
+```
+
+Most usage rules of comparison operations and functions are the same as those of [static expressions](./expr.md) in static queries, but conditional expressions are specialized for dynamic scenarios: the `caseWhen` method takes several pairs of conditions and results, and `otherwise` specifies the default value at the end:
+
+```scala
+val e =
+    caseWhen(
+        (column("a") === value(1), value(1)),
+        (column("a") === value(2), value(2))
+    ).otherwise(value(3))
+```
+
+The generated SQL is:
+
+```sql
+CASE WHEN "a" = 1 THEN 1 WHEN "a" = 2 THEN 2 ELSE 3
+```
+
+## Sorting
+
+The `orderBy` method takes several sort rules (or a `List` of sort rules) to generate sorting; multiple calls are concatenated in order:
+
+```scala
+val query =
+    select(column("a", "x").as("col1"))
+        .from(table("a"))
+        .where(column("a", "x") === column("a", "y"))
+        .orderBy(column("a", "x").asc, column("a", "y").desc)
+```
+
+The sort rules are the same as those of [static queries](./query.md).
+
+## Grouping
+
+The `groupBy` method takes several expressions (or a `List` of expressions) to generate grouping; multiple calls are concatenated in order:
+
+```scala
+val query =
+    select(count().as("c"))
+        .from(table("a"))
+        .where(column("a", "x") === column("a", "y"))
+        .groupBy(column("a", "x"), column("a", "y"))
+```
+
+The `having` method for filtering after grouping is similar to `where` and is not repeated here.
+
+## Limiting Results
+
+The `limit` and `offset` methods limit the result set:
+
+```scala
+val query =
+    select(column("a", "x").as("col1"))
+        .from(table("a"))
+        .limit(10)
+        .offset(10)
+```
+
+## Joining Tables
+
+`join` and `on` generate joins:
+
+```scala
+val query =
+    select(column("a", "x").as("col1"))
+        .from(
+            table("a").join(table("b")).on(column("a", "x") === column("b", "x"))
+        )
+```
+
+The supported join types are the same as those of [static query joins](./query-join.md).
+
+## Subqueries
+
+The `subquery` method generates a subquery expression:
+
+```scala
+val query =
+    select(column("a", "x").as("col1"))
+        .from(table("a"))
+        .where(
+            column("a", "x") ===
+                subquery(select(count().as("c")).from(table("b")))
+        )
+```
+
+The `as` method generates a subquery table:
+
+```scala
+val query =
+    select(count().as("c"))
+        .from(
+            select(count().as("c"))
+                .from(table("a"))
+                .as("t1")
+        )
+```
+
+`any`, `all`, and `exists` generate quantified subqueries:
+
+```scala
+val query =
+    select(column("a", "x").as("col1"))
+        .from(table("a"))
+        .where(
+            column("a", "x") ===
+                any(select(column("x").as("x")).from(table("b")))
+        )
+```
+
+## Set Operations
+
+Methods such as `union` perform set operations:
+
+```scala
+val q1 = select(column("x").as("x")).from(table("a"))
+val q2 = select(column("x").as("x")).from(table("b"))
+val query = q1.union(q2)
+```
+
+The supported set operations are the same as those of [static set operations](./query-set.md).
