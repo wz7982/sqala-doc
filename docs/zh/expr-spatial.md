@@ -1,5 +1,13 @@
 # 空间操作
 
+> 本页功能属于 `sqala-static-ext` 模块，需要额外引入该模块，并导入：
+>
+> ```scala
+> import sqala.static.dsl.*
+> import sqala.static.ext.dsl.*
+> ```
+
+
 ## 空间函数
 
 sqala支持ISO/IEC 13249中定义的部分标准空间操作，支持MySQL和PostgreSQL的PostGIS插件。

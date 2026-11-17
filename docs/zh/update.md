@@ -5,7 +5,7 @@
 ## 新增
 
 ```scala
-val i1 = insert[Department](d => (d.managerId, d.name)).values(1, "IT")
+val i1 = insert[Department](d => (d.managerId, d.name)).values((1, "IT"))
 
 val i2 = insert[Department](d => (d.managerId, d.name)).values(List((1, "IT"), (2, "Legal")))
 ```
@@ -13,7 +13,7 @@ val i2 = insert[Department](d => (d.managerId, d.name)).values(List((1, "IT"), (
 ## 更新
 
 ```scala
-val u = update[Department].set(d => d.name := "IT").where(_.id == 1)
+val u = update[Department].set(d => d.name := "IT").where(_.id === 1)
 ```
 
 `:=`右侧不仅可以是简单的值，也可以是其它表达式：
@@ -25,7 +25,7 @@ val u = update[A].set(a => a.x := a.x + 1)
 ## 删除
 
 ```scala
-val d = delete[Department].where(_.id == 1)
+val d = delete[Department].where(_.id === 1)
 ```
 
 ## 新增或更新

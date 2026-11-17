@@ -10,9 +10,9 @@ sqala对于过滤操作提供了`filterIf`，但对于排序没有提供类似�
 // 假设是用户传参
 val key: String = ???
 
-val q = query:
-    val baseQuery = from(Post)
+val baseQuery = from(Post)
 
+val query =
     key match
         case "likeCount" => baseQuery.sortBy(p => p.likeCount.desc)
         case "viewCount" => baseQuery.sortBy(p => p.viewCount.desc)
@@ -28,17 +28,17 @@ case class Data(dim1: Int, dim2: Int, dim3: Int, measure: Int)
 
 val dim: Int = ???
 
-val q = query:
-    val baseQuery = from(Data)
+val baseQuery = from(Data)
 
-    val grouping = if dim == 1 then
+val grouping =
+    if dim == 1 then
         baseQuery.groupBy(d => d.dim1)
     else if dim == 2 then
         baseQuery.groupBy(d => d.dim2)
     else
         baseQuery.groupBy(d => d.dim3)
 
-    grouping.map((g, d) => (g, sum(d.measure)))
+val query = grouping.map((g, d) => (g, sum(d.measure)))
 ```
 
 ## 按列表生成OR条件
@@ -48,7 +48,7 @@ val q = query:
 ```scala
 val list = List("a", "b", "c")
 
-val q =
+val query =
     from(User).filter(u => list.map(i => u.name.contains(i)).reduce((x, y) => x || y))
 ```
 
@@ -59,23 +59,22 @@ val q =
 ```scala
 // L参数是sqala内部处理使用的，表示查询所在层级
 def joinTable[L <: Int](using QueryContext[L]) =
-    Post.join(Comment).on((p, c) => p.id == c.postId)
+    Post.join(Comment).on((p, c) => p.id === c.postId)
 
-// 使用query方法提供查询构建上下文
-val q1 = query:
-    from(joinTable).filter((p, _) => p.id == 1)
+val q1 =
+    from(joinTable).filter((p, _) => p.id === 1)
 
-val q2 = query:
+val q2 =
     from(joinTable).sortBy((p, c) => (p.title, c.title))
 ```
 
 ## 提升可读性
 
-在同一个`query`上下文里，我们可以将子查询等结构提出一个变量来提高代码可读性：
+在同一个查询里，我们可以将子查询等结构提出一个变量来提高代码可读性：
 
 ```scala
-val q = query:
-    val avgQuery = from(Post).map(p => avg(e.likeCount))
+val avgQuery = from(Post).map(p => avg(p.likeCount))
 
+val query =
     from(Post).filter(p => p.likeCount > avgQuery)
 ```

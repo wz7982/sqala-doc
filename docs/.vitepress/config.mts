@@ -26,8 +26,6 @@ export default defineConfig({
             items: [
               { text: '元数据配置', link: 'metadata' },
               { text: '数据库交互', link: 'database' },
-              { text: '使用方法名创查询', link: 'query-by-name' },
-              { text: '级联映射', link: 'cascade' },
               {
                 text: '查询',
                 collapsed: false,
@@ -39,7 +37,6 @@ export default defineConfig({
                   { text: '子查询', link: 'query-sub' },
                   { text: '条件构建查询', link: 'query-cond' },
                   { text: '递归查询', link: 'query-recursive' },
-                  { text: '透视表', link: 'query-pivot' },
                   { text: 'JSON表', link: 'query-json' },
                   { text: '函数表', link: 'query-func' },
                   { text: '行模式识别', link: 'query-recognize' },

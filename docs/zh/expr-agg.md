@@ -5,7 +5,7 @@
 聚合函数使用示例：
 
 ```scala
-val q =
+val query =
     from(Post).map(p => sum(p.likeCount))
 ```
 
@@ -28,7 +28,7 @@ sqala内置的聚合函数有：
 |`covarPop(a, b)`   |`COVAR_POP(a, b)`        |
 |`covarSamp(a, b)`  |`COVAR_SAMP(a, b)`       |
 |`corr(a, b)`       |`CORR(a, b)`             |
-|`regrSlop(a, b)`   |`REGR_SLOPE(a, b)`       |
+|`regrSlope(a, b)`   |`REGR_SLOPE(a, b)`       |
 |`regrIntercept(a, b)`|`REGR_INTERCEPT(a, b)` |
 |`regrCount(a, b)`  |`REGR_COUNT(a, b)`       |
 |`regrR2(a, b)`     |`REGR_R2(a, b)`          |
@@ -41,8 +41,8 @@ sqala内置的聚合函数有：
 聚合函数不允许嵌套调用，sqala会在此情况进行语义检测，因此以下用法会返回编译错误：
 
 ```scala
-val q =
-    // 编译错误
+val query =
+    // 编译错误：Aggregate function calls cannot be nested.
     from(Post).map(p => count(sum(p.likeCount)))
 ```
 
@@ -51,7 +51,7 @@ val q =
 `listAgg`函数的第一个参数为需要聚合的表达式，第二个参数为分隔符，第三个参数为排序规则：
 
 ```scala
-val q =
+val query =
     from(Post).map(p => listAgg(p.title, ",", p.id.asc))
 ```
 
@@ -70,7 +70,7 @@ val q =
 `percentileCont`/`percentileDisc`函数的参数为百分比，范围是`0` - `1`，第二个参数为需要聚合表达式的排序规则。
 
 ```scala
-val q =
+val query =
     from(Post).map(p => percentileCont(0.5, p.id.asc))
 ```
 

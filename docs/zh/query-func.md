@@ -1,5 +1,13 @@
 # 函数表
 
+> 本页功能属于 `sqala-static-ext` 模块，需要额外引入该模块，并导入：
+>
+> ```scala
+> import sqala.static.dsl.*
+> import sqala.static.ext.dsl.*
+> ```
+
+
 sqala支持SQL中的函数表功能（目前仅PostgreSQL支持标准函数表操作），可以把函数调用结果当做表使用。
 
 ## UNNEST
@@ -7,7 +15,7 @@ sqala支持SQL中的函数表功能（目前仅PostgreSQL支持标准函数表�
 `unnest`对应SQL标准的函数表`UNNEST`，作用是把数组字段平铺，作为一个表使用，我们使用字段`x`进行后续操作：
 
 ```scala
-val q =
+val query =
     from(unnest(Array(1, 2, 3))).filter(t => t.x > 1)
 ```
 
@@ -25,7 +33,7 @@ WHERE
 `unnestWithOrdinal`可以在展开数组之后添加序号，使用`ordinal`字段进行后续序号操作：
 
 ```scala
-val q =
+val query =
     from(unnestWithOrdinal(Array(1, 2, 3))).filter(t => t.ordinal > 1)
 ```
 
@@ -46,7 +54,7 @@ WHERE
 ```scala
 case class Entity(arr: Array[Int])
 
-val q =
+val query =
     from:
         Entity.crossJoinLateral(e => unnest(e.arr))
 ```
@@ -75,8 +83,8 @@ case class GenerateSeries(x: Int)
 然后创建函数表：
 
 ```scala
-def generateSeries(start: Int, end: Int)(using QueryContext) =
-    createTableFunction[GenerateSeries](
+def generateSeries[L <: Int](start: Int, end: Int)(using QueryContext[L]) =
+    createTableFunc[GenerateSeries](
         "generate_series",
         start.asExpr :: end.asExpr :: Nil,
         false
@@ -88,7 +96,7 @@ def generateSeries(start: Int, end: Int)(using QueryContext) =
 然后我们就可以在查询中使用：
 
 ```scala
-val q =
+val query =
     from(generateSeries(1, 10)).filter(t => t.x > 1)
 ```
 

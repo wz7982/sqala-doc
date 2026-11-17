@@ -1,5 +1,7 @@
 # Introduction to sqala
 
+> **Note:** The English documentation is based on an older version of sqala and does not yet reflect the current API. Please refer to the Chinese documentation for the latest usage.
+
 sqala is an SQL query library based on Scala 3, named after the combination of Scala and SQL.
 
 Using sqala, you can achieve:

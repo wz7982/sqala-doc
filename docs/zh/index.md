@@ -9,23 +9,23 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
     ```scala
     case class User(id: Int, name: String)
 
-    val q =
+    val query =
         from(User)
-            .filter(u => u.id == 1)
+            .filter(u => u.id === 1)
             .map(u => u.name)
 
     // 返回类型为：List[String]
-    val result = db.fetch(q)
+    val result = db.fetch(query)
     ```
 
 2. **使用Scala3新特性命名元组管理查询**：无需为投影、关联结果预先创建DTO，也无需`Map[String, Any]`，使用`.`调用返回字段且类型安全：
 
     ```scala
-    val q =
+    val query =
         from(User).map(u => (id = u.id))
 
     // 返回类型为：List[(id: Int)]
-    val result = db.fetch(q)
+    val result = db.fetch(query)
 
     for r <- result do
         println(r.id)
@@ -34,18 +34,11 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
 3. **支持类型安全的主键查询**：按主键查询数据无需创建DSL，直接从实体类配置中读取主键类型作为参数类型并创建查询：
 
     ```scala
-    // 返回类型为：List[User]
-    val result = db.fetchByPrimaryKey[User](1)
+    // 返回类型为：Option[User]
+    val result = db.findByPrimaryKey[User](1)
     ```
 
-4. **支持类型安全的命名查询**：简单查询无需创建DSL，sqala支持从方法名称中获取查询参数类型，并生成查询，而且无需预先定义方法：
-
-    ```scala
-    // 返回类型为：List[User]
-    val result = db.fetchByIdAndNameOrderByIdDesc[User](1, "小黑")
-    ```
-
-5. **极致的类型安全**：sqala使用类型系统建模SQL语义，因此sqala的类型检查不仅可以拦截诸如“字段不存在”，“比较运算符两侧类型不兼容”等简单的错误，还可以拦截更多语义错误：
+4. **极致的类型安全**：sqala使用类型系统建模SQL语义，因此sqala的类型检查不仅可以拦截诸如“字段不存在”，“比较运算符两侧类型不兼容”等简单的错误，还可以拦截更多语义错误：
 
     ```scala
     val q1 =
@@ -61,20 +54,22 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
         from(A).map(a => from(A).map(_.a))
 
     val q4 =
-        // 编译错误：WHERE子句中的子查询聚合了外层列
-        from(A).filter(a => a.y == from(A).map(aa => count(a.x)))
+        // 编译错误：聚合函数不能嵌套调用
+        from(A).map(a => count(sum(a.x)))
 
     // 等等
     ```
 
-6. **动态查询**：在拖拽式报表平台等场景，sqala提供动态查询功能：
+5. **动态查询**：在拖拽式报表平台等场景，sqala提供动态查询功能：
 
     ```scala
-    val q =
-        from(table("t"))
-            .where(column("a") == value(1))
-            .select(column("b").as("col1"), column("c").as("col2"))
+    val query =
+        select(column("b").as("col1"), column("c").as("col2"))
+            .from(table("t"))
+            .where(column("a") === value(1))
     ```
+
+6. **SQL 解析器**：`dynamic` 模块内置 SQL 解析器，可通过 `unsafeExpr` 将 SQL 片段解析为表达式，便于迁移既有 SQL 或处理动态查询片段（注意：仅校验语法，不校验语义，不能拼接不可信输入）。
 
 7. **极致性能**：使用Scala3的`inline`能力生成高性能的反序列化代码，其反序列化速度通常可达基于反射的Java主流查询库的数倍。
 
@@ -82,7 +77,7 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
 
 9.  **多方言支持**：支持PostgreSQL、MySQL、Oracle、SQLServer在内的多种方言，同一个查询表达式传入不同的方言参数即可生成不同的SQL，在查询部分文档中将详细列出各数据库最新版本实测的支持程度。
 
-10. **强大的查询功能**：不仅是CRUD，sqala还支持多维分组、`LATERAL`子查询、透视表、递归查询、行模式识别、JSON表、属性图查询等高级功能。从简单场景到复杂数据分析，sqala为您提供一站式解决方案。
+10. **强大的查询功能**：不仅是CRUD，sqala还支持多维分组、`LATERAL`子查询、递归查询、行模式识别、JSON表、属性图查询等高级功能。从简单场景到复杂数据分析，sqala为您提供一站式解决方案。
 
 11. **专业场景支持**：支持`ISO/IEC 13249`标准定义的空间操作，为地理信息计算场景提供了专业支持。
 
@@ -92,11 +87,9 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
 
 ## 注意事项
 
-1. 由于sqala目前没有基于Scala3 LTS版本构建，在Scala3 3.9 LTS版本之前，应用在生产环境需谨慎。
+1. sqala基于Scala 3.9.0 LTS版本构建，请确保Scala版本在`3.9.0`及以上。
 
-2. 请确保Scala版本在`3.8.2`及以上。
-
-3. 推荐使用Scala官方的metals插件配合VSCode、Vim等工具使用，以获得更好的编写体验。
+2. 推荐使用Scala官方的metals插件配合VSCode、Vim等工具使用，以获得更好的编写体验。
 
 ## 并发模型和错误处理
 
@@ -112,11 +105,11 @@ sqala目前使用异常机制处理数据库错误。
 
 ## 使用场景建议
 
-sqala支持查询DSL、使用方法名创建查询和原生SQL三种模式，使用建议如下：
+sqala支持查询DSL和原生SQL两种模式，使用建议如下：
 
-| 场景           | 查询 DSL       | 方法名查询     | 原生 SQL               |
-|---------------|---------------|---------------|-----------------------|
-| 简单条件查询    | ✅ 推荐       | ✅ 推荐       | ⚠️ 可用              |
-| 复杂查询       | ✅ 推荐       | ❌ 不支持     | ⚠️ 可用              |
-| 类型安全       | ✅ 编译期检查 | ✅ 编译期检查 | ⚠️ 静态查询编译期检查 |
-| 开发效率       | ✅ 高         | ✅ 极高       | ⚠️ 中等             |
+| 场景           | 查询 DSL       | 原生 SQL               |
+|---------------|---------------|-----------------------|
+| 简单条件查询    | ✅ 推荐       | ⚠️ 可用              |
+| 复杂查询       | ✅ 推荐       | ⚠️ 可用              |
+| 类型安全       | ✅ 编译期检查 | ⚠️ 静态查询编译期检查 |
+| 开发效率       | ✅ 高         | ⚠️ 中等             |

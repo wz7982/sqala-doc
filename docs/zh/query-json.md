@@ -1,11 +1,19 @@
 # JSON表
 
+> 本页功能属于 `sqala-static-ext` 模块，需要额外引入该模块，并导入：
+>
+> ```scala
+> import sqala.static.dsl.*
+> import sqala.static.ext.dsl.*
+> ```
+
+
 `JSON_TABLE`是SQL中较新的标准，用于将嵌套JSON数据平铺成关系型数据库能处理的关系表，sqala也对JSON表进行了支持。
 
 `jsonTable`方法用于生成一个JSON表，第一个参数是JSON数据，第二个参数是基础的JSON PATH，第三个参数是列定义：
 
 ```scala
-val q =
+val query =
     from:
         jsonTable(
             """{"a": 1, "obj": {"b": "abc", "c": 2}}""",
@@ -50,7 +58,7 @@ FROM
 
 ```scala
 // 返回类型为List[(o: Int, a: Option[Int], b: Option[String], c: Option[Boolean])]
-val result = db.fetch(q)
+val result = db.fetch(query)
 ```
 
 我们可以使用`LATERAL`功能让JSON表获取外部字段作为JSON输入源：
@@ -58,7 +66,7 @@ val result = db.fetch(q)
 ```scala
 case class Entity(json: Json)
 
-val q =
+val query =
     from:
         Entity.crossJoinLateral(e =>
             jsonTable(
