@@ -4,18 +4,18 @@
 
 ## 定义函数
 
-`createFunction`方法用于创建SQL函数，参数是函数名和参数列表`List[Expr[?, ?]]`，我们以MySQL的`LEFT`函数为例：
+`createFunc`方法用于创建SQL函数，参数是函数名和参数列表`List[Expr[?, ?]]`，我们以MySQL的`LEFT`函数为例：
 
 ```scala
 // L参数是sqala内部处理使用的，表示查询所在层级
 def left[L <: Int](x: Expr[String, ?], n: Int)(using QueryContext[L]) =
-    createFunction[Option[String], L]("LEFT", x :: n.asExpr :: Nil)
+    createFunc[Option[String], L]("LEFT", x :: n.asExpr :: Nil)
 ```
 
 我们就可以在查询中使用了：
 
 ```scala
-val q =
+val query =
     from(Post)
         .map(p => left(p.title, 10))
 ```
@@ -36,7 +36,7 @@ extension [L <: Int](x: Expr[Json, ?])(using QueryContext[L])
 我们就可以在查询中使用了：
 
 ```scala
-val q =
+val query =
     from(Post)
         .map(p => jsonObject("id" value p.id) ->> "id")
 ```

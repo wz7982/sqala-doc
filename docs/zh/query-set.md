@@ -7,10 +7,10 @@
 SQL中`UNION`和`UNION ALL`代表并集操作，区别是前者将两个查询的并集去重，相当于`UNION DISTINCT`，后者则不会去重。sqala中使用`union`和`unionAll`方法连接两个查询：
 
 ```scala
-val q = query:
-    val q1 = from(User).filter(u => u.id == 1).map(u => (id = u.id, name = u.name))
-    val q2 = from(User).filter(u => u.id == 2).map(u => (id = u.id, name = u.name))
-    q1.unionAll(q2)
+val q1 = from(User).filter(u => u.id === 1).map(u => (id = u.id, name = u.name))
+val q2 = from(User).filter(u => u.id === 2).map(u => (id = u.id, name = u.name))
+
+val query = q1.unionAll(q2)
 ```
 
 生成的SQL为：
@@ -56,10 +56,10 @@ sqala在追求类型安全的同时，也会极力追求便利性。
 SQL中`INTERSECT`和`INTERSECT ALL`代表交集操作。sqala中使用`intersect`和`intersectAll`方法连接两个查询：
 
 ```scala
-val q = query:
-    val q1 = from(User).filter(u => u.id >= 5).map(u => (id = u.id, name = u.name))
-    val q2 = from(User).filter(u => u.id <= 10).map(u => (id = u.id, name = u.name))
-    q1.intersectAll(q2)
+val q1 = from(User).filter(u => u.id >= 5).map(u => (id = u.id, name = u.name))
+val q2 = from(User).filter(u => u.id <= 10).map(u => (id = u.id, name = u.name))
+
+val query = q1.intersectAll(q2)
 ```
 
 ```sql
@@ -89,10 +89,10 @@ INTERSECT ALL
 SQL中`EXCEPT`和`EXCEPT ALL`代表差集操作。sqala中使用`except`和`exceptAll`方法连接两个查询：
 
 ```scala
-val q = query:
-    val q1 = from(User).filter(u => u.id >= 5).map(u => (id = u.id, name = u.name))
-    val q2 = from(User).filter(u => u.id <= 10).map(u => (id = u.id, name = u.name))
-    q1.exceptAll(q2)
+val q1 = from(User).filter(u => u.id >= 5).map(u => (id = u.id, name = u.name))
+val q2 = from(User).filter(u => u.id <= 10).map(u => (id = u.id, name = u.name))
+
+val query = q1.exceptAll(q2)
 ```
 
 ```sql

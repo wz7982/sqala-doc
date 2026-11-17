@@ -401,8 +401,8 @@ sqala无需像其他查询库那样额外定义一个表结构对象，在创建
 ```scala
 import sqala.static.dsl.*
 
-val q =
-    from(User).filter(d => d.id == 1)
+val query =
+    from(User).filter(d => d.id === 1)
 ```
 
 ## 支持的字段类型
@@ -459,8 +459,8 @@ case class Post(
 ```scala
 import sqala.static.dsl.*
 
-val q =
-    from(Post).filter(p => p.state == DataState.Active)
+val query =
+    from(Post).filter(p => p.state === DataState.Active)
 ```
 
 sqala会返回一个编译错误。原因是sqala不知道如何处理这样的字段，为其生成查询，或从查询结果中反序列化。
@@ -468,7 +468,7 @@ sqala会返回一个编译错误。原因是sqala不知道如何处理这样的�
 因此我们需要为自定义类型提供`trait CustomField`的实现，为了避免构建查询时频繁导入，建议将实现放入自定义类型的伴生对象中：
 
 ```scala
-import sqala.tadata.*
+import sqala.metadata.*
 
 enum DataState:
     case Active
@@ -485,7 +485,7 @@ object DataState:
             case Deleted => 0
 ```
 
-`Custom`的两个类型参数分别为要实现的类型，和要映射到的基础类型；`fromValue`方法处理如何从基础类型创建自定义类型的值，`toValue`方法含义反之。
+`CustomField`的两个类型参数分别为要实现的类型，和要映射到的基础类型；`fromValue`方法处理如何从基础类型创建自定义类型的值，`toValue`方法含义反之。
 
 这样，就可以正常使用枚举字段构造查询了。
 

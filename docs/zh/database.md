@@ -115,11 +115,11 @@ val result: List[Entity] = db.fetchByPrimaryKeys[Entity](keys)
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val query =
     from(User)
 
 // 返回类型自动推导为List[User]
-val result = db.fetch(q)
+val result = db.fetch(query)
 ```
 
 如果不希望使用sqala自动推导出的类型，我们可以使用`db.fetchTo`方法手动传入类型参数，但如果类型与实际返回不符，**则可能在运行时返回类型转换错误**：
@@ -127,10 +127,10 @@ val result = db.fetch(q)
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val query =
     from(User)
 
-val result: List[SomeType] = db.fetchTo[SomeType](q)
+val result: List[SomeType] = db.fetchTo[SomeType](query)
 ```
 
 ## 查询单条数据
@@ -140,11 +140,11 @@ val result: List[SomeType] = db.fetchTo[SomeType](q)
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val query =
     from(User)
 
 // 返回类型自动推导为Option[User]
-val result = db.find(q)
+val result = db.find(query)
 ```
 
 如果不希望使用sqala自动推导出的类型，使用`db.findTo`方法即可，用法类似`db.fetchTo`，不赘述。
@@ -160,10 +160,10 @@ val result = db.find(q)
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val query =
     from(User)
 
-val result: Long = db.fetchCount(q)
+val result: Long = db.fetchCount(query)
 ```
 
 ## 查询存在性
@@ -173,10 +173,10 @@ val result: Long = db.fetchCount(q)
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val query =
     from(User)
 
-val result: Boolean = db.fetchExists(q)
+val result: Boolean = db.fetchExists(query)
 ```
 
 ## 分页查询
@@ -187,21 +187,21 @@ val result: Boolean = db.fetchExists(q)
 case class Page[T](
     pageTotal: Int,  // 总页数
     querySize: Long, // 查询COUNT(*)返回的条目数
-    pageNo: Int,     // 当前页码
     pageSize: Int,   // 页大小
+    pageNo: Int,     // 当前页码
     data: List[T]    // 分页数据
 )
 ```
 
-`db.page`的参数分别为：查询语句、页大小、页码、是否需要查询条数和总页数（默认为true）。
+`db.page`的参数分别为：查询语句、页大小、页码、是否需要查询总条数（默认为`true`）。
 
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val query =
     from(User)
 
-val result = db.page(q, 10, 1)
+val result = db.page(query, 10, 1)
 ```
 
 每页都查询数据条数和总页数是不必要的，我们通常可以只在第一页查询条数和总页数，避免浪费数据库性能：
@@ -209,10 +209,10 @@ val result = db.page(q, 10, 1)
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val query =
     from(User)
 
-val result = db.page(q, pageSize, pageNo, pageNo == 1)
+val result = db.page(query, pageSize, pageNo, pageNo == 1)
 ```
 
 ## 新增数据
@@ -285,7 +285,7 @@ val result: Int = db.save(user)
 
 ## 按主键删除数据
 
-sqala支持直接使用主键删除数据，，请确保实体类上使用`primaryKey`或`autoInc`注解配置了主键字段，然后使用`db.deleteByPrimary`方法查询数据：
+sqala支持直接使用主键删除数据，请确保实体类上使用`primaryKey`或`autoInc`注解配置了主键字段，然后使用`db.deleteByPrimaryKey`方法删除数据：
 
 ```scala
 val result: Int = db.deleteByPrimaryKey[User](1)
@@ -296,7 +296,7 @@ val result: Int = db.deleteByPrimaryKey[User](1)
 也可以使用`db.deleteByPrimaryKeys`方法批量删除：
 
 ```scala
-val result: Int = db.deleteByPrimaryKey[User](List(1, 2, 3))
+val result: Int = db.deleteByPrimaryKeys[User](List(1, 2, 3))
 ```
 
 ## 执行语句
@@ -314,10 +314,10 @@ val result: Int = db.execute(...)
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val query =
     from(User)
 
-db.cursorFetch(q, 100): c =>
+db.cursorFetch(query, 100): c =>
     // 对数据的操作 ...
 ```
 
@@ -339,10 +339,10 @@ case class Cursor[T](
 ```scala
 import sqala.static.dsl.*
 
-val q =
+val query =
     from(User)
 
-val sql = db.showSql(q)
+val sql = db.showSql(query)
 ```
 
 ## 事务
@@ -372,7 +372,7 @@ def insert(row: User)(using JdbcTransactionContext): Int =
     db.insertAndReturn(row).head.toInt
 
 def delete(id: Int)(using JdbcTransactionContext): Int =
-    db.execute(delete[User].where(d => d.id == id))
+    db.execute(delete[User].where(d => d.id === id))
 
 def insertAndDelete(row: User)(using JdbcTransactionContext): Int =
     val id = insertDepartment(row)

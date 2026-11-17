@@ -7,9 +7,9 @@
 sqala也像数据库一样，支持在`from`中传入多个表：
 
 ```scala
-val q =
+val query =
     from(Channel, Post, Comment)
-        .filter((cl, p, ct) => cl.id == p.channelId && p.id == ct.postId)
+        .filter((cl, p, ct) => cl.id === p.channelId && p.id === ct.postId)
         .take(10)
 ```
 
@@ -64,14 +64,14 @@ sqala支持如下的连接类型：
 
 以上方法除了`crossJoin`外均配合`on`方法，在`from`中使用。
 
-**需要注意的是，sqala的表连接方法不是大多数查询库采用的`from.join.on`形式，而是把`join`作为`from`的参数处理，这是符合SQL标准语义的，而且在子查询表、函数表、透视表等复杂情况下可以提供更统一的调用形式。**
+**需要注意的是，sqala的表连接方法不是大多数查询库采用的`from.join.on`形式，而是把`join`作为`from`的参数处理，这是符合SQL标准语义的，而且在子查询表、函数表等复杂情况下可以提供更统一的调用形式。**
 
 两表连接形式为：
 
 ```scala
-val q =
+val query =
     from:
-        Channel.join(Post).on((c, p) => c.id == p.channelId)
+        Channel.join(Post).on((c, p) => c.id === p.channelId)
 ```
 
 生成的SQL为：
@@ -96,11 +96,11 @@ FROM
 三表连接形式为：
 
 ```scala
-val q =
+val query =
     from:
         Channel
-        .join(Post).on((c, p) => c.id == p.channelId)
-        .join(Comment).on((_, p, c) => p.id == c.postId)
+        .join(Post).on((c, p) => c.id === p.channelId)
+        .join(Comment).on((_, p, c) => p.id === c.postId)
 ```
 
 生成的SQL为：
@@ -140,76 +140,76 @@ FROM
 因此如果将外连接的情况，比如：
 
 ```scala
-val q =
+val query =
     from:
         Channel
-        .leftJoin(Post).on((c, p) => c.id == p.channelId)
-        .leftJoin(Comment).on((_, p, c) => p.id == c.postId)
+        .leftJoin(Post).on((c, p) => c.id === p.channelId)
+        .leftJoin(Comment).on((_, p, c) => p.id === c.postId)
 ```
 
 还机械地推导为`List[(Channel, Post, Comment)]`类型，在连接数据库反序列化的时候将不再安全，sqala在这种情况下会智能地将返回类型推导为：
 
 ```scala
-val q =
+val query =
     from:
         Channel
-        .leftJoin(Post).on((c, p) => c.id == p.channelId)
-        .leftJoin(Comment).on((_, p, c) => p.id == c.postId)
+        .leftJoin(Post).on((c, p) => c.id === p.channelId)
+        .leftJoin(Comment).on((_, p, c) => p.id === c.postId)
 
 // 返回类型为List[(Channel, Option[Post], Option[Comment])]
-val result = db.fetch(q)
+val result = db.fetch(query)
 ```
 
 如果把第一个连接形式改为`rightJoin`，返回类型则自动推导为：
 
 ```scala
-val q =
+val query =
     from:
         Channel
-        .rightJoin(Post).on((c, p) => c.id == p.channelId)
-        .leftJoin(Comment).on((_, p, c) => p.id == c.postId)
+        .rightJoin(Post).on((c, p) => c.id === p.channelId)
+        .leftJoin(Comment).on((_, p, c) => p.id === c.postId)
 
 // 返回类型为List[(Option[Channel], Post, Option[Comment])]
-val result = db.fetch(q)
+val result = db.fetch(query)
 ```
 
 如果我们引用可空侧的字段，比如：
 
 ```scala
-val q =
+val query =
     from:
         Channel
-        .rightJoin(Post).on((c, p) => c.id == p.channelId)
-        .leftJoin(Comment).on((_, p, c) => p.id == c.postId)
+        .rightJoin(Post).on((c, p) => c.id === p.channelId)
+        .leftJoin(Comment).on((_, p, c) => p.id === c.postId)
     .map((_, _, c) => c.id)
 ```
 
 即使原本实体类中`Comment`的`id`字段为`Int`，是一个非空字段，但sqala仍会聪明地将返回类型推导为：
 
 ```scala
-val q =
+val query =
     from:
         Channel
-        .rightJoin(Post).on((c, p) => c.id == p.channelId)
-        .leftJoin(Comment).on((_, p, c) => p.id == c.postId)
+        .rightJoin(Post).on((c, p) => c.id === p.channelId)
+        .leftJoin(Comment).on((_, p, c) => p.id === c.postId)
     .map((_, _, c) => c.id)
 
 // 返回类型为List[Option[Int]]
-val result = db.fetch(q)
+val result = db.fetch(query)
 ```
 
 但是如果原本字段本身就是`Option`可空字段，sqala也不会多此一举，产生诸如`Option[Option[T]]`的类型：
 
 ```scala
-val q =
+val query =
     from:
         Channel
-        .rightJoin(Post).on((c, p) => c.id == p.channelId)
-        .leftJoin(Comment).on((_, p, c) => p.id == c.postId)
+        .rightJoin(Post).on((c, p) => c.id === p.channelId)
+        .leftJoin(Comment).on((_, p, c) => p.id === c.postId)
     .map((_, _, c) => c.parentId)
 
 // 返回类型仍然为List[Option[Int]]
-val result = db.fetch(q)
+val result = db.fetch(query)
 ```
 
 sqala这样的推导策略在尽力简化返回类型的同时，保持类型安全性。您可以专注于业务逻辑，把类型安全交给sqala管理。
@@ -219,11 +219,11 @@ sqala这样的推导策略在尽力简化返回类型的同时，保持类型安
 sqala跟SQL一样，支持灵活调整连接顺序，而不是只支持A先连接B再连接C这样的操作：
 
 ```scala
-val q =
+val query =
     from:
         Channel.join(
-            Post.leftJoin(Comment).on((p, c) => p.id == c.postId)
-        ).on((c, p, _) => c.id == p.channelId)
+            Post.leftJoin(Comment).on((p, c) => p.id === c.postId)
+        ).on((c, p, _) => c.id === p.channelId)
 ```
 
 生成的SQL为：
@@ -265,15 +265,15 @@ FROM
 `LATERAL`是SQL中一个强大的功能，其可以在`FROM`的表中引用前一个表的字段，为每行数据产生一个新的关联结果集，比如我们需要处理这样一个需求：“分别统计每个频道里点赞数前2的帖子，并汇总到一个列表中”，就可以使用`LATERAL`功能，sqala也为此类需求带来了开箱即用的工具：
 
 ```scala
-val q =
+val query =
     from:
         Channel.joinLateral(c =>
             from(Post)
-                .filter(p => c.id == p.channelId)
+                .filter(p => c.id === p.channelId)
                 .map(p => (id = p.id, channelId = p.channelId, title = p.title))
                 .sortBy(p => p.likeCount.desc)
                 .take(2)
-        ).on((c, p) => c.id == p.channelId)
+        ).on((c, p) => c.id === p.channelId)
 ```
 
 这样的需求在传统ORM中，要么会生成`N + 1`的SQL语句，循环查询带来高IO开销，要么完全不支持这样的表达，退回到手写SQL。而使用sqala您可以轻松处理这样的复杂需求。

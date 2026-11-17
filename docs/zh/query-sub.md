@@ -14,7 +14,7 @@ sqala对以上四种子查询均进行了支持。
 一个投影到**命名元组**的查询，在sqala里可以作为子查询使用：
 
 ```scala
-val q =
+val query =
     from:
         from(User).map(u => (col1 = u.id, col2 = u.name))
 ```
@@ -22,12 +22,12 @@ val q =
 表子查询必须投影到元组是因为，sqala会自动从命名元组中抽取信息，并为子查询生成字段，我们可以在后续子句中使用：
 
 ```scala
-val q =
+val query =
     from:
         from(User).map(u => (col1 = u.id, col2 = u.name))
-    .filter: q =>
+    .filter: query =>
         // col1字段是sqala自动生成的，且类型安全
-        q.col1 > 5
+        query.col1 > 5
 ```
 
 生成的SQL为：
@@ -57,11 +57,11 @@ sqala也会自动管理子查询的表别名和列别名，您无需为此浪费
 比如我们需要统计“点赞数比同频道帖子的平均点赞数更高的帖子”，则可以：
 
 ```scala
-val q =
+val query =
     from(Post).filter: p =>
         p.likeCount >
             from(Post)
-                .filter(pp => pp.channelId == p.channelId)
+                .filter(pp => pp.channelId === p.channelId)
                 .map(pp => avg(pp.likeCount))
 ```
 
@@ -93,11 +93,11 @@ WHERE
 sqala支持多字段参与比较，因此，我们也可以方便地统计“点赞数和浏览量都比同频道帖子的平均点赞数和浏览数更高的帖子”，可以：
 
 ```scala
-val q =
+val query =
     from(Post).filter: p =>
         (p.likeCount, p.viewCount) >
             from(Post)
-                .filter(pp => pp.channelId == p.channelId)
+                .filter(pp => pp.channelId === p.channelId)
                 .map(pp => (avg(pp.likeCount), avg(pp.viewCount)))
 ```
 
@@ -134,9 +134,9 @@ WHERE
 `EXISTS`子查询用于检测存在性，但不关心`EXISTS`中的实际数据，比如我们统计“同名的用户”：
 
 ```scala
-val q =
+val query =
     from(User).filter: u =>
-        exists(from(User).filter(uu => uu.name == u.name && uu.id != u.id))
+        exists(from(User).filter(uu => uu.name === u.name && uu.id <> u.id))
     .map(u => u.name)
 ```
 
@@ -164,7 +164,7 @@ WHERE
 `IN`子查询用于查找子查询中数据包含外侧表对应字段数据的条目，比如我们统计“有评论的帖子”：
 
 ```scala
-val q =
+val query =
     from(Post).filter: p =>
         p.id.in(
             from(Comment).map(c => c.postId)
@@ -199,9 +199,9 @@ WHERE
 SQL中`ANY`或`SOME`子查询的语义为，只要子查询中的**存在任意一条**数据与外侧类匹配，则表示匹配成功，上面的`IN`子查询也可以写成：
 
 ```scala
-val q =
+val query =
     from(Post).filter: p =>
-        p.id == any(
+        p.id === any(
             from(Comment).map(c => c.postId)
         )
 ```
@@ -234,9 +234,9 @@ WHERE
 SQL中`ALL`或`SOME`子查询的语义为，只要子查询中的**所有**数据都与外侧类匹配，才表示匹配成功，`<> ALL`与`NOT IN`子查询等价：
 
 ```scala
-val q =
+val query =
     from(Post).filter: p =>
-        p.id != all(
+        p.id <> all(
             from(Comment).map(c => c.postId)
         )
 ```
@@ -277,14 +277,14 @@ WHERE
 
 ## 标量子查询
 
-返回一行一列的子查询可以在`map`/`select`中使用，比如我们查询“一个用户的ID和他发的任意一个帖子标题”：
+返回一行一列的子查询可以在`map`中使用，比如我们查询“一个用户的ID和他发的任意一个帖子标题”：
 
 ```scala
-val q =
+val query =
     from(User).map: u =>
         (
             u.id,
-            from(Post).filter(p => p.authorId == p.id).map(p => anyValue(p.title))
+            from(Post).filter(p => p.authorId === u.id).map(p => anyValue(p.title))
         )
 ```
 
@@ -299,8 +299,26 @@ SELECT
         FROM
             "post" AS "t2"
         WHERE
-            "t2"."author_id" = "t2"."id"
+            "t2"."author_id" = "t1"."id"
     ) AS "c2"
 FROM
     "user" AS "t1"
+```
+
+## 语义检查
+
+作为表达式使用的子查询最多只能返回一行，否则会在编译期报错：
+
+```scala
+val query =
+    // 编译错误：More than one row returned by a subquery used as an expression.
+    from(Post).map(p => from(Post).map(pp => pp.likeCount))
+```
+
+子查询只能引用更深层作用域的列，不能反过来引用外层或兄弟作用域：
+
+```scala
+val query =
+    // 编译错误：A subquery cannot be referenced from an outer or sibling scope; it must be defined in a deeper scope.
+    from(Post).map(p => from(Comment).map(c => c.postId === p.id))
 ```

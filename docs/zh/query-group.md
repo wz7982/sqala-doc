@@ -7,7 +7,7 @@
 分组操作通常与[聚合函数](./expr-agg.md)配合使用，sqala中使用`groupBy`方法创建分组，比如我们需要统计每个频道的帖子数量：
 
 ```scala
-val q =
+val query =
     from(Post)
         .groupBy(p => p.channelId)
         .map((g, p) => (g, count()))
@@ -25,12 +25,12 @@ GROUP BY
     "t1"."channel_id"
 ```
 
-在分组后的`sortBy`/`orderBy`/`having`/`map`/`select`中，均多了一个参数，这个参数代表当前分组集（如果是两表连接之后的分组则有三个参数，以此类推）。
+在分组后的`sortBy`/`having`/`map`中，均多了一个参数，这个参数代表当前分组集（如果是两表连接之后的分组则有三个参数，以此类推）。
 
 使用元组或命名元组支持支持多个分组[表达式](./expr.md)：
 
 ```scala
-val q =
+val query =
     from(Post)
         .groupBy(p => (cid = p.channelId, title = p.title))
         .map((g, p) => (g.cid, g.title, count()))
@@ -63,12 +63,20 @@ GROUP BY
     "t1"."channel_id"
 ```
 
-sqala也会在这样的查询中生成编译错误。
+sqala也会在这样的查询中生成编译错误：
+
+```scala
+val query =
+    from(Post)
+        .groupBy(p => p.channelId)
+        // 编译错误：Ungrouped column references must appear in the groupBy clause or be used in an aggregate function.
+        .map((g, p) => (g, p.title, count()))
+```
 
 如果我们只想在一个分组中返回任意的`title`字段值，使用`ANY_VALUE`聚合函数即可，在sqala中对应的方法为`anyValue`：
 
 ```scala
-val q =
+val query =
     from(Post)
         .groupBy(p => p.channelId)
         .map((g, p) => (g, anyValue(p.title), count()))
@@ -79,7 +87,7 @@ val q =
 `having`方法用于分组后过滤数据，使用方式与`filter`类似：
 
 ```scala
-val q =
+val query =
     from(Post)
         .groupBy(p => p.channelId)
         .having((g, p) => count() > 1)
@@ -98,6 +106,32 @@ GROUP BY
     "t1"."channel_id"
 HAVING
     COUNT(*) > 1
+```
+
+### 语义检查
+
+`groupBy`和`having`中的表达式同样会在编译期检查：
+
+```scala
+val q1 =
+    // 编译错误：Aggregate functions are not allowed in groupBy.
+    from(Post).groupBy(p => count())
+
+val q2 =
+    // 编译错误：Window functions are not allowed in groupBy.
+    from(Post).groupBy(p => rowNumber().over())
+
+val q3 =
+    from(Post)
+        .groupBy(p => p.channelId)
+        // 编译错误：Window functions are not allowed in having.
+        .having((g, p) => rowNumber().over() > 1)
+
+val q4 =
+    from(Post)
+        .groupBy(p => p.channelId)
+        // 编译错误：Ungrouped column references must appear in the groupBy clause or be used in an aggregate function.
+        .having((g, p) => p.title === "x")
 ```
 
 ## 多维分组
@@ -130,7 +164,7 @@ SQL的`GROUP BY CUBE(a, b, c)`将会在分组中生成每一种组合的情况�
 ```scala
 case class Person(id: Int, age: Int, nation: String, gender: String)
 
-val q =
+val query =
     from(Person)
         .groupBySets(p =>
             (
@@ -173,7 +207,7 @@ GROUP BY
 
 ```scala
 // 返回类型为List[(age: Option[String], nation: Option[String], gender: Option[String], count: Long)]
-val result = db.fetch(q)
+val result = db.fetch(query)
 ```
 
 ### GROUPING表达式
@@ -181,7 +215,7 @@ val result = db.fetch(q)
 既然多维分组集会产生额外的空值，那我们怎么区分“分组产生的空值是数据原本就有的，还是因为多维分组额外产生的”，为此，SQL推出了配套的`GROUPING`表达式，`GROUPING`的结果为1则说明空值是分组额外产生的，结果为0则说明空值是原本数据中就有的，在sqala中，我们使用`grouping`方法创建此表达式：
 
 ```scala
-val q =
+val query =
     from(Person)
         .groupBySets(p =>
             (
@@ -237,7 +271,7 @@ SQL的`GROUP BY ROLLUP(a, b, c)`将会在分组中生成逐级分组，也就是
 
 共4种情况（n + 1）。
 
-在sqala中生成`ROLLUP`分组的方式与`groupByCube`类似，不赘述。
+在sqala中生成`ROLLUP`分组的方式与`CUBE`类似，把`cube`换成`rollup`即可，不赘述。
 
 ### GROUPING SETS分组
 
@@ -246,7 +280,7 @@ SQL的`GROUP BY GROUPING SETS`分组将按指定的分组集来产生分组结�
 `GROUP BY GROUPING SETS((), a, (a, b), (a, b, c))`，`groupBySets`配合`groupingSets`方法传入该分组集产生的分组的嵌套元组，空分组集使用`Unit`类型的字面量`()`来指定：
 
 ```scala
-val q =
+val query =
     from(Entity)
         .groupBySets(e => (a = e.a, b = e.b, c = e.c))(g => groupingSets((), g.a, (g.a, g.b), (g.a, g.b, g.c)))
         .map((g, e) => (g.a, g.b, g.c, count()))
@@ -258,6 +292,6 @@ val q =
 
 | 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
 |------|------------|-------|--------|-----------|--------|
-| `groupByCube` | ✅ | ❌ | ✅ | ✅ | ❌ |
-| `groupByRollup` | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `groupBySets` | ✅ | ❌ | ✅ | ✅ | ❌ |
+| `cube` | ✅ | ❌ | ✅ | ✅ | ❌ |
+| `rollup` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `groupingSets` | ✅ | ❌ | ✅ | ✅ | ❌ |

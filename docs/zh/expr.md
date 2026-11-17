@@ -8,7 +8,7 @@ sqala包含了一个SQL表达式类型`Expr`，其包装了一个SQL的AST，为
 
 ```scala
 // u.id是一个字段类型表达式
-val q =
+val query =
     from(User).map(u => u.id)
 ```
 
@@ -17,14 +17,14 @@ val q =
 在sqala内置支持的数据类型，比如`Int`、`String`等，或是实现了`CustomField`的类型的值，都可以作为sqala的值表达式，它们可以很自然地出现在查询中，而不需要显式转换成`Expr`，这是使用Scala3强大的上下文抽象能力实现的：
 
 ```scala
-val q =
+val query =
     from(User).map(u => (u.id, 1, "a"))
 ```
 
-sqala的可空值使用`Option`来管理，但由于`None`没有实际的类型，会破坏sqala的类型安全性，所以sqala不支持`None`，而空值需要使用`Option.empty[T]`来构建：
+sqala的可空值使用`Option`来管理。由于`None`没有实际的类型，普通值位置请使用`Option.empty[T]`构造空值，类型推导才安全；判空请使用`isEmpty`/`!isEmpty`（也兼容`=== None`/`<> None`）：
 
 ```scala
-val q =
+val query =
     from(User).map(u => (u.id, Option.empty[String]))
 ```
 
@@ -35,7 +35,7 @@ val q =
 `asExpr`就是转换方法，上面的例子也可以写成：
 
 ```scala
-val q =
+val query =
     from(User).map(u => (u.id, 1.asExpr, "a".asExpr))
 ```
 
@@ -45,7 +45,7 @@ val q =
 
 ```scala
 val word = "abc"
-val q =
+val query =
     from(Post)
         .filter(p => rawExpr"MATCH(${p.title}) AGAINST(${word})".as[Boolean])
 ```
@@ -62,8 +62,8 @@ sqala支持以下的符号关系运算符：
 
 | 运算符名称 | 对应SQL运算符          |
 |:---------:|:---------------------:|
-| `==`      | `=`                   |
-| `!=`      | `<>`                  |
+| `===`      | `=`                   |
+| `<>`      | `<>`                  |
 | `<=>`     | `IS NOT DISTINCT FROM`|
 | `>`       | `>`                   |
 | `>=`      | `>=`                  |
@@ -73,18 +73,18 @@ sqala支持以下的符号关系运算符：
 我们可以像使用Scala自带的运算符那样使用它们：
 
 ```scala
-val q =
-    from(User).filter(u => u.name == "小黑")
+val query =
+    from(User).filter(u => u.name === "小黑")
 ```
 
 由于sqala有强大的类型兼容性，因此运算符的右侧不仅可以是值，也可以是其他表达式或子查询，这种情况常用于连接条件中：
 
 ```scala
-val q =
-    from(User).filter(u => u.id == u.id)
+val query =
+    from(User).filter(u => u.id === u.id)
 ```
 
-`==`等运算符不要求两侧类型一致，只需要在SQL标准中允许兼容，比如我们知道，数据库允许数值类型之间跨类型比较，也允许可空类型和不可空类型之间直接比较，比如这样的SQL是合法的：
+`===`等运算符不要求两侧类型一致，只需要在SQL标准中允许兼容，比如我们知道，数据库允许数值类型之间跨类型比较，也允许可空类型和不可空类型之间直接比较，比如这样的SQL是合法的：
 
 ```sql
 SELECT
@@ -94,17 +94,17 @@ SELECT
 所以sqala允许这种行为：
 
 ```scala
-val q =
+val query =
     // u.id是Expr[Int]，允许和Option[Long]直接比较
-    from(User).filter(u => u.id == Option(1L))
+    from(User).filter(u => u.id === Option(1L))
 ```
 
 我们知道，数据库允许时间类型和字符串之间比较，所以sqala允许时间和字符串类型的表达式直接比较：
 
 ```scala
-val q =
+val query =
     // u.createTime是Expr[LocalDateTime]，允许和String直接比较
-    from(Post).filter(p => u.createTime > "2020-01-01 00:00:00")
+    from(Post).filter(p => p.createTime > "2020-01-01 00:00:00")
 ```
 
 可以在此举出一个极端但能体现sqala类型兼容性的例子，我们有如下实体类：
@@ -116,16 +116,16 @@ case class Entity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int
 实体类的两个字段都是嵌套了两层的`Int`数组，只有空值策略不同，sqala允许这样**层数相同**且类型兼容的两个数组字段比较：
 
 ```scala
-val q =
-    from(Entity).filter(e => e.x == e.y)
+val query =
+    from(Entity).filter(e => e.x === e.y)
 ```
 
 但是如果两侧类型不兼容，sqala则会在编译期严格禁止：
 
 ```scala
-val q =
+val query =
     // 编译错误
-    from(User).filter(u => u.id == "abc")
+    from(User).filter(u => u.id === "abc")
 ```
 
 类似的，如果我们把上面的复杂例子的右侧字段最内部改成字符串类型：
@@ -137,42 +137,51 @@ case class Entity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Str
 sqala也不允许两个字段比较：
 
 ```scala
-val q =
+val query =
     // 编译错误
-    from(Entity).filter(e => e.x == e.y)
+    from(Entity).filter(e => e.x === e.y)
 ```
 
 sqala的类型兼容性检查不是停留在表面的一层，而是递归检查整个类型树。
 
-但由于Scala的限制，`==`和`!=`左侧如果不是`Expr`类型，则会产生编译错误，所以sqala提供了`===`和`<>`应对此类情况（其他运算符不受此影响）：
+sqala的关系运算符（`===`、`<>`等）左侧可以是任意可提升为表达式的值，不再依赖 Scala 的 `==`/`!=` 重载，因此不会与 Scala 的相等语义冲突（其他运算符不受此影响）：
 
 ```scala
-val q =
+val query =
     from(User).filter(u => "小黑" === u.name)
 ```
 
 或是显式使用`asExpr`将值转为`Expr`类型：
 
 ```scala
-val q =
-    from(User).filter(u => "小黑".asExpr == u.name)
+val query =
+    from(User).filter(u => "小黑".asExpr === u.name)
 ```
 
 ### IS NULL
 
-`isNull`方法对应SQL的`IS NULL`，用于探测值是否为空：
+`isEmpty`方法对应SQL的`IS NULL`，用于判断可空表达式是否为空：
 
 ```scala
-val q =
-    from(User).filter(u => u.name.isNull)
+val query =
+    from(User).filter(u => u.name.isEmpty)
 ```
+
+取反即可得到`IS NOT NULL`：
+
+```scala
+val query =
+    from(User).filter(u => !u.name.isEmpty)
+```
+
+也可以使用`=== None`/`<> None`的写法，但推荐使用`isEmpty`/`!isEmpty`，语义更直观。
 
 ### IN
 
 `in`方法对应SQL的`IN`运算符，sqala支持两种`in`模式，第一种是使用`Seq`、`List`等传入一个值的集合，这是最常见的用法：
 
 ```scala
-val q =
+val query =
     from(User).filter(u => u.id.in(List(1, 2, 3)))
 ```
 
@@ -181,7 +190,7 @@ val q =
 `in`方法也可以传入一个表达式元组，此元组同时兼容`Expr`、值、子查询：
 
 ```scala
-val q =
+val query =
     from(User).filter(u => u.id.in(1, u.id, from(User).map(_.id).take(1)))
 ```
 
@@ -190,7 +199,7 @@ val q =
 ```scala
 val list: List[Option[Long]] = List(Some(1L), None, Some(2L))
 
-val q =
+val query =
     from(User).filter(u => u.id.in(list))
 ```
 
@@ -199,7 +208,7 @@ val q =
 ```scala
 val list: List[String] = List("a", "b", "c")
 
-val q =
+val query =
     // 编译错误
     from(User).filter(u => u.id.in(list))
 ```
@@ -209,21 +218,21 @@ val q =
 `like`方法对应SQL的`LIKE`运算符，右侧兼容`Expr`、值、子查询：
 
 ```scala
-val q =
+val query =
     from(User).filter(u => u.name.like("%小%"))
 ```
 
 `contains`是一个`like`的简易版本，不需要手动填写`%%`，但右侧只兼容`String`：
 
 ```scala
-val q =
+val query =
     from(User).filter(u => u.name.contains("小"))
 ```
 
 `startsWith`和`endsWith`与`contains`类似：
 
 ```scala
-val q =
+val query =
     from(User).filter(u => u.name.startsWith("小"))
 ```
 
@@ -232,7 +241,7 @@ val q =
 `between`是一个有两个参数的方法，对应三元表达式`BETWEEN`，参数兼容`Expr`、值、子查询：
 
 ```scala
-val q =
+val query =
     from(User).filter(u => u.id.between(1, 10))
 ```
 
@@ -241,29 +250,29 @@ val q =
 sqala支持二元逻辑运算`&&`（对应`AND`）和`||`（对应`OR`）：
 
 ```scala
-val q =
-    from(User).filter(u => u.id == 1 && u.name == "小黑")
+val query =
+    from(User).filter(u => u.id === 1 && u.name === "小黑")
 ```
 
 通常来说`&&`的优先级比`||`高，我们可以通过`()`控制优先级：
 
 ```scala
-val q =
-    from(User).filter(u => u.id < 5 && (u.name == "小黑" || u.name == "小白"))
+val query =
+    from(User).filter(u => u.id < 5 && (u.name === "小黑" || u.name === "小白"))
 ```
 
 一元逻辑运算`!`对应SQL的`NOT`运算符：
 
 ```scala
-val q =
-    from(User).filter(u => !(u.name == "小黑"))
+val query =
+    from(User).filter(u => !(u.name === "小黑"))
 ```
 
 在`!`的右侧是`like`、`in`、`between`等运算符时，实际生成的是`NOT LIKE`、`NOT IN`、`NOT BETWEEN`等。
 
 ## 多列比较
 
-sqala允许多列同时参与关系运算，但`==`需要替换为`===`，`!=`需要替换为`<>`：
+sqala允许多列同时参与关系运算，使用`===`/`<>`比较对应的元组：
 
 ```scala
 val q1 =
@@ -301,7 +310,7 @@ sqala支持以下数值运算符：
 | `/`       | `/`          |
 
 ```scala
-val q =
+val query =
     from(User).filter(u => u.id + 1 > 5).map(_.id * 100)
 ```
 
@@ -314,7 +323,7 @@ sqala还支持`%`运算符，但实际会生成SQL标准的`MOD`函数。
 sqala支持数据库的字符串拼接运算，我们可以使用`++`来拼接字符串，生成`||`运算符：
 
 ```scala
-val q =
+val query =
     from(User).map(u => u.name ++ "abc")
 ```
 
@@ -325,8 +334,8 @@ val q =
 `caseWhen`/`when`/`otherwise`等方法对应SQL的`CASE WHEN THEN ELSE END`表达式，参数同样兼容`Expr`、值、子查询：
 
 ```scala
-val q =
-    from(User).map(u => caseWhen(u.id == 1)(1).when(u.id == 2)(u.id).otherWise(Option.empty[Int]))
+val query =
+    from(User).map(u => caseWhen(u.id === 1)(1).when(u.id === 2)(u.id).otherwise(Option.empty[Int]))
 ```
 
 生成的SQL表达式为：
@@ -344,43 +353,43 @@ case class Entity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int
 如果我们把两个字段放在条件表达式的两个分支里：
 
 ```scala
-val q =
+val query =
     from(Entity)
-        .map(e => caseWhen(t.x == t.y)(t.x).otherwise(t.y))
+        .map(e => caseWhen(e.x === e.y)(e.x).otherwise(e.y))
 ```
 
 在数据库查询后会自动推导返回类型为：
 
 ```scala
 // 返回类型为 List[Option[Array[Option[Array[Option[Int]]]]]]
-val result = db.fetch(q)
+val result = db.fetch(query)
 ```
 
 `coalesce`对应SQL的`COALESCE`表达式，用于返回参数中第一个非空值：
 
 ```scala
-val q =
+val query =
     from(User).map(u => coalesce(u.id, 1))
 ```
 
 sqala也支持`ifNull`作为`coalesce`的别名：
 
 ```scala
-val q =
+val query =
     from(User).map(u => ifNull(u.id, 1))
 ```
 
 另外，`COALESCE`作为一个极高频操作，sqala也提供了符合Scala标准库习惯的`getOrElse`方法自动映射到`COALESCE`：
 
 ```scala
-val q =
+val query =
     from(User).map(u => u.id.getOrElse(1))
 ```
 
 `nullIf`对应SQL的`NULLIF`表达式用于匹配两个值，如果相同则返回`NULL`：
 
 ```scala
-val q =
+val query =
     from(User).map(u => nullIf(u.id, 1))
 ```
 
@@ -391,7 +400,7 @@ val q =
 函数使用示例：
 
 ```scala
-val q =
+val query =
     from(User).map(u => substring(u.name, 1))
 ```
 
@@ -446,6 +455,6 @@ sqala内置支持的函数如下（此处没有列举聚合函数、窗口函数
 `as`方法配合类型参数进行类型转换，对应SQL的`CAST`表达式：
 
 ```scala
-val q =
+val query =
     from(User).map(u => u.id.as[String])
 ```

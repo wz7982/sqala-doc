@@ -1,5 +1,13 @@
 # 属性图查询
 
+> 本页功能属于 `sqala-static-ext` 模块，需要额外引入该模块，并导入：
+>
+> ```scala
+> import sqala.static.dsl.*
+> import sqala.static.ext.dsl.*
+> ```
+
+
 属性图查询是SQL 2023标准中新推出的功能，用于复杂图状数据匹配，但目前主流关系型数据库中只有Oracle支持此功能，PostgreSQL数据库则预计在19版本支持此功能。
 
 sqala选择先基于SQL标准做功能实现，待您的数据库支持此功能后便可以无缝接入，而无需等待查询库跟进。
@@ -21,7 +29,7 @@ val friendGraph = createGraph(name = "friend_graph")(
 然后使用`graphTable`创建图查询：
 
 ```scala
-val q =
+val query =
     from:
         graphTable(friendGraph)(g =>
             g.matching:
@@ -67,5 +75,5 @@ FROM
             "t3"."name" AS "c2",
             "t2"."meeting_date" AS "c3"
         )
-    ) "t4"
+    ) AS "t4"
 ```

@@ -7,36 +7,36 @@ sqala提供了`over`方法，用于创建窗口，其参数为窗口的分组规
 使用`partitionBy`方法创建窗口的分组规则，并配合`over`使用：
 
 ```scala
-val q =
+val query =
     from(Post)
         .map(p => sum(p.likeCount).over(partitionBy(p.authorId)))
 ```
 
-`partitionBy`之后可以使用`orderBy`方法创建窗口的排序规则：
+`partitionBy`之后可以使用`sortBy`方法创建窗口的排序规则：
 
 ```scala
-val q =
+val query =
     from(Post)
-        .map(p => sum(p.likeCount).over(partitionBy(p.authorId).orderBy(p.id.desc)))
+        .map(p => sum(p.likeCount).over(partitionBy(p.authorId).sortBy(p.id.desc)))
 ```
 
 `over`中也可以没有`partitionBy`：
 
 ```scala
-val q =
+val query =
     from(Post)
-        .map(p => sum(p.likeCount).over(orderBy(p.id.desc)))
+        .map(p => sum(p.likeCount).over(sortBy(p.id.desc)))
 ```
 
 `over`中也支持窗口函数框架，`range`、`rows`、`groups`参数是单个边界信息，`rangeBetween`、`rowsBetween`、`groupsBetween`参数是两个边界信息：
 
 ```scala
-val q =
+val query =
     from(Post).map: p =>
         sum(p.likeCount)
             .over(
                 partitionBy(p.authorId)
-                    .orderBy(p.id.desc)
+                    .sortBy(p.id.desc)
                     .rows(currentRow)
             )
 ```
@@ -44,27 +44,27 @@ val q =
 或
 
 ```scala
-val q =
+val query =
     from(Post).map: p =>
         sum(p.likeCount)
             .over(
                 partitionBy(p.authorId)
-                    .orderBy(p.id.desc)
+                    .sortBy(p.id.desc)
                     .rowsBetween(currentRow, 1.preceding)
             )
 ```
 
-边界支持`currentRow`、`unboundedPreceding`、`unboundedFollowing`、`n.Preceding`、`n.Following`。
+边界支持`currentRow`、`unboundedPreceding`、`unboundedFollowing`、`n.preceding`、`n.following`。
 
 我们可以使用`excludeCurrentRow`、`excludeTies`、`excludeGroup`排除组间特定行：
 
 ```scala
-val q =
+val query =
     from(Post).map: p =>
         sum(p.likeCount)
             .over(
                 partitionBy(p.authorId)
-                    .orderBy(p.id.desc)
+                    .sortBy(p.id.desc)
                     .rowsBetween(currentRow, 1.preceding)
                     .excludeCurrentRow
             )
@@ -100,3 +100,15 @@ sqala内置支持的窗口函数有：
 | `leadIgnoreNulls(a)`                       | `LEAD(a) IGNORE NULLS`                               |
 | `leadIgnoreNulls(a, n)`                    | `LEAD(a, n) IGNORE NULLS`                            |
 | `leadIgnoreNulls(a, n, d)`                 | `LEAD(a, n, d) IGNORE NULLS`                         |
+
+## 语义检查
+
+`over`只能用于聚合函数或窗口函数，否则会返回编译错误：
+
+```scala
+val query =
+    // 编译错误：Over specified, but this expression is not a window function nor an aggregate function.
+    from(Post).map(p => p.id.over())
+```
+
+窗口函数不能嵌套，错误文案为 `Window function calls cannot be nested.`。
