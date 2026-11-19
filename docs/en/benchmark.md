@@ -38,14 +38,14 @@ Parsers:
 
 ## Point Query
 
-| Implementation | Throughput (ops/s) | Relative to plain JDBC | 8-thread latency (µs/op) |
+| Implementation | Throughput (ops/s) | Relative to sqala | 8-thread latency (µs/op) |
 | --- | ---: | ---: | ---: |
-| Plain JDBC | 184,453 | 1.00x | 44.661 |
-| **sqala** | **163,960** | **0.89x** | **49.842** |
-| Hibernate | 162,893 | 0.88x | 49.843 |
-| MyBatis | 144,305 | 0.78x | 52.845 |
-| jOOQ | 131,174 | 0.71x | 59.990 |
-| Slick | 122,490 | 0.66x | 66.066 |
+| Plain JDBC | 184,453 | 1.13x | 44.661 |
+| **sqala** | **163,960** | **1.00x** | **49.842** |
+| Hibernate | 162,893 | 0.99x | 49.843 |
+| MyBatis | 144,305 | 0.88x | 52.845 |
+| jOOQ | 131,174 | 0.80x | 59.990 |
+| Slick | 122,490 | 0.75x | 66.066 |
 
 ![Point query throughput](/benchmark/en/01-point-throughput.png)
 
@@ -53,14 +53,14 @@ Point queries are dominated by the database round trip, so the gap between frame
 
 ## Range Query
 
-| Implementation | Throughput (ops/s) | Relative to plain JDBC | Row throughput (rows/s) | 8-thread latency (ms/op) |
+| Implementation | Throughput (ops/s) | Relative to sqala | Row throughput (rows/s) | 8-thread latency (ms/op) |
 | --- | ---: | ---: | ---: | ---: |
-| Plain JDBC | 1,013.4 | 1.00x | 10,134,000 | 7.930 |
-| **sqala** | **956.1** | **0.94x** | **9,561,000** | **8.285** |
-| Slick | 846.5 | 0.84x | 8,465,000 | 9.352 |
-| MyBatis | 625.8 | 0.62x | 6,258,000 | 12.754 |
-| Hibernate | 486.6 | 0.48x | 4,866,000 | 15.953 |
-| jOOQ | 440.6 | 0.43x | 4,406,000 | 17.886 |
+| Plain JDBC | 1,013.4 | 1.06x | 10,134,000 | 7.930 |
+| **sqala** | **956.1** | **1.00x** | **9,561,000** | **8.285** |
+| Slick | 846.5 | 0.89x | 8,465,000 | 9.352 |
+| MyBatis | 625.8 | 0.65x | 6,258,000 | 12.754 |
+| Hibernate | 486.6 | 0.51x | 4,866,000 | 15.953 |
+| jOOQ | 440.6 | 0.46x | 4,406,000 | 17.886 |
 
 ![Range query throughput](/benchmark/en/03-range-throughput.png)
 
@@ -68,12 +68,12 @@ Decoding 10,000 rows highlights differences in result-set decoding. sqala reache
 
 ## SQL Parsers
 
-| Parser | Throughput (ops/s) | Relative to Druid | 8-thread latency (µs/op) |
+| Parser | Throughput (ops/s) | Relative to sqala | 8-thread latency (µs/op) |
 | --- | ---: | ---: | ---: |
-| Alibaba Druid | 2,258,798 | 1.00x | 3.554 |
-| **sqala** | **1,098,332** | **0.49x** | **7.258** |
-| Apache Calcite | 193,177 | 0.09x | 42.819 |
-| JSqlParser | 7,646 | 0.003x | 1,055.507 |
+| Alibaba Druid | 2,258,798 | 2.06x | 3.554 |
+| **sqala** | **1,098,332** | **1.00x** | **7.258** |
+| Apache Calcite | 193,177 | 0.18x | 42.819 |
+| JSqlParser | 7,646 | 0.007x | 1,055.507 |
 
 ![SQL parser throughput](/benchmark/en/05-parser-throughput.png)
 
