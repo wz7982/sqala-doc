@@ -114,5 +114,3 @@ JSON表各主流数据库最新版本实测支持程度如下：
 | PostgreSQL | ✅ |
 | MySQL | ✅ |
 | Oracle | ✅ |
-| SQLServer | ❌ |
-| SQLite | ❌ |

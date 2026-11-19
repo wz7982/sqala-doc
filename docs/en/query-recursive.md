@@ -174,5 +174,3 @@ The measured support for recursive CTEs in the latest versions of mainstream dat
 | PostgreSQL | ✅ |
 | MySQL | ✅ |
 | Oracle | ✅ |
-| SQLServer | ✅ |
-| SQLite | ✅ |

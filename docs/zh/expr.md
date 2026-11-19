@@ -39,6 +39,64 @@ val query =
     from(User).map(u => (u.id, 1.asExpr, "a".asExpr))
 ```
 
+### 内联表达式
+
+`asInlinedExpr`将值直接渲染为SQL字面量，而不是生成`?`占位符。典型场景是PostgreSQL的`GROUP BY`表达式匹配：
+
+```scala
+case class T(x: Int)
+
+val offset = 1
+
+val query =
+    from(T)
+        .groupBy(t => t.x + offset.asInlinedExpr)
+        .map((g, t) => (g, count()))
+```
+
+生成的SQL为：
+
+```sql
+SELECT
+    "t1"."x" + 1 AS "c1",
+    COUNT(*) AS "c2"
+FROM
+    "t" AS "t1"
+GROUP BY
+    "t1"."x" + 1
+```
+
+如果直接使用普通值（`t.x + offset`），PostgreSQL会收到`x + $1`和`x + $2`两个不同的参数表达式，从而认为`SELECT`中的表达式没有出现在`GROUP BY`中；`asInlinedExpr`让两侧都变成相同的字面量`x + 1`。
+
+同样的查询也可以改写成子查询形式，避免在`GROUP BY`中重复表达式：
+
+```scala
+val query =
+    from(
+        from(T).map(t => (v = t.x + offset))
+    )
+        .groupBy(r => r.v)
+        .map((g, r) => (g, count()))
+```
+
+```sql
+SELECT
+    "t2"."c1" AS "c1",
+    COUNT(*) AS "c2"
+FROM (
+    SELECT
+        "t1"."x" + ? AS "c1"
+    FROM
+        "t" AS "t1"
+) AS "t2"
+GROUP BY
+    "t2"."c1"
+```
+
+`asInlinedExpr`内联的值会由sqala按照当前方言和转义配置进行安全转义。普通查询仍推荐使用`asExpr`或直接写值，让sqala通过`?`参数绑定。
+
+更多关于JDBC参数与内联表达式的说明，请参考[数据库交互](./database.md)。
+
 ## 原生表达式
 
 某些数据库方言中可能含有无法被sqala表达式系统概括的特殊语法，比如MySQL的全文检索语法，这种场景我们可以使用`rawExpr`字符串插值器来创建原生表达式，然后使用`as`方法声明表达式类型：

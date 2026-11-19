@@ -290,8 +290,8 @@ val query =
 
 多维分组各主流数据库最新版本实测支持程度如下：
 
-| 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
-|------|------------|-------|--------|-----------|--------|
-| `cube` | ✅ | ❌ | ✅ | ✅ | ❌ |
-| `rollup` | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `groupingSets` | ✅ | ❌ | ✅ | ✅ | ❌ |
+| 方法 | PostgreSQL | MySQL | Oracle |
+| ------ | ------------ | ------- | -------- |
+| `cube` | ✅ | ❌ | ✅ |
+| `rollup` | ✅ | ✅ | ✅ |
+| `groupingSets` | ✅ | ❌ | ✅ |

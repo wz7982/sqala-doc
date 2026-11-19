@@ -22,8 +22,6 @@ sqala支持的时间单位有：`year`, `month`, `day`, `hour`, `minute`, `secon
 | PostgreSQL | ✅ |
 | MySQL | ✅ |
 | Oracle | ✅ |
-| SQLServer | ❌ |
-| SQLite | ❌ |
 
 ## 抽取时间
 
@@ -48,8 +46,6 @@ val query =
 | PostgreSQL | ✅ |
 | MySQL | ✅ |
 | Oracle | ✅ |
-| SQLServer | ❌ |
-| SQLite | ❌ |
 
 ## 时间重叠
 
@@ -67,17 +63,15 @@ val query =
 | PostgreSQL | ✅ |
 | MySQL | ❌ |
 | Oracle | ❌ |
-| SQLServer | ❌ |
-| SQLite | ❌ |
 
 ## 时间数据类型
 
 sqala默认使用`java.time.*`下面的时间类型作为内置时间类型，各时间类型的值在生成SQL时规则如下：
 
-| 时间类型 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
-|----------|------------|-------|--------|-----------|--------|
-| `LocalDate` | `DATE '2020-01-01'` | `DATE '2020-01-01'` | `TO_DATE('2020-01-01', 'YYYY-MM-DD')` | `CAST('2020-01-01 00:00:00.123456789' AS DATE)` | ❌ |
-| `LocalDateTime` | `TIMESTAMP '2020-01-01 00:00:00.123456789'` | `TIMESTAMP '2020-01-01 00:00:00.123456789'` | `TO_TIMESTAMP('2020-01-01 00:00:00.123456789', 'YYYY-MM-DD HH24:MI:SS.FF9')` | `CAST('2020-01-01 00:00:00.123456789' AS DATETIME2)` | ❌ |
-| `LocalTime` | `TIME '00:00:00'` | `TIME '00:00:00'` | ❌ | ❌ | ❌ |
-| `OffsetDateTime` | `TIMESTAMP WITH TIME ZONE '2020-01-01 00:00:00.123456789 +08:00'` | ❌ | `TO_TIMESTAMP_TZ('2020-01-01 00:00:00.123456789 +08:00', 'YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM')` | `CAST('2020-01-01 00:00:00.123456789 +08:00' AS DATETIMEOFFSET)` | ❌ |
-| `OffsetTime` | `TIME WITH TIME ZONE '00:00:00 +08:00'` | ❌ | ❌ | ❌ | ❌ |
+| 时间类型 | PostgreSQL | MySQL | Oracle |
+| ---------- | ------------ | ------- | -------- |
+| `LocalDate` | `DATE '2020-01-01'` | `DATE '2020-01-01'` | `TO_DATE('2020-01-01', 'YYYY-MM-DD')` |
+| `LocalDateTime` | `TIMESTAMP '2020-01-01 00:00:00.123456789'` | `TIMESTAMP '2020-01-01 00:00:00.123456789'` | `TO_TIMESTAMP('2020-01-01 00:00:00.123456789', 'YYYY-MM-DD HH24:MI:SS.FF9')` |
+| `LocalTime` | `TIME '00:00:00'` | `TIME '00:00:00'` | ❌ |
+| `OffsetDateTime` | `TIMESTAMP WITH TIME ZONE '2020-01-01 00:00:00.123456789 +08:00'` | ❌ | `TO_TIMESTAMP_TZ('2020-01-01 00:00:00.123456789 +08:00', 'YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM')` |
+| `OffsetTime` | `TIME WITH TIME ZONE '00:00:00 +08:00'` | ❌ | ❌ |

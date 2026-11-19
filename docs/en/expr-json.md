@@ -100,5 +100,3 @@ The measured support for JSON operations in the latest versions of each major da
 | PostgreSQL | ✅ |
 | MySQL | ✅ |
 | Oracle | ✅ |
-| SQLServer | ❌ |
-| SQLite | ❌ |

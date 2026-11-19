@@ -166,11 +166,11 @@ LIMIT 5 OFFSET 10
 
 集合操作各主流数据库最新版本实测支持程度如下：
 
-| 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
-|------|------------|-------|--------|-----------|--------|
-| `union` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `unionAll` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `intersect` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `intersectAll` | ✅ | ✅ | ✅ | ❌ | ❌ |
-| `except` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `exceptAll` | ✅ | ✅ | ✅ | ❌ | ❌ |
+| 方法 | PostgreSQL | MySQL | Oracle |
+| ------ | ------------ | ------- | -------- |
+| `union` | ✅ | ✅ | ✅ |
+| `unionAll` | ✅ | ✅ | ✅ |
+| `intersect` | ✅ | ✅ | ✅ |
+| `intersectAll` | ✅ | ✅ | ✅ |
+| `except` | ✅ | ✅ | ✅ |
+| `exceptAll` | ✅ | ✅ | ✅ |

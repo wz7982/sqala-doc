@@ -288,12 +288,12 @@ WHERE
 
 The measured support for subqueries with quantifiers in the latest versions of mainstream databases is as follows:
 
-| Method | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
-|------|------------|-------|--------|-----------|--------|
-| `exists` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `in` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `any` | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `all` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Method | PostgreSQL | MySQL | Oracle |
+| ------ | ------------ | ------- | -------- |
+| `exists` | ✅ | ✅ | ✅ |
+| `in` | ✅ | ✅ | ✅ |
+| `any` | ✅ | ✅ | ✅ |
+| `all` | ✅ | ✅ | ✅ |
 
 ## Scalar Subqueries
 

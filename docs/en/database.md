@@ -8,43 +8,58 @@ We need to create an instance of `sqala.jdbc.JdbcContext`. To avoid resource lea
 
 ```scala
 import sqala.jdbc.JdbcContext
-import sqala.metadata.PostgresqlDialect
+import sqala.jdbc.dialect.PostgresqlJdbcDialect
 
 object DB:
     // The first parameter is the connection pool, you can use any connection pool you like
     // The second parameter is the database dialect
-    // The third parameter is whether to enable standard SQL escaping
-    val db = JdbcContext(dataSource, PostgresqlDialect, true)
+    // The third parameter controls standard SQL escaping for inlined strings
+    val db = JdbcContext(dataSource, PostgresqlJdbcDialect, true)
 ```
 
-Besides the connection pool, the second parameter passed to the context constructor is the database dialect used by the database. Currently sqala has built-in support for the following dialects (all can be imported from `sqala.metadata`):
+Besides the connection pool, the second parameter passed to the context constructor is the JDBC dialect used by the database. Currently sqala has built-in support for the following dialects (all can be imported from `sqala.jdbc.dialect`):
 
-| Dialect            |
-|:------------------:|
-|`PostgresqlDialect` |
-|`MysqlDialect`      |
-|`OracleDialect`     |
-|`SqlserverDialect`  |
-|`SqliteDialect`     |
-|`H2Dialect`         |
+| JDBC Dialect |
+| :----------------------: |
+| `PostgresqlJdbcDialect` |
+| `MysqlJdbcDialect` |
+| `OracleJdbcDialect` |
 
-The third parameter **is very important**. It is `standardEscapeStrings`, which determines whether sqala adopts the escaping mode of standard SQL. Because the SQL expressions supported by sqala are very comprehensive, not all strings (for example, `INTERVAL` expressions, `TIME` literals, JSON paths in JSON features, etc.) can be parameterized with JDBC prepared statement parameters, so sqala chooses to manage escape characters itself to **avoid SQL injection**.
+The third parameter is `standardEscapeStrings`. It controls how **strings that must be inlined into the SQL text** are escaped, such as JSON paths, values explicitly inlined with `asInlinedExpr`, and special syntax required by some dialects. Ordinary string, numeric, boolean, and time literals are preferably passed as JDBC `?` placeholders and bound by a `PreparedStatement`, so they are not affected by this parameter.
 
 If you are not sure which escaping mode your database uses, you can send the query `SELECT '//'` to the database. If the database returns `//`, set it to `true`; if it returns `/`, set it to `false`.
 
 Usually, MySQL databases use `false`, while databases such as PostgreSQL and Oracle use `true`.
 
-## Why sqala Does Not Use JDBC `?` Parameter Placeholders
+## JDBC Parameters and Inlined Expressions
 
-sqala does not use the `?` placeholders of JDBC prepared statements; instead, it writes values directly into the statement when generating SQL. The reason is that `?` placeholders cannot cover all the SQL syntax supported by sqala:
+sqala prefers JDBC prepared statement `?` placeholders. Ordinary literals are collected as parameters and bound through a `PreparedStatement` at execution time:
 
-1. **Some values are themselves part of the SQL syntax and cannot be parameterized**: typed literals such as `INTERVAL '1 day'`, `TIME '12:00:00'`, and `DATE '2024-01-01'` must be followed by a string constant, and `INTERVAL ?` and `TIME ?` are not valid SQL; the JSON paths in JSON features (such as `'$.a ? (@ > 1)'`) are likewise written inside string constants and cannot be replaced with placeholders.
+```scala
+val id = 1
+
+val query =
+    from(User).filter(u => u.id === id)
+
+// The generated SQL is roughly:
+// SELECT ... FROM "user" WHERE "id" = ?
+```
+
+However, the SQL syntax supported by sqala is much broader than ordinary value parameters. The following cases still require values to be inlined into the SQL text:
+
+1. **Some values are themselves part of the SQL syntax and cannot be parameterized**: JSON paths in JSON features (such as `'$.a ? (@ > 1)'`) are written inside string constants and cannot be replaced with placeholders; row pattern quantifiers in `MATCH_RECOGNIZE` and quantifiers in property graph queries are also part of the SQL syntax. Some dialect-specific syntax may likewise require literals to appear directly in the SQL text.
 
 2. **When the same expression appears repeatedly, it must remain exactly identical**: PostgreSQL matches by expression structure in `GROUP BY`. If placeholders are used, `SELECT x + ? FROM t GROUP BY x + ?` will be compiled by the JDBC driver into `x + $1` and `x + $2`, and the database will consider these to be two different expressions and refuse to execute the statement; if values are inlined directly, `SELECT x + 1 FROM t GROUP BY x + 1` is generated, both sides have the same structure, and this problem does not occur.
 
 3. **`?` is itself an operator in some SQL syntax**: for example, in the row pattern quantifiers of `MATCH_RECOGNIZE` (`A?` meaning zero or one occurrence), `A*?`, `A+?`, and the quantifiers in property graph queries, `?` is part of the syntax. If it is treated as a placeholder as well, the JDBC driver will mistake these syntax symbols for parameters, and the statement cannot be executed at all.
 
-For the above reasons, sqala chooses to write values directly into the statement when generating SQL and to handle escaping itself:
+For these cases, sqala automatically marks the literals that need to be inlined in the syntax tree (for example, JSON paths and row pattern quantifiers). If your own expression also needs to be forced inline, use `asInlinedExpr`, which renders the value directly as a SQL literal instead of generating a `?` placeholder. See the "Inlined Expressions" section in [Expressions](./expr.md) for usage and examples.
+
+Values inlined by `asInlinedExpr` are safely escaped by sqala according to the configured dialect and `standardEscapeStrings`. For ordinary queries, prefer plain values or `asExpr` so that sqala can bind them through JDBC `?` parameters, which is usually more efficient.
+
+### Escaping Inlined Strings
+
+For strings that must be inlined, sqala applies the following escaping rules:
 
 - Single quotes in strings are always escaped by doubling them (`''`);
 - When the third parameter is `true`, the standard SQL escaping mode is used, and backslashes are treated as ordinary characters;
@@ -352,7 +367,7 @@ case class Cursor[T](
 ```
 
 ## Returning SQL
-The `db.showSql` feature returns the SQL generated by sqala:
+`db.showSql` returns the generated SQL string together with the corresponding argument array:
 
 ```scala
 import sqala.static.dsl.*
@@ -360,8 +375,10 @@ import sqala.static.dsl.*
 val query =
     from(User)
 
-val sql = db.showSql(query)
+val (sql, args) = db.showSql(query)
 ```
+
+The `?` placeholders in `sql` correspond one-to-one, in order, with the arguments in `args`, and can be passed directly to a `PreparedStatement`.
 
 ## Transactions
 
@@ -411,13 +428,13 @@ The `db.executeTransactionWithIsolation` method lets you specify the transaction
 
 The isolation levels supported by sqala are:
 
-|         Isolation Level              |  Description   |
-|:------------------------------------:|:--------------:|
-|TransactionIsolation.None             |Do not use transactions|
-|TransactionIsolation.ReadUncommitted  |Read uncommitted|
-|TransactionIsolation.ReadCommitted    |Read committed|
-|TransactionIsolation.RepeatableRead   |Repeatable read|
-|TransactionIsolation.Serializable     |Serializable|
+| Isolation Level | Description |
+| :------------------------------------: | :--------------: |
+| TransactionIsolation.None | Do not use transactions |
+| TransactionIsolation.ReadUncommitted | Read uncommitted |
+| TransactionIsolation.ReadCommitted | Read committed |
+| TransactionIsolation.RepeatableRead | Repeatable read |
+| TransactionIsolation.Serializable | Serializable |
 
 ```scala
 import sqala.jdbc.*

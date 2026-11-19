@@ -62,8 +62,6 @@ val query =
 | PostgreSQL | `STRING_AGG(x, ',' ORDER BY y)` |
 | MySQL | `GROUP_CONCAT(x ORDER BY y SEPARATOR ',')` |
 | Oracle | `LISTAGG(x, ',') WITHIN GROUP (ORDER BY y)` |
-| SQLServer | `STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y)` |
-| SQLite | `GROUP_CONCAT(x, ',' ORDER BY y)` |
 
 另外，SQL标准中还有两个特殊聚合函数`PERCENTILE_CONT`和`PERCENTILE_DISC`，用于计算百分比。
 

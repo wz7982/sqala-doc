@@ -8,43 +8,58 @@ sqala需要一个继承了`javax.sql.DataSource`的连接池作为连接管理�
 
 ```scala
 import sqala.jdbc.JdbcContext
-import sqala.metadata.PostgresqlDialect
+import sqala.jdbc.dialect.PostgresqlJdbcDialect
 
 object DB:
     // 第一个参数是连接池，您可以使用自己喜欢的连接池
     // 第二个参数是数据库方言
-    // 第三个参数是是否启用SQL标准转义
-    val db = JdbcContext(dataSource, PostgresqlDialect, true)
+    // 第三个参数是内联字符串是否使用SQL标准转义
+    val db = JdbcContext(dataSource, PostgresqlJdbcDialect, true)
 ```
 
-除了连接池外，连接上下文构造的第二个参数是数据库使用的方言，目前sqala内置支持以下方言（均可从`sqala.metadata`中导入）：
+除了连接池外，连接上下文构造的第二个参数是数据库使用的JDBC方言，目前sqala内置支持以下方言（均可从`sqala.jdbc.dialect`中导入）：
 
-| 方言              |
-|:-----------------:|
-|`PostgresqlDialect`|
-|`MysqlDialect`     |
-|`OracleDialect`    |
-|`SqlserverDialect` |
-|`SqliteDialect`    |
-|`H2Dialect`        |
+| JDBC方言 |
+| :---------------------: |
+| `PostgresqlJdbcDialect` |
+| `MysqlJdbcDialect` |
+| `OracleJdbcDialect` |
 
-第三个参数**很重要**，它是`standardEscapeStrings`，决定sqala是否采用标准SQL的转义模式。由于sqala支持的SQL表达式非常全面，并非所有字符串（比如`INTERVAL`表达式、`TIME`字面量、JSON功能的JSON path等）都能使用JDBC预编译语句参数化，所以sqala选择自己管理转义字符，**避免SQL注入**。
+第三个参数是`standardEscapeStrings`，它决定**必须内联到SQL文本中的字符串**如何转义，例如JSON path、使用`asInlinedExpr`显式内联的值，以及部分方言的特殊语法。普通字符串、数字、布尔值、时间等字面量会优先通过JDBC的`?`占位符传递，由`PreparedStatement`完成参数绑定，不受这个参数影响。
 
 如果您不确定您的数据库是何种转义模式，可以在数据库中发送查询`SELECT '//'`，如果数据库返回`//`则填`true`，如果为`/`则填`false`。
 
 通常情况下，MySQL数据库填写`false`，PostgreSQL和Oracle等数据库填写`true`。
 
-## 为什么sqala不使用JDBC的`?`参数占位符
+## JDBC参数与内联表达式
 
-sqala没有使用JDBC预编译语句的`?`占位符，而是在生成SQL时直接把值写进语句。这样做的原因是，`?`占位符无法覆盖sqala支持的全部SQL语法：
+sqala默认优先使用JDBC预编译语句的`?`占位符。普通字面量会被收集为参数，并在执行时通过`PreparedStatement`绑定：
 
-1. **有些值本身就是SQL语法的一部分，无法参数化**：`INTERVAL '1 day'`、`TIME '12:00:00'`、`DATE '2024-01-01'`等类型化字面量后面必须跟字符串常量，`INTERVAL ?`、`TIME ?`都不是合法SQL；JSON功能中的JSON path（如`'$.a ? (@ > 1)'`）同样写在字符串常量里，也无法替换成占位符。
+```scala
+val id = 1
+
+val query =
+    from(User).filter(u => u.id === id)
+
+// 生成的SQL大致为：
+// SELECT ... FROM "user" WHERE "id" = ?
+```
+
+但sqala支持的SQL语法范围远大于普通值参数，以下情况仍然必须把值内联到SQL文本中：
+
+1. **有些值本身就是SQL语法的一部分，无法参数化**：JSON功能中的JSON path（如`'$.a ? (@ > 1)'`）写在字符串常量里，无法替换成占位符；`MATCH_RECOGNIZE`的行模式量词、属性图查询中的量词等也属于SQL语法的一部分。少数方言特有的语法同样可能要求字面量直接出现在SQL文本中。
 
 2. **同一表达式重复出现时，必须保持完全一致**：PostgreSQL在`GROUP BY`中按表达式结构进行匹配。如果使用占位符，`SELECT x + ? FROM t GROUP BY x + ?`会被JDBC驱动编译成`x + $1`和`x + $2`，数据库会认为这是两个不同的表达式而拒绝执行；把值直接内联后生成`SELECT x + 1 FROM t GROUP BY x + 1`，两侧结构一致，就不会有这个问题。
 
 3. **`?`在某些SQL语法中本身就是运算符**：比如`MATCH_RECOGNIZE`的行模式量词`A?`（出现零次或一次）、`A*?`、`A+?`，以及属性图查询中的量词，`?`都是语法的一部分。如果再把它当作占位符，JDBC驱动会把这些语法符号误认为参数，语句根本无法执行。
 
-基于以上原因，sqala选择在生成SQL时将值直接写入语句，并自行处理转义：
+对于这些情况，sqala会自动在语法树中标记需要内联的字面量（例如JSON path、行模式量词等）。如果业务表达式也需要强制内联，可以使用`asInlinedExpr`，它会把值直接渲染为SQL字面量，而不是生成`?`占位符。用法和示例请参考[表达式](./expr.md)中的“内联表达式”部分。
+
+`asInlinedExpr`内联的值会由sqala按照当前方言和`standardEscapeStrings`配置进行安全转义。对于普通查询，仍推荐直接写值或使用`asExpr`，让sqala通过JDBC的`?`参数绑定，通常性能更好。
+
+### 内联字符串的转义
+
+对于必须内联的字符串，sqala会按以下规则处理转义：
 
 - 字符串中的单引号始终通过双写（`''`）转义；
 - 第三个参数为`true`时使用标准SQL转义模式，反斜杠按普通字符处理；
@@ -352,7 +367,8 @@ case class Cursor[T](
 ```
 
 ## 返回SQL
-`db.showSql`功能会返回sqala生成的SQL：
+
+`db.showSql`会返回sqala生成的SQL字符串和对应的参数数组：
 
 ```scala
 import sqala.static.dsl.*
@@ -360,8 +376,10 @@ import sqala.static.dsl.*
 val query =
     from(User)
 
-val sql = db.showSql(query)
+val (sql, args) = db.showSql(query)
 ```
+
+`sql`中的`?`占位符与`args`中的参数按顺序一一对应，可以直接用于`PreparedStatement`。
 
 ## 事务
 
@@ -411,13 +429,13 @@ try {
 
 sqala支持的隔离级别有：
 
-|         隔离级别                      |  说明   |
-|:------------------------------------:|:-------:|
-|TransactionIsolation.None             |不使用事务|
-|TransactionIsolation.ReadUncommitted  |读未提交  |
-|TransactionIsolation.ReadCommitted    |读已提交  |
-|TransactionIsolation.RepeatableRead   |可重复读  |
-|TransactionIsolation.Serializable     |序列化   |
+| 隔离级别 | 说明 |
+| :------------------------------------: | :-------: |
+| TransactionIsolation.None | 不使用事务 |
+| TransactionIsolation.ReadUncommitted | 读未提交 |
+| TransactionIsolation.ReadCommitted | 读已提交 |
+| TransactionIsolation.RepeatableRead | 可重复读 |
+| TransactionIsolation.Serializable | 序列化 |
 
 ```scala
 import sqala.jdbc.*

@@ -100,5 +100,3 @@ JSON操作各主流数据库最新版本实测支持程度如下（MySQL不支�
 | PostgreSQL | ✅ |
 | MySQL | ✅ |
 | Oracle | ✅ |
-| SQLServer | ❌ |
-| SQLite | ❌ |

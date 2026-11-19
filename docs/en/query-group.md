@@ -290,8 +290,8 @@ val query =
 
 The measured support of multi-dimensional grouping in the latest versions of major databases is as follows:
 
-| Method | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
-|------|------------|-------|--------|-----------|--------|
-| `cube` | ✅ | ❌ | ✅ | ✅ | ❌ |
-| `rollup` | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `groupingSets` | ✅ | ❌ | ✅ | ✅ | ❌ |
+| Method | PostgreSQL | MySQL | Oracle |
+| ------ | ------------ | ------- | -------- |
+| `cube` | ✅ | ❌ | ✅ |
+| `rollup` | ✅ | ✅ | ✅ |
+| `groupingSets` | ✅ | ❌ | ✅ |
