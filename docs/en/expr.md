@@ -39,6 +39,64 @@ val query =
     from(User).map(u => (u.id, 1.asExpr, "a".asExpr))
 ```
 
+### Inlined Expressions
+
+`asInlinedExpr` renders a value directly as a SQL literal instead of generating a `?` placeholder. A typical case is PostgreSQL `GROUP BY` expression matching:
+
+```scala
+case class T(x: Int)
+
+val offset = 1
+
+val query =
+    from(T)
+        .groupBy(t => t.x + offset.asInlinedExpr)
+        .map((g, t) => (g, count()))
+```
+
+Generated SQL:
+
+```sql
+SELECT
+    "t1"."x" + 1 AS "c1",
+    COUNT(*) AS "c2"
+FROM
+    "t" AS "t1"
+GROUP BY
+    "t1"."x" + 1
+```
+
+If a normal value is used (`t.x + offset`), PostgreSQL receives two different parameter expressions, `x + $1` and `x + $2`, and considers the expression in `SELECT` to be missing from `GROUP BY`; `asInlinedExpr` makes both sides the same literal `x + 1`.
+
+The same query can also be rewritten as a subquery to avoid repeating the expression in `GROUP BY`:
+
+```scala
+val query =
+    from(
+        from(T).map(t => (v = t.x + offset))
+    )
+        .groupBy(r => r.v)
+        .map((g, r) => (g, count()))
+```
+
+```sql
+SELECT
+    "t2"."c1" AS "c1",
+    COUNT(*) AS "c2"
+FROM (
+    SELECT
+        "t1"."x" + ? AS "c1"
+    FROM
+        "t" AS "t1"
+) AS "t2"
+GROUP BY
+    "t2"."c1"
+```
+
+Values inlined by `asInlinedExpr` are safely escaped by sqala according to the configured dialect and escaping settings. For ordinary queries, prefer `asExpr` or plain values so that sqala can bind them through `?` parameters.
+
+See [Database Interaction](./database.md) for more about JDBC parameters and inlined expressions.
+
 ## Native Expressions
 
 Some database dialects may contain special syntax that the sqala expression system cannot generalize, such as MySQL's full-text search syntax. In such cases, you can use the `rawExpr` string interpolator to create a native expression, and then use the `as` method to declare the expression type:

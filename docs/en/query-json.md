@@ -114,5 +114,3 @@ The tested support for JSON tables in the latest versions of mainstream database
 | PostgreSQL | ✅ |
 | MySQL | ✅ |
 | Oracle | ✅ |
-| SQLServer | ❌ |
-| SQLite | ❌ |

@@ -166,11 +166,11 @@ The lambda parameter of `sortBy` has the return type of the set operation result
 
 The measured support for set operations in the latest versions of mainstream databases is as follows:
 
-| Method | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
-|------|------------|-------|--------|-----------|--------|
-| `union` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `unionAll` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `intersect` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `intersectAll` | ✅ | ✅ | ✅ | ❌ | ❌ |
-| `except` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `exceptAll` | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Method | PostgreSQL | MySQL | Oracle |
+| ------ | ------------ | ------- | -------- |
+| `union` | ✅ | ✅ | ✅ |
+| `unionAll` | ✅ | ✅ | ✅ |
+| `intersect` | ✅ | ✅ | ✅ |
+| `intersectAll` | ✅ | ✅ | ✅ |
+| `except` | ✅ | ✅ | ✅ |
+| `exceptAll` | ✅ | ✅ | ✅ |

@@ -42,7 +42,6 @@ FROM
 | PostgreSQL | `""`        |
 | MySQL      | ` `` `      |
 | Oracle     | `""`        |
-| SQLServer  | `[]`        |
 
 ## 生成SQL
 
@@ -307,15 +306,15 @@ val query =
 
 此外，sqala支持标准SQL的`FETCH n ROWS WITH TIES`子句，使用`takeWithTies`即可。
 
-限制结果集操作在不同数据库方言下差异较大，下面列出各主流数据库方言适配情况，标记为❌的则是数据库本身不支持此操作，由于`MySQL`和`SQLite`不允许单独使用`OFFSET`子句，因此在单独调用`drop`时，`LIMIT`值为`Long.MaxValue`：
+限制结果集操作在不同数据库方言下差异较大，下面列出各主流数据库方言适配情况，标记为❌的则是数据库本身不支持此操作，由于`MySQL`不允许单独使用`OFFSET`子句，因此在单独调用`drop`时，`LIMIT`值为`Long.MaxValue`：
 
-| 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
-|------|------------|-------|--------|-----------|--------|
-| `drop(m)` | `OFFSET m` | `LIMIT m, 9223372036854775807` | `OFFSET m ROWS` | `OFFSET m ROWS` | `LIMIT 9223372036854775807 OFFSET m` |
-| `take(n)` | `LIMIT n` | `LIMIT 0, n` | `FETCH NEXT n ROWS ONLY` | `FETCH NEXT n ROWS ONLY` | `LIMIT n` |
-| `drop(m).take(n)` | `LIMIT n OFFSET m` | `LIMIT m, n` | `OFFSET m ROWS FETCH NEXT n ROWS ONLY` | `OFFSET m ROWS FETCH NEXT n ROWS ONLY` | `LIMIT n OFFSET m` |
-| `takeWithTies(n)` | `FETCH NEXT n ROWS WITH TIES` | `❌` | `FETCH NEXT n ROWS WITH TIES` | `❌` | `❌` |
-| `drop(m).takeWithTies(n)` | `OFFSET m ROWS FETCH NEXT n ROWS WITH TIES` | `❌` | `OFFSET m ROWS FETCH NEXT n ROWS WITH TIES` | `❌` | `❌` |
+| 方法 | PostgreSQL | MySQL | Oracle |
+| ------ | ------------ | ------- | -------- |
+| `drop(m)` | `OFFSET m` | `LIMIT m, 9223372036854775807` | `OFFSET m ROWS` |
+| `take(n)` | `LIMIT n` | `LIMIT 0, n` | `FETCH NEXT n ROWS ONLY` |
+| `drop(m).take(n)` | `LIMIT n OFFSET m` | `LIMIT m, n` | `OFFSET m ROWS FETCH NEXT n ROWS ONLY` |
+| `takeWithTies(n)` | `FETCH NEXT n ROWS WITH TIES` | `❌` | `FETCH NEXT n ROWS WITH TIES` |
+| `drop(m).takeWithTies(n)` | `OFFSET m ROWS FETCH NEXT n ROWS WITH TIES` | `❌` | `OFFSET m ROWS FETCH NEXT n ROWS WITH TIES` |
 
 ## 去重
 
@@ -370,14 +369,14 @@ val query =
 
 sqala支持的排序规则和各主流数据库的支持程度如下：
 
-| 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
-|------|------------|-------|--------|-----------|--------|
-| `x.asc` | `x ASC` | `x ASC` | `x ASC` | `x ASC` | `x ASC` |
-| `x.ascNullsFirst` | `x ASC NULLS FIRST` | `x ASC` | `x ASC NULLS FIRST` | `x ASC` | `x ASC NULLS FIRST` |
-| `x.ascNullsLast` | `x ASC NULLS LAST` | `CASE WHEN x IS NULL THEN 1 ELSE 0 END ASC, x ASC` | `x ASC NULLS LAST` | `CASE WHEN x IS NULL THEN 1 ELSE 0 END ASC, x ASC` | `x ASC NULLS LAST` |
-| `x.desc` | `x DESC` | `x DESC` | `x DESC` | `x DESC` | `x DESC` |
-| `x.descNullsFirst` | `x DESC NULLS FIRST` | `CASE WHEN x IS NULL THEN 1 ELSE 0 END DESC, x DESC` | `x DESC NULLS FIRST` | `CASE WHEN x IS NULL THEN 1 ELSE 0 END DESC, x DESC` | `x DESC NULLS FIRST` |
-| `x.descNullsLast` | `x DESC NULLS LAST` | `x DESC` | `x DESC NULLS LAST` | `x DESC` | `x DESC NULLS LAST` |
+| 方法 | PostgreSQL | MySQL | Oracle |
+| ------ | ------------ | ------- | -------- |
+| `x.asc` | `x ASC` | `x ASC` | `x ASC` |
+| `x.ascNullsFirst` | `x ASC NULLS FIRST` | `x ASC` | `x ASC NULLS FIRST` |
+| `x.ascNullsLast` | `x ASC NULLS LAST` | `CASE WHEN x IS NULL THEN 1 ELSE 0 END ASC, x ASC` | `x ASC NULLS LAST` |
+| `x.desc` | `x DESC` | `x DESC` | `x DESC` |
+| `x.descNullsFirst` | `x DESC NULLS FIRST` | `CASE WHEN x IS NULL THEN 1 ELSE 0 END DESC, x DESC` | `x DESC NULLS FIRST` |
+| `x.descNullsLast` | `x DESC NULLS LAST` | `x DESC` | `x DESC NULLS LAST` |
 
 ### 投影后排序
 
@@ -450,8 +449,6 @@ FROM
 | PostgreSQL | ✅ |
 | MySQL | ✅ |
 | Oracle | ✅ |
-| SQLServer | ✅ |
-| SQLite | ❌ |
 
 ## 查询锁
 
@@ -464,11 +461,11 @@ val query =
 
 查询加锁不是SQL标准内容，但大部分数据库的语法类似，因此sqala参照PostgreSQL和MySQL功能进行支持，加锁方法和各主流数据库最新版本实测支持程度如下：
 
-| 方法 | PostgreSQL | MySQL | Oracle | SQLServer | SQLite |
-|------|------------|-------|--------|-----------|--------|
-| `forUpdate` | `FOR UPDATE` | `FOR UPDATE` | `FOR UPDATE` | ❌ | ❌ |
-| `forUpdateNoWait` | `FOR UPDATE NOWAIT` | `FOR UPDATE NOWAIT` | `FOR UPDATE NOWAIT` | ❌ | ❌ |
-| `forUpdateSkipLocked` | `FOR UPDATE SKIP LOCKED` | `FOR UPDATE SKIP LOCKED` | `FOR UPDATE SKIP LOCKED` | ❌ | ❌ |
-| `forShare` | `FOR SHARE` | `FOR SHARE` | ❌ | ❌ | ❌ |
-| `forShareNoWait` | `FOR SHARE NOWAIT` | `FOR SHARE NOWAIT` | ❌ | ❌ | ❌ |
-| `forShareSkipLocked` | `FOR SHARE SKIP LOCKED` | `FOR SHARE SKIP LOCKED` | ❌ | ❌ | ❌ |
+| 方法 | PostgreSQL | MySQL | Oracle |
+| ------ | ------------ | ------- | -------- |
+| `forUpdate` | `FOR UPDATE` | `FOR UPDATE` | `FOR UPDATE` |
+| `forUpdateNoWait` | `FOR UPDATE NOWAIT` | `FOR UPDATE NOWAIT` | `FOR UPDATE NOWAIT` |
+| `forUpdateSkipLocked` | `FOR UPDATE SKIP LOCKED` | `FOR UPDATE SKIP LOCKED` | `FOR UPDATE SKIP LOCKED` |
+| `forShare` | `FOR SHARE` | `FOR SHARE` | ❌ |
+| `forShareNoWait` | `FOR SHARE NOWAIT` | `FOR SHARE NOWAIT` | ❌ |
+| `forShareSkipLocked` | `FOR SHARE SKIP LOCKED` | `FOR SHARE SKIP LOCKED` | ❌ |

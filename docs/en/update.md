@@ -37,5 +37,3 @@ The `db.save` method decides whether to insert or update based on the primary ke
 | PostgreSQL | `INSERT INTO ... ON CONFLICT ... DO UPDATE SET` |
 | MySQL | `INSERT INTO ... ON DUPLICATE KEY UPDATE` |
 | Oracle | `MERGE INTO` |
-| SQLServer | `MERGE INTO` |
-| SQLite | `INSERT OR REPLACE INTO` |

@@ -174,5 +174,3 @@ LIMIT 5 OFFSET 10
 | PostgreSQL | ✅ |
 | MySQL | ✅ |
 | Oracle | ✅ |
-| SQLServer | ✅ |
-| SQLite | ✅ |

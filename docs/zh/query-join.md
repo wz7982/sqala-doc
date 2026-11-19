@@ -282,12 +282,10 @@ val query =
 
 sqala支持使用`joinLateral`和`leftJoinLateral`以及`crossJoinLateral`创建`LATERAL`表（由于数据库限制，不允许右外连接和全外连接使用`LATERAL`功能）。
 
-各主流数据库最新版本实测支持程度如下（SQLServer有自己的`APPLY`语法，但无法跟标准SQL进行等价转换，所以sqala不做支持）：
+各主流数据库最新版本实测支持程度如下：
 
 | 数据库类型 | LATERAL 支持 |
 |------------|--------------|
 | PostgreSQL | ✅ |
 | MySQL | ✅ |
 | Oracle | ✅ |
-| SQLServer | ❌ |
-| SQLite | ❌ |

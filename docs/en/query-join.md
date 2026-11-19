@@ -282,12 +282,10 @@ This example uses sqala's subquery feature together with `joinLateral`. For more
 
 sqala supports creating `LATERAL` tables with `joinLateral`, `leftJoinLateral`, and `crossJoinLateral` (due to database limitations, right outer joins and full outer joins cannot use the `LATERAL` feature).
 
-The measured support of the latest versions of major databases is as follows (SQLServer has its own `APPLY` syntax, but it cannot be equivalently converted to standard SQL, so sqala does not support it):
+The measured support of the latest versions of major databases is as follows:
 
 | Database | LATERAL Support |
 |------------|--------------|
 | PostgreSQL | ✅ |
 | MySQL | ✅ |
 | Oracle | ✅ |
-| SQLServer | ❌ |
-| SQLite | ❌ |

@@ -26,6 +26,7 @@ export default defineConfig({
             items: [
               { text: '元数据配置', link: 'metadata' },
               { text: '数据库交互', link: 'database' },
+              { text: '性能基准', link: 'benchmark' },
               {
                 text: '查询',
                 collapsed: false,
@@ -77,6 +78,7 @@ export default defineConfig({
               { text: 'Getting Started', link: 'introduction' },
               { text: 'Metadata Configuration', link: 'metadata' },
               { text: 'Database Interaction', link: 'database' },
+              { text: 'Benchmark', link: 'benchmark' },
               {
                 text: 'Query',
                 collapsed: false,
