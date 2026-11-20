@@ -67,39 +67,54 @@ For strings that must be inlined, sqala applies the following escaping rules:
 
 ## Configuring Logging
 
-The last step in configuring database connection information is to configure a log handler, so that debug information can be recorded in the logs when queries are executed. Any type of `String => Unit` works. The following introduces log configuration using the mainstream JVM logging framework `SLF4J` and console printing as two examples; in actual use you can replace them with various logging frameworks.
+sqala emits JDBC execution logs through a `sqala.jdbc.Logger`. A `Logger` receives structured `LogEvent` values that contain the log level, operation kind, SQL statement, bound parameters, elapsed time, affected row count, and error information.
 
-Using `SLF4J`:
+Logging is optional. When no `given Logger` is provided, sqala uses `Logger.noop` and produces no output.
 
-```scala
-import org.slf4j.LoggerFactory
-import sqala.jdbc.Logger
-
-class Service:
-    val logger = LoggerFactory.getLogger(Service.class)
-
-    given Logger = Logger((s: String) => logger.info(s))
-```
-
-Using console printing:
+Using console output:
 
 ```scala
 import sqala.jdbc.Logger
 
-class Service:
-    given Logger = Logger((s: String) => println(s))
+given Logger = Logger.console()
 ```
 
-If you want the log handler to do nothing, simply write the `given` implementation as:
+The arguments of `Logger.console` are the level used for successful operations, whether to output arguments, and the maximum rendered argument length.
+
+Using the JDK's `java.util.logging`:
 
 ```scala
-import sqala.jdbc.Logger
+import sqala.jdbc.{JdkLogger, Logger}
 
-class Service:
-    given Logger = Logger(_ => ())
+given Logger = JdkLogger("sqala")
 ```
 
-and that's it.
+`JdkLogger` uses the `info` level by default, matching the JDK logging defaults.
+
+If you use SLF4J, add the `sqala-slf4j` module:
+
+```scala
+libraryDependencies += "com.wz7982" %% "sqala-slf4j" % "0.8.2"
+```
+
+Then import its default `given`:
+
+```scala
+import sqala.slf4j.given
+```
+
+You can also create a custom instance:
+
+```scala
+import sqala.jdbc.{LogLevel, Logger}
+import sqala.slf4j.Slf4jLogger
+
+given Logger = Slf4jLogger("my-service", level = LogLevel.Info)
+```
+
+Apart from `sqala-jdbc`, `sqala-slf4j` depends only on `slf4j-api` and does not bring in a logging implementation. The logging implementation is still chosen by the application.
+
+For Spring Boot logging configuration, see [Spring Boot Integration](./spring-boot.md).
 
 After configuring the connection information, we can use sqala to connect to the database and execute queries.
 

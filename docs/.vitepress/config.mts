@@ -26,6 +26,7 @@ export default defineConfig({
             items: [
               { text: '元数据配置', link: 'metadata' },
               { text: '数据库交互', link: 'database' },
+              { text: 'Spring Boot 集成', link: 'spring-boot' },
               { text: '性能基准', link: 'benchmark' },
               {
                 text: '查询',
@@ -78,6 +79,7 @@ export default defineConfig({
               { text: 'Getting Started', link: 'introduction' },
               { text: 'Metadata Configuration', link: 'metadata' },
               { text: 'Database Interaction', link: 'database' },
+              { text: 'Spring Boot Integration', link: 'spring-boot' },
               { text: 'Benchmark', link: 'benchmark' },
               {
                 text: 'Query',

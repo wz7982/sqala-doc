@@ -67,39 +67,54 @@ val query =
 
 ## 配置日志
 
-配置数据库连接信息的最后一步是配置一个日志处理器，以便在执行查询时在日志中记录调试信息，任何类型为`String => Unit`，下面将以JVM主流日志框架`SLF4J`和控制台打印两种情况为例，介绍日志配置方式，实际使用时可以自行替换成各种日志框架。
+sqala通过`sqala.jdbc.Logger`输出JDBC执行日志。`Logger`接收结构化的`LogEvent`，其中包含日志级别、操作类型、SQL语句、绑定参数、执行耗时、影响行数和异常信息。
 
-使用`SLF4J`：
+日志是可选的。如果没有提供`given Logger`，sqala会使用`Logger.noop`，不会产生任何输出。
 
-```scala
-import org.slf4j.LoggerFactory
-import sqala.jdbc.Logger
-
-class Service:
-    val logger = LoggerFactory.getLogger(Service.class)
-
-    given Logger = Logger((s: String) => logger.info(s))
-```
-
-使用控制台打印：
+使用控制台输出：
 
 ```scala
 import sqala.jdbc.Logger
 
-class Service:
-    given Logger = Logger((s: String) => println(s))
+given Logger = Logger.console()
 ```
 
-如果您希望日志处理什么都不做，直接将`given`实现写成：
+`Logger.console`的参数依次是成功操作使用的日志级别、是否输出参数和参数最大长度。
+
+使用JDK自带的`java.util.logging`：
 
 ```scala
-import sqala.jdbc.Logger
+import sqala.jdbc.{JdkLogger, Logger}
 
-class Service:
-    given Logger = Logger(_ => ())
+given Logger = JdkLogger("sqala")
 ```
 
-即可。
+`JdkLogger`默认使用`info`级别，与JDK日志的默认级别一致。
+
+如果使用SLF4J，可以引入`sqala-slf4j`模块：
+
+```scala
+libraryDependencies += "com.wz7982" %% "sqala-slf4j" % "0.8.2"
+```
+
+然后直接导入默认的`given`：
+
+```scala
+import sqala.slf4j.given
+```
+
+也可以自定义实例：
+
+```scala
+import sqala.jdbc.{LogLevel, Logger}
+import sqala.slf4j.Slf4jLogger
+
+given Logger = Slf4jLogger("my-service", level = LogLevel.Info)
+```
+
+`sqala-slf4j`除`sqala-jdbc`外只依赖`slf4j-api`，不会引入任何日志实现，日志实现仍由应用自行选择。
+
+Spring Boot项目中的日志配置请参考[Spring Boot 集成](./spring-boot.md)。
 
 配置好连接信息后，我们就可以使用sqala连接到数据库执行查询了。
 

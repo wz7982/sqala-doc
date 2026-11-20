@@ -83,7 +83,7 @@ With sqala, you can:
 
 12. **Standards compatibility**: Built-in abstract syntax tree and generic SQL generator compatible with `ISO/IEC 9075` SQL 2023 and the `ISO/IEC 13249` SQL spatial extension; only a small amount of code is needed to support more database dialects.
 
-13. **0 dependencies**: sqala depends only on Scala and the Java standard library, with no third-party dependencies.
+13. **0 dependencies**: sqala's core modules depend only on Scala and the Java standard library, with no third-party dependencies. Only optional integration modules such as `sqala-slf4j` and `sqala-spring-boot-starter` bring in the corresponding frameworks when used.
 
 ## Notes
 
