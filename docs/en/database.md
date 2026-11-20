@@ -94,7 +94,7 @@ given Logger = JdkLogger("sqala")
 If you use SLF4J, add the `sqala-slf4j` module:
 
 ```scala
-libraryDependencies += "com.wz7982" %% "sqala-slf4j" % "0.8.2"
+libraryDependencies += "com.wz7982" %% "sqala-slf4j" % "latest.integration"
 ```
 
 Then import its default `given`:

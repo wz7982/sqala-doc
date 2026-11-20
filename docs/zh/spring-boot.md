@@ -5,7 +5,7 @@
 ## 引入依赖
 
 ```scala
-libraryDependencies += "com.wz7982" %% "sqala-spring-boot-starter" % "0.8.2"
+libraryDependencies += "com.wz7982" %% "sqala-spring-boot-starter" % "latest.integration"
 ```
 
 Spring相关依赖均为`Provided`，版本由应用的Spring Boot BOM决定。事务集成需要classpath中存在`spring-jdbc`和`spring-tx`，通常由`spring-boot-starter-jdbc`引入。
