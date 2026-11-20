@@ -5,7 +5,7 @@
 ## Dependency
 
 ```scala
-libraryDependencies += "com.wz7982" %% "sqala-spring-boot-starter" % "0.8.2"
+libraryDependencies += "com.wz7982" %% "sqala-spring-boot-starter" % "latest.integration"
 ```
 
 Spring dependencies are `Provided`; versions come from the application's Spring Boot BOM. Transaction integration requires `spring-jdbc` and `spring-tx` on the classpath, usually provided by `spring-boot-starter-jdbc`.
