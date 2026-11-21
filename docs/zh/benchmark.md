@@ -70,14 +70,14 @@
 
 | 解析器 | 吞吐 (ops/s) | 相对 sqala | 8 线程延迟 (µs/op) |
 | --- | ---: | ---: | ---: |
-| Alibaba Druid | 2,258,798 | 2.06x | 3.554 |
-| **sqala** | **1,098,332** | **1.00x** | **7.258** |
-| Apache Calcite | 193,177 | 0.18x | 42.819 |
-| JSqlParser | 7,646 | 0.007x | 1,055.507 |
+| Alibaba Druid | 2,258,782 | 1.65x | 3.654 |
+| **sqala** | **1,371,140** | **1.00x** | **6.098** |
+| Apache Calcite | 187,206 | 0.14x | 43.679 |
+| JSqlParser | 7,292 | 0.005x | 1,090.824 |
 
 ![SQL 解析器吞吐](/benchmark/05-parser-throughput.png)
 
-解析器测试与数据库无关。sqala 的手写递归下降解析器吞吐约为 Druid 的 49%，但明显高于 Calcite 和 JSqlParser。
+解析器测试与数据库无关。sqala 的手写递归下降解析器吞吐约为 Druid 的 61%，但明显高于 Calcite 和 JSqlParser。
 
 ## 延迟图表
 
@@ -92,7 +92,7 @@
 - 点查吞吐：sqala 约 16.4 万 ops/s，与 Hibernate 基本持平，约为纯 JDBC 的 89%。
 - 范围查询吞吐：sqala 约 956 ops/s，即每秒约 956 万行，约为纯 JDBC 的 94%，明显领先 MyBatis、Hibernate 和 jOOQ。
 - 8 线程下点查扩展比约 5.2～5.6 倍，范围查询约 6.0～6.8 倍，已开始受到 PostgreSQL 并发处理能力限制。
-- 解析器吞吐：Druid 约 226 万 ops/s，sqala 约 110 万 ops/s，Calcite 约 19.3 万 ops/s，JSqlParser 约 7,600 ops/s。
+- 解析器吞吐：Druid 约 226 万 ops/s，sqala 约 137 万 ops/s，Calcite 约 18.7 万 ops/s，JSqlParser 约 7,300 ops/s。
 - JMH 的 `AverageTime` 在多线程下报告的是各线程平均每操作耗时的均值，不等同于聚合吞吐；吞吐指标使用 `-bm thrpt -tu s` 单独测量。
 
 ## 复现
