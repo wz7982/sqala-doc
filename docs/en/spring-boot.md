@@ -110,12 +110,14 @@ class UserController(service: UserService):
 ### Configuration
 
 ```yaml
+# Spring configuration: data source
 spring:
   datasource:
     url: jdbc:h2:mem:demo;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
     username: sa
     password: ""
 
+# sqala configuration: JdbcContext and SqalaLogging
 sqala:
   jdbc:
     dialect: postgresql
@@ -123,10 +125,13 @@ sqala:
     enabled: true
     level: debug
 
+# SLF4J/Logback configuration: enable the logger named "sqala"
 logging:
   level:
     sqala: debug
 ```
+
+`sqala.logging.level` controls the level sqala emits events at, while `logging.level.sqala` controls whether Logback accepts that level. If they disagree, successful statements may not be printed.
 
 ## Auto-configuration
 
@@ -146,7 +151,7 @@ Every auto-configuration uses `@ConditionalOnMissingBean`, so an application can
 | Property | Default | Description |
 | :--- | :--- | :--- |
 | `sqala.jdbc.dialect` | `postgresql` | Database dialect: `postgresql`, `mysql` or `oracle` |
-| `sqala.jdbc.standard-escape-strings` | `false` | Whether to use standard SQL string escaping |
+| `sqala.jdbc.standard-escape-strings` | `true` | Whether to use standard SQL string escaping |
 
 ### sqala.logging
 
@@ -228,11 +233,11 @@ import javax.sql.DataSource
 class DataSourceConfig:
     @Bean
     def readDb(@Qualifier("readDataSource") dataSource: DataSource): JdbcContext =
-        JdbcContext(dataSource, PostgresqlJdbcDialect, false)
+        JdbcContext(dataSource, PostgresqlJdbcDialect, true)
 
     @Bean
     def writeDb(@Qualifier("writeDataSource") dataSource: DataSource): JdbcContext =
-        JdbcContext(dataSource, PostgresqlJdbcDialect, false)
+        JdbcContext(dataSource, PostgresqlJdbcDialect, true)
 ```
 
 Each data source also needs its own `SqalaExecutionContext`; otherwise transactions only apply to the default `DataSource`.
