@@ -70,14 +70,14 @@ Decoding 10,000 rows highlights differences in result-set decoding. sqala reache
 
 | Parser | Throughput (ops/s) | Relative to sqala | 8-thread latency (µs/op) |
 | --- | ---: | ---: | ---: |
-| Alibaba Druid | 2,258,798 | 2.06x | 3.554 |
-| **sqala** | **1,098,332** | **1.00x** | **7.258** |
-| Apache Calcite | 193,177 | 0.18x | 42.819 |
-| JSqlParser | 7,646 | 0.007x | 1,055.507 |
+| Alibaba Druid | 2,258,782 | 1.65x | 3.654 |
+| **sqala** | **1,371,140** | **1.00x** | **6.098** |
+| Apache Calcite | 187,206 | 0.14x | 43.679 |
+| JSqlParser | 7,292 | 0.005x | 1,090.824 |
 
 ![SQL parser throughput](/benchmark/en/05-parser-throughput.png)
 
-Parser results are independent of the database. sqala's hand-written recursive-descent parser reaches about 49% of Druid's throughput but is substantially faster than Calcite and JSqlParser.
+Parser results are independent of the database. sqala's hand-written recursive-descent parser reaches about 61% of Druid's throughput but is substantially faster than Calcite and JSqlParser.
 
 ## Latency Charts
 
@@ -92,7 +92,7 @@ Parser results are independent of the database. sqala's hand-written recursive-d
 - Point query throughput: sqala reaches about 164k ops/s, essentially on par with Hibernate and about 89% of plain JDBC.
 - Range query throughput: sqala reaches about 956 ops/s, or about 9.56 million rows/s, roughly 94% of plain JDBC and clearly ahead of MyBatis, Hibernate, and jOOQ.
 - With 8 threads, point-query scaling is about 5.2–5.6x and range-query scaling is about 6.0–6.8x, already limited by PostgreSQL concurrency.
-- Parser throughput: Druid about 2.26M ops/s, sqala about 1.10M ops/s, Calcite about 193k ops/s, and JSqlParser about 7,600 ops/s.
+- Parser throughput: Druid about 2.26M ops/s, sqala about 1.37M ops/s, Calcite about 187k ops/s, and JSqlParser about 7,300 ops/s.
 - JMH `AverageTime` with multiple threads reports the mean of per-thread average time per operation, not aggregate throughput. Throughput is measured separately with `-bm thrpt -tu s`.
 
 ## Reproducing
