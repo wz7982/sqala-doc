@@ -77,7 +77,6 @@ export default defineConfig({
           '/en/': {
             base: '/en/',
             items: [
-              { text: 'Getting Started', link: 'introduction' },
               { text: 'Metadata Configuration', link: 'metadata' },
               { text: 'Database Interaction', link: 'database' },
               { text: 'Spring Boot Integration', link: 'spring-boot' },
