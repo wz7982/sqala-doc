@@ -493,4 +493,6 @@ val result = db.executeTransaction {
 
 `createSavepoint()` creates an unnamed savepoint and `createSavepoint(name)` creates a named one. `rollbackToSavepoint` rolls back to the savepoint, and `releaseSavepoint` releases it.
 
-Savepoints depend on database and JDBC driver support. In a Spring transaction, `db.currentTransaction` uses the connection currently bound by Spring; if you also use Spring's `PROPAGATION_NESTED`, do not manage savepoints at the same level manually.
+Savepoints depend on database and JDBC driver support.
+
+In a Spring application, use Spring's transaction management instead of sqala's native transactions.
