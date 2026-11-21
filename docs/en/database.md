@@ -417,27 +417,30 @@ Using the context abstraction mechanism of Scala 3, we can easily share a transa
 
 ```scala
 import sqala.jdbc.*
+import sqala.static.dsl.*
 
 def insert(row: User)(using JdbcTransactionContext): Int =
-    db.insertAndReturn(row).head.toInt
+    db.insert(row)
 
-def delete(id: Int)(using JdbcTransactionContext): Int =
+def deleteUser(id: Int)(using JdbcTransactionContext): Int =
     db.execute(delete[User].where(d => d.id === id))
 
-def insertAndDelete(row: User)(using JdbcTransactionContext): Int =
-    val id = insertDepartment(row)
-    deleteDepartment(id)
+def insertAndDelete(row: User, id: Int)(using JdbcTransactionContext): Int =
+    insert(row)
+    deleteUser(id)
 
-val department: Department = ???
+val user: User = ???
 
 try {
     db.executeTransaction {
-        insertAndDelete(department)
+        insertAndDelete(user, 1)
     }
 } catch {
     case e: Exception =>
 }
 ```
+
+`executeTransaction` supports nesting. If a `JdbcTransactionContext` is already in scope, an inner call joins the outer transaction and does not commit or roll back independently. `executeTransactionWithIsolation` also joins the current transaction; the requested isolation level is ignored in that case.
 
 The `db.executeTransactionWithIsolation` method lets you specify the transaction isolation level manually.
 
@@ -464,3 +467,30 @@ try {
     case e: Exception => println("Query error")
 }
 ```
+
+### Savepoints
+
+`db.currentTransaction` returns the current `JdbcTransactionContext`, which can be used to create and manage savepoints:
+
+```scala
+import sqala.jdbc.*
+
+val result = db.executeTransaction {
+    db.execute(...)
+
+    val tx = db.currentTransaction
+    val savepoint = tx.createSavepoint("before_update")
+
+    try
+        db.execute(...)
+        tx.releaseSavepoint(savepoint)
+    catch
+        case e: Exception =>
+            tx.rollbackToSavepoint(savepoint)
+            throw e
+}
+```
+
+`createSavepoint()` creates an unnamed savepoint and `createSavepoint(name)` creates a named one. `rollbackToSavepoint` rolls back to the savepoint, and `releaseSavepoint` releases it.
+
+Savepoints depend on database and JDBC driver support. In a Spring transaction, `db.currentTransaction` uses the connection currently bound by Spring; if you also use Spring's `PROPAGATION_NESTED`, do not manage savepoints at the same level manually.

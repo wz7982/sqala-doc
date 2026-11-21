@@ -161,10 +161,10 @@ logging:
 
 | Bean | Condition | Description |
 | :--- | :--- | :--- |
-| `JdbcContext` | Exactly one `DataSource` exists | Configured through `sqala.jdbc.*` |
-| `SqalaExecutionContext` | A `DataSource` exists and no other `JdbcExecutionContext` is defined | Participates in Spring transactions through `DataSourceUtils` |
+| `JdbcContext` | Exactly one or an `@Primary` `DataSource` exists | Configured through `sqala.jdbc.*` |
+| `SqalaExecutionContext` | No other `JdbcExecutionContext` is defined | Uses the `DataSource` of the current `JdbcContext` to participate in Spring transactions |
 | `SqalaLogging` | SLF4J is present | Holds a `Logger`, configured through `sqala.logging.*` |
-| `PlatformTransactionManager` | A `DataSource` exists and no other transaction manager is defined | Registers a `DataSourceTransactionManager` |
+| `PlatformTransactionManager` | Exactly one or an `@Primary` `DataSource` exists and no other transaction manager is defined | Registers a `DataSourceTransactionManager` |
 
 Every auto-configuration uses `@ConditionalOnMissingBean`, so an application can override any of these beans.
 
@@ -205,6 +205,10 @@ def transfer(): Unit =
 
 `db.executeTransaction` is intended for non-Spring environments. In Spring Boot it is unnecessary, and sqala operations should not be wrapped in an additional sqala transaction.
 
+Spring transaction `timeout` values are applied to statements created by sqala. JDBC `SQLException`s are translated to Spring `DataAccessException`s, so Spring's default rollback rules apply.
+
+The adapter only translates JDBC `SQLException`s. If business code can throw other checked exceptions and you want Spring to roll back, use `@Transactional(rollbackFor = Array(classOf[Exception]))` or wrap them in a runtime exception.
+
 ## Logging
 
 Inject `SqalaLogging` and import its `given`:
@@ -244,10 +248,15 @@ Spring Boot collects every `JacksonModule` bean and registers it with the `JsonM
 
 ## Multiple Data Sources
 
-Auto-configuration applies only when there is exactly one `DataSource`. With multiple data sources, declare the contexts manually:
+Auto-configuration creates `JdbcContext` and the fallback `PlatformTransactionManager` only when there is exactly one or an `@Primary` `DataSource`. With multiple `DataSource`s and no `@Primary`, those two auto-configurations are skipped and the application still starts; declare them per data source.
+
+`SqalaExecutionContext` is not bound to a fixed `DataSource`. It always uses the `DataSource` of the current `JdbcContext`, so one instance can serve multiple data sources. The starter registers it automatically.
 
 ```scala
-import org.springframework.context.annotation.{Bean, Configuration, Qualifier}
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.context.annotation.{Bean, Configuration}
+import org.springframework.jdbc.datasource.DataSourceTransactionManager
+import org.springframework.transaction.PlatformTransactionManager
 import sqala.jdbc.JdbcContext
 import sqala.jdbc.dialect.PostgresqlJdbcDialect
 
@@ -262,6 +271,18 @@ class DataSourceConfig:
     @Bean
     def writeDb(@Qualifier("writeDataSource") dataSource: DataSource): JdbcContext =
         JdbcContext(dataSource, PostgresqlJdbcDialect, true)
+
+    @Bean
+    def readTransactionManager(
+        @Qualifier("readDataSource") dataSource: DataSource
+    ): PlatformTransactionManager =
+        new DataSourceTransactionManager(dataSource)
+
+    @Bean
+    def writeTransactionManager(
+        @Qualifier("writeDataSource") dataSource: DataSource
+    ): PlatformTransactionManager =
+        new DataSourceTransactionManager(dataSource)
 ```
 
-Each data source also needs its own `SqalaExecutionContext`; otherwise transactions only apply to the default `DataSource`.
+If exactly one `DataSource` is marked `@Primary`, it is treated as the single candidate and auto-configuration uses it.

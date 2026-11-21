@@ -418,27 +418,30 @@ try {
 
 ```scala
 import sqala.jdbc.*
+import sqala.static.dsl.*
 
 def insert(row: User)(using JdbcTransactionContext): Int =
-    db.insertAndReturn(row).head.toInt
+    db.insert(row)
 
-def delete(id: Int)(using JdbcTransactionContext): Int =
+def deleteUser(id: Int)(using JdbcTransactionContext): Int =
     db.execute(delete[User].where(d => d.id === id))
 
-def insertAndDelete(row: User)(using JdbcTransactionContext): Int =
-    val id = insertDepartment(row)
-    deleteDepartment(id)
+def insertAndDelete(row: User, id: Int)(using JdbcTransactionContext): Int =
+    insert(row)
+    deleteUser(id)
 
-val department: Department = ???
+val user: User = ???
 
 try {
     db.executeTransaction {
-        insertAndDelete(department)
+        insertAndDelete(user, 1)
     }
 } catch {
     case e: Exception =>
 }
 ```
+
+`executeTransaction`支持嵌套调用。如果当前作用域中已经有`JdbcTransactionContext`，内层调用会直接加入外层事务，不会单独提交或回滚；`executeTransactionWithIsolation`在已有事务中也会加入当前事务，此时指定的隔离级别会被忽略。
 
 `db.executeTransactionWithIsolation`方法手动指定事务的隔离级别。
 
@@ -465,3 +468,30 @@ try {
     case e: Exception => println("查询错误")
 }
 ```
+
+### Savepoint
+
+`db.currentTransaction`返回当前的`JdbcTransactionContext`，可以用它创建和管理保存点：
+
+```scala
+import sqala.jdbc.*
+
+val result = db.executeTransaction {
+    db.execute(...)
+
+    val tx = db.currentTransaction
+    val savepoint = tx.createSavepoint("before_update")
+
+    try
+        db.execute(...)
+        tx.releaseSavepoint(savepoint)
+    catch
+        case e: Exception =>
+            tx.rollbackToSavepoint(savepoint)
+            throw e
+}
+```
+
+`createSavepoint()`创建匿名保存点，`createSavepoint(name)`创建命名保存点；`rollbackToSavepoint`回滚到保存点，`releaseSavepoint`释放保存点。
+
+保存点依赖数据库和JDBC驱动的支持。Spring事务中，`db.currentTransaction`使用的是Spring当前绑定的连接；如果同时使用Spring的`PROPAGATION_NESTED`，不要再手动管理同一层保存点。
