@@ -494,4 +494,6 @@ val result = db.executeTransaction {
 
 `createSavepoint()`创建匿名保存点，`createSavepoint(name)`创建命名保存点；`rollbackToSavepoint`回滚到保存点，`releaseSavepoint`释放保存点。
 
-保存点依赖数据库和JDBC驱动的支持。Spring事务中，`db.currentTransaction`使用的是Spring当前绑定的连接；如果同时使用Spring的`PROPAGATION_NESTED`，不要再手动管理同一层保存点。
+保存点依赖数据库和JDBC驱动的支持。
+
+在Spring项目中请使用Spring的事务管理，不要使用sqala原生事务。
