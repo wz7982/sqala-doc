@@ -29,6 +29,30 @@ libraryDependencies ++= Seq(
 
 `spring-boot-starter-jdbc` provides the `DataSource`, `spring-jdbc` and `spring-tx`. If the application already pulls in a JDBC starter through `spring-boot-starter-data-jpa`, MyBatis, or another framework, it does not need to be declared again.
 
+## Scala 3.9 Note
+
+When compiling with Scala 3.9.x, add the following dependency:
+
+```scala
+libraryDependencies += "io.micrometer" % "context-propagation" % "1.2.1"
+```
+
+`PropagationContextElement` in `spring-core 7.x` references `io.micrometer.context.ContextSnapshot$Scope`, but micrometer declares `context-propagation` as an optional dependency, so it is not transitive. The Scala 3.9 classfile parser aborts when an inner class cannot be resolved:
+
+```text
+java.lang.AssertionError: assertion failed: failure to resolve inner class:
+externalName = io.micrometer.context.ContextSnapshot$Scope,
+outerName = io.micrometer.context.ContextSnapshot,
+innerName = Scope,
+owner.fullName = io.micrometer.context.ContextSnapshot
+while parsing .../spring-core-7.0.11.jar(org/springframework/core/PropagationContextElement.class)
+```
+
+- Scala 3.10.x does not need this dependency
+- Projects that use only `sqala-jdbc` without Spring do not need it
+- Spring Boot 3.x (Spring Framework 6.x) does not need it
+- `1.2.1` matches `micrometer-observation 1.16.9` managed by Spring Boot 4.0.10
+
 ## Quick Start
 
 ### Entity
@@ -241,27 +265,3 @@ class DataSourceConfig:
 ```
 
 Each data source also needs its own `SqalaExecutionContext`; otherwise transactions only apply to the default `DataSource`.
-
-## Scala 3.9 Note
-
-When compiling with Scala 3.9.x, add the following dependency:
-
-```scala
-libraryDependencies += "io.micrometer" % "context-propagation" % "1.2.1"
-```
-
-`PropagationContextElement` in `spring-core 7.x` references `io.micrometer.context.ContextSnapshot$Scope`, but micrometer declares `context-propagation` as an optional dependency, so it is not transitive. The Scala 3.9 classfile parser aborts when an inner class cannot be resolved:
-
-```text
-java.lang.AssertionError: assertion failed: failure to resolve inner class:
-externalName = io.micrometer.context.ContextSnapshot$Scope,
-outerName = io.micrometer.context.ContextSnapshot,
-innerName = Scope,
-owner.fullName = io.micrometer.context.ContextSnapshot
-while parsing .../spring-core-7.0.11.jar(org/springframework/core/PropagationContextElement.class)
-```
-
-- Scala 3.10.x does not need this dependency
-- Projects that use only `sqala-jdbc` without Spring do not need it
-- Spring Boot 3.x (Spring Framework 6.x) does not need it
-- `1.2.1` matches `micrometer-observation 1.16.9` managed by Spring Boot 4.0.10

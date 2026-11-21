@@ -29,6 +29,30 @@ libraryDependencies ++= Seq(
 
 `spring-boot-starter-jdbc`负责提供`DataSource`、`spring-jdbc`和`spring-tx`。如果应用已经通过`spring-boot-starter-data-jpa`、MyBatis等引入了JDBC starter，则不需要重复声明。
 
+## Scala 3.9 注意事项
+
+使用Scala 3.9.x编译时，需要在项目中额外加入：
+
+```scala
+libraryDependencies += "io.micrometer" % "context-propagation" % "1.2.1"
+```
+
+`spring-core 7.x`中的`PropagationContextElement`引用了`io.micrometer.context.ContextSnapshot$Scope`，而micrometer将`context-propagation`声明为optional依赖，不会传递到应用。Scala 3.9的classfile parser遇到缺失的内部类时会直接断言失败：
+
+```text
+java.lang.AssertionError: assertion failed: failure to resolve inner class:
+externalName = io.micrometer.context.ContextSnapshot$Scope,
+outerName = io.micrometer.context.ContextSnapshot,
+innerName = Scope,
+owner.fullName = io.micrometer.context.ContextSnapshot
+while parsing .../spring-core-7.0.11.jar(org/springframework/core/PropagationContextElement.class)
+```
+
+- Scala 3.10.x已修复，不需要该依赖
+- 只使用`sqala-jdbc`、不使用Spring的项目不需要
+- 使用Spring Boot 3.x（Spring Framework 6.x）不需要
+- `1.2.1`与Spring Boot 4.0.10管理的`micrometer-observation 1.16.9`对齐
+
 ## 快速开始
 
 ### 实体
@@ -241,27 +265,3 @@ class DataSourceConfig:
 ```
 
 每个数据源还需要各自的`SqalaExecutionContext`，否则事务只会作用在默认的`DataSource`上。
-
-## Scala 3.9 注意事项
-
-使用Scala 3.9.x编译时，需要在项目中额外加入：
-
-```scala
-libraryDependencies += "io.micrometer" % "context-propagation" % "1.2.1"
-```
-
-`spring-core 7.x`中的`PropagationContextElement`引用了`io.micrometer.context.ContextSnapshot$Scope`，而micrometer将`context-propagation`声明为optional依赖，不会传递到应用。Scala 3.9的classfile parser遇到缺失的内部类时会直接断言失败：
-
-```text
-java.lang.AssertionError: assertion failed: failure to resolve inner class:
-externalName = io.micrometer.context.ContextSnapshot$Scope,
-outerName = io.micrometer.context.ContextSnapshot,
-innerName = Scope,
-owner.fullName = io.micrometer.context.ContextSnapshot
-while parsing .../spring-core-7.0.11.jar(org/springframework/core/PropagationContextElement.class)
-```
-
-- Scala 3.10.x已修复，不需要该依赖
-- 只使用`sqala-jdbc`、不使用Spring的项目不需要
-- 使用Spring Boot 3.x（Spring Framework 6.x）不需要
-- `1.2.1`与Spring Boot 4.0.10管理的`micrometer-observation 1.16.9`对齐
