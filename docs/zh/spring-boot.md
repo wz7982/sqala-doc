@@ -161,12 +161,12 @@ logging:
 
 | Bean | 条件 | 说明 |
 | :--- | :--- | :--- |
-| `JdbcContext` | 存在唯一的`DataSource` | 使用`sqala.jdbc.*`配置 |
-| `SqalaExecutionContext` | 存在`DataSource`且没有其他`JdbcExecutionContext` | 通过`DataSourceUtils`参与Spring事务 |
+| `JdbcContext` | 存在唯一或`@Primary`的`DataSource` | 使用`sqala.jdbc.*`配置 |
+| `SqalaExecutionContext` | 没有其他`JdbcExecutionContext` | 使用当前`JdbcContext`的`DataSource`参与Spring事务 |
 | `SqalaLogging` | 存在SLF4J | 持有`Logger`，使用`sqala.logging.*`配置 |
-| `PlatformTransactionManager` | 存在`DataSource`且没有其他事务管理器 | 注册`DataSourceTransactionManager` |
+| `PlatformTransactionManager` | 存在唯一或`@Primary`的`DataSource`且没有其他事务管理器 | 注册`DataSourceTransactionManager` |
 
-所有自动配置都带有`@ConditionalOnMissingBean`，应用可以声明自己的Bean覆盖默认行为。
+所有自动配置都伴有`@ConditionalOnMissingBean`，应用可以声明自己的Bean覆盖默认行为。
 
 ## 配置项
 
@@ -204,6 +204,10 @@ def transfer(): Unit =
 ```
 
 `db.executeTransaction`是为非Spring环境准备的。在Spring Boot中不需要，也不应该再包一层sqala事务。
+
+Spring事务的`timeout`会传递给sqala创建的`Statement`。JDBC `SQLException`会转换为Spring的`DataAccessException`，因此Spring默认的回滚规则会生效。
+
+适配层只转换JDBC的`SQLException`。如果业务代码还会抛出其他受检异常，并希望Spring回滚，请使用`@Transactional(rollbackFor = Array(classOf[Exception]))`，或自行将异常包装为运行时异常。
 
 ## 日志
 
@@ -244,10 +248,15 @@ Spring Boot会自动收集`JacksonModule`类型的Bean并注册到`JsonMapper`�
 
 ## 多数据源
 
-自动配置只在存在**唯一**`DataSource`时生效。有多个`DataSource`时，需要自行声明：
+自动配置只在存在唯一或`@Primary`的`DataSource`时创建`JdbcContext`和回退的`PlatformTransactionManager`。存在多个`DataSource`且没有`@Primary`时，这两个自动配置会跳过，应用仍可正常启动，需要按数据源自行声明。
+
+`SqalaExecutionContext`不绑定固定的`DataSource`，它总是使用当前`JdbcContext`的`DataSource`，因此一个实例即可服务多个数据源；starter会自动注册它。
 
 ```scala
-import org.springframework.context.annotation.{Bean, Configuration, Qualifier}
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.context.annotation.{Bean, Configuration}
+import org.springframework.jdbc.datasource.DataSourceTransactionManager
+import org.springframework.transaction.PlatformTransactionManager
 import sqala.jdbc.JdbcContext
 import sqala.jdbc.dialect.PostgresqlJdbcDialect
 
@@ -262,6 +271,18 @@ class DataSourceConfig:
     @Bean
     def writeDb(@Qualifier("writeDataSource") dataSource: DataSource): JdbcContext =
         JdbcContext(dataSource, PostgresqlJdbcDialect, true)
+
+    @Bean
+    def readTransactionManager(
+        @Qualifier("readDataSource") dataSource: DataSource
+    ): PlatformTransactionManager =
+        new DataSourceTransactionManager(dataSource)
+
+    @Bean
+    def writeTransactionManager(
+        @Qualifier("writeDataSource") dataSource: DataSource
+    ): PlatformTransactionManager =
+        new DataSourceTransactionManager(dataSource)
 ```
 
-每个数据源还需要各自的`SqalaExecutionContext`，否则事务只会作用在默认的`DataSource`上。
+如果只有一个`DataSource`标记了`@Primary`，它会被视为唯一候选，自动配置会使用这个数据源。
