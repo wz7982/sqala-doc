@@ -382,15 +382,77 @@ val query =
 
 sqala returns a compile error. The reason is that sqala does not know how to handle such a field, generate a query for it, or deserialize it from query results.
 
-Therefore we need to provide an implementation of the `trait CustomField` for the custom type. To avoid frequent imports when building queries, it is recommended to put the implementation in the custom type's companion object:
+Therefore the custom type needs a `CustomField` implementation. To avoid importing it at every query site, put the implementation in the type's companion object.
+
+For a parameterless Scala 3 enum, sqala derives the implementation from annotations. Declare the database value on each case and add one `given`:
+
+### Integer mapping
 
 ```scala
 import sqala.metadata.*
 
 enum DataState:
-    case Active
+    @enumValue(1) case Active
+    @enumValue(0) case Deleted
+
+object DataState:
+    given CustomField[DataState, Int] = CustomField.derived
+```
+
+`@enumValue` is required. sqala never falls back to `ordinal`, because reordering cases would silently change stored data.
+
+### String mapping
+
+```scala
+import sqala.metadata.*
+
+enum Status:
+    @enumName("ACTIVE") case Active
     case Deleted
 
+object Status:
+    given CustomField[Status, String] = CustomField.derived
+```
+
+`@enumName` is optional; when it is absent, the case name is used. Renaming a case therefore changes the stored value, so declare `@enumName` explicitly when the value must stay stable.
+
+### Usage
+
+```scala
+case class Post(
+    // other fields omitted
+    state: DataState
+)
+
+val query =
+    from(Post).filter(p => p.state === DataState.Active)
+```
+
+`Option[DataState]`, query parameters, inserts, updates and result decoding all work without further declarations.
+
+### Compile-time checks
+
+The macro rejects:
+
+- enums with type parameters or case parameters
+- integer-mapped cases without `@enumValue`
+- annotations that do not match the storage type, such as `@enumName` on an `Int` mapping
+- duplicate database values
+- non-literal annotation arguments
+
+### Runtime checks
+
+Decoding an unknown database value throws `EnumDecodeException`, which contains the enum name and the actual value. This usually means the database holds a value the enum does not cover, or the column lacks a check constraint.
+
+### Manual implementation
+
+Write `CustomField` manually when:
+
+- the enum has parameters, such as `enum Color(val code: Int)`
+- the type is a Java enum
+- the database value comes from another field or external logic
+
+```scala
 object DataState:
     given CustomField[DataState, Int] with
         override def fromValue(x: Int): DataState = x match
@@ -402,9 +464,7 @@ object DataState:
             case Deleted => 0
 ```
 
-The two type parameters of `CustomField` are the type to implement and the basic type to map to. The `fromValue` method handles how to create a value of the custom type from the basic type, and the `toValue` method does the reverse.
-
-This way, you can build queries with enum fields normally.
+The two type parameters of `CustomField` are the type to implement and the basic type to map to. `fromValue` creates a custom value from the basic type, and `toValue` does the reverse.
 
 ## Setting Primary Keys
 

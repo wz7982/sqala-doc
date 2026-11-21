@@ -382,15 +382,77 @@ val query =
 
 sqala会返回一个编译错误。原因是sqala不知道如何处理这样的字段，为其生成查询，或从查询结果中反序列化。
 
-因此我们需要为自定义类型提供`trait CustomField`的实现，为了避免构建查询时频繁导入，建议将实现放入自定义类型的伴生对象中：
+因此我们需要为自定义类型提供`CustomField`实现。为了避免在构建查询时频繁导入，建议将实现放入自定义类型的伴生对象中。
+
+对于无参数的Scala 3枚举，sqala可以根据注解自动派生实现。在每个case上声明数据库值，再写一行`given`即可。
+
+### 映射为整数
 
 ```scala
 import sqala.metadata.*
 
 enum DataState:
-    case Active
+    @enumValue(1) case Active
+    @enumValue(0) case Deleted
+
+object DataState:
+    given CustomField[DataState, Int] = CustomField.derived
+```
+
+`@enumValue`是必填的。sqala**不会**回退到`ordinal`，因为调整case顺序会静默改变已存储的数据。
+
+### 映射为字符串
+
+```scala
+import sqala.metadata.*
+
+enum Status:
+    @enumName("ACTIVE") case Active
     case Deleted
 
+object Status:
+    given CustomField[Status, String] = CustomField.derived
+```
+
+`@enumName`可以省略，省略时使用case名。因此重命名case会改变数据库值，需要稳定值时请显式声明`@enumName`。
+
+### 使用
+
+```scala
+case class Post(
+    // 其他字段省略
+    state: DataState
+)
+
+val query =
+    from(Post).filter(p => p.state === DataState.Active)
+```
+
+`Option[DataState]`、查询参数、插入、更新和结果解码都可以直接使用，不需要额外声明。
+
+### 编译期校验
+
+宏会在编译期拒绝：
+
+- 带类型参数或case参数的枚举
+- `Int`映射下缺少`@enumValue`的case
+- 注解与存储类型不匹配，例如`Int`映射使用`@enumName`
+- 重复的数据库值
+- 非字面量注解参数
+
+### 运行时校验
+
+解码到未声明的值时抛出`EnumDecodeException`，其中包含枚举全名和实际值。这通常意味着数据库里出现了枚举未覆盖的值，或者列缺少check约束。
+
+### 手动实现
+
+以下情况需要手写`CustomField`：
+
+- 枚举带参数，例如`enum Color(val code: Int)`
+- 类型是Java枚举
+- 数据库值需要从其他字段或外部逻辑推导
+
+```scala
 object DataState:
     given CustomField[DataState, Int] with
         override def fromValue(x: Int): DataState = x match
@@ -403,8 +465,6 @@ object DataState:
 ```
 
 `CustomField`的两个类型参数分别为要实现的类型，和要映射到的基础类型；`fromValue`方法处理如何从基础类型创建自定义类型的值，`toValue`方法含义反之。
-
-这样，就可以正常使用枚举字段构造查询了。
 
 ## 设置主键
 
