@@ -110,12 +110,14 @@ class UserController(service: UserService):
 ### 配置
 
 ```yaml
+# Spring 配置：数据源
 spring:
   datasource:
     url: jdbc:h2:mem:demo;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
     username: sa
     password: ""
 
+# sqala 配置：JdbcContext 与 SqalaLogging
 sqala:
   jdbc:
     dialect: postgresql
@@ -123,10 +125,13 @@ sqala:
     enabled: true
     level: debug
 
+# SLF4J/Logback 配置：打开名为 sqala 的 logger
 logging:
   level:
     sqala: debug
 ```
+
+`sqala.logging.level`控制sqala以什么级别生成日志，`logging.level.sqala`控制Logback是否接收该级别。两者不一致时，成功语句可能不会输出。
 
 ## 自动配置
 
@@ -146,7 +151,7 @@ logging:
 | 配置 | 默认值 | 说明 |
 | :--- | :--- | :--- |
 | `sqala.jdbc.dialect` | `postgresql` | 数据库方言，可选`postgresql`、`mysql`、`oracle` |
-| `sqala.jdbc.standard-escape-strings` | `false` | 是否使用标准SQL字符串转义 |
+| `sqala.jdbc.standard-escape-strings` | `true` | 是否使用标准SQL字符串转义 |
 
 ### sqala.logging
 
@@ -228,11 +233,11 @@ import javax.sql.DataSource
 class DataSourceConfig:
     @Bean
     def readDb(@Qualifier("readDataSource") dataSource: DataSource): JdbcContext =
-        JdbcContext(dataSource, PostgresqlJdbcDialect, false)
+        JdbcContext(dataSource, PostgresqlJdbcDialect, true)
 
     @Bean
     def writeDb(@Qualifier("writeDataSource") dataSource: DataSource): JdbcContext =
-        JdbcContext(dataSource, PostgresqlJdbcDialect, false)
+        JdbcContext(dataSource, PostgresqlJdbcDialect, true)
 ```
 
 每个数据源还需要各自的`SqalaExecutionContext`，否则事务只会作用在默认的`DataSource`上。
