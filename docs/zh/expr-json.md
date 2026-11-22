@@ -61,7 +61,7 @@ val query =
 
 ```scala
 val query =
-    from(Post).map(p => jsonObject("id" value p.id, "title" value p.title))
+    from(Post).map(p => jsonObject("id" -> p.id, "title" -> p.title))
 ```
 
 ## JSON_ARRAY

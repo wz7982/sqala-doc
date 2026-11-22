@@ -29,8 +29,8 @@ val query =
     from:
         StockPrice.matchRecognize(s =>
             // 分组和排序，类似窗口函数
-            s.partitionBy(s.stockSymbol)
-                .sortBy(s.tradeTime)
+            s.partitionBy(t => t.stockSymbol)
+                .sortBy(t => t.tradeTime)
                 // 行匹配模式 支持oneRowPerMatch和allRowsPerMatch
                 .oneRowPerMatch
                 // 预定义标签，使用字符串字面量创建，后续为模式生成对应名称的字段
@@ -115,13 +115,13 @@ FROM
 ```scala
 val query =
     // 编译错误：Only columns of the source table can be used in matchRecognize partitionBy.
-    from(Post).matchRecognize(s => s.partitionBy(count()))
+    from(Post).matchRecognize(s => s.partitionBy(_ => count()))
 
 val q2 =
     from(Post).matchRecognize(s =>
-        s.partitionBy(s.id)
+        s.partitionBy(t => t.id)
             // 编译错误：Only columns of the source table can be used in matchRecognize sortBy.
-            .sortBy(count())
+            .sortBy(_ => count())
     )
 ```
 
