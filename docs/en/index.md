@@ -4,7 +4,7 @@ sqala is a type-safe SQL query library designed for Scala 3. It combines the exp
 
 With sqala, you can:
 
-1. **Build queries in an object-oriented way similar to collection libraries**: The type-safe query builder filters out most incorrect SQL at compile time and automatically infers the return data type:
+1. **Build queries in an object-oriented way similar to collection libraries**: The type-safe query builder checks fields, operators, and result types at compile time, rejecting errors such as unknown fields or incompatible types on either side of a comparison operator, and automatically infers the return data type:
 
     ```scala
     case class User(id: Int, name: String)
@@ -38,7 +38,7 @@ With sqala, you can:
     val result = db.findByPrimaryKey[User](1)
     ```
 
-4. **Extreme type safety**: sqala uses the type system to model SQL semantics, so its type checking not only intercepts simple errors such as "the field does not exist" and "the types on both sides of a comparison operator are incompatible", but also intercepts more semantic errors:
+4. **SQL semantic safety**: sqala also uses the type system to model SQL semantics, so it can catch SQL semantic errors that go beyond ordinary type checking. Here "safety" refers only to SQL semantics that can be decided at compile time; it does not cover dynamic queries, native SQL, `unsafeExpr`, database schema drift, or runtime data problems:
 
     ```scala
     val q1 =
@@ -111,5 +111,5 @@ sqala supports both the query DSL and native SQL. The recommendations are as fol
 |----------|-----------|------------|
 | Simple conditional queries | ✅ Recommended | ⚠️ Usable |
 | Complex queries | ✅ Recommended | ⚠️ Usable |
-| Type safety | ✅ Compile-time checks | ⚠️ Compile-time checks for static queries |
+| Type and semantic safety | ✅ Compile-time checks | ⚠️ Compile-time checks for static queries |
 | Development efficiency | ✅ High | ⚠️ Medium |

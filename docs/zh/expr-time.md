@@ -66,12 +66,35 @@ val query =
 
 ## 时间数据类型
 
-sqala默认使用`java.time.*`下面的时间类型作为内置时间类型，各时间类型的值在生成SQL时规则如下：
+sqala默认使用`java.time.*`下面的时间类型作为内置时间类型。文本 SQL 中时间字面量的格式如下：
 
 | 时间类型 | PostgreSQL | MySQL | Oracle |
 | ---------- | ------------ | ------- | -------- |
 | `LocalDate` | `DATE '2020-01-01'` | `DATE '2020-01-01'` | `TO_DATE('2020-01-01', 'YYYY-MM-DD')` |
 | `LocalDateTime` | `TIMESTAMP '2020-01-01 00:00:00.123456789'` | `TIMESTAMP '2020-01-01 00:00:00.123456789'` | `TO_TIMESTAMP('2020-01-01 00:00:00.123456789', 'YYYY-MM-DD HH24:MI:SS.FF9')` |
-| `LocalTime` | `TIME '00:00:00'` | `TIME '00:00:00'` | ❌ |
+| `LocalTime` | `TIME '00:00:00.123456789'` | `TIME '00:00:00.123456789'` | ❌ |
 | `OffsetDateTime` | `TIMESTAMP WITH TIME ZONE '2020-01-01 00:00:00.123456789 +08:00'` | ❌ | `TO_TIMESTAMP_TZ('2020-01-01 00:00:00.123456789 +08:00', 'YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM')` |
-| `OffsetTime` | `TIME WITH TIME ZONE '00:00:00 +08:00'` | ❌ | ❌ |
+| `OffsetTime` | `TIME WITH TIME ZONE '00:00:00.123456789 +08:00'` | ❌ | ❌ |
+
+JDBC 执行时，PostgreSQL 和 MySQL 不会把这些值拼成字面量，而是生成 `?` 占位符，并通过`PreparedStatement.setObject`绑定对应的`java.time`类型。Oracle 仍然使用`TO_DATE`、`TO_TIMESTAMP`、`TO_TIMESTAMP_TZ`绑定格式化后的字符串。
+
+sqala整体不处理秒级时区偏移（例如`+08:00:30`）。`OffsetDateTime`和`OffsetTime`格式化时只保留到分钟，Oracle的`TZH:TZM`本身也不支持秒级偏移。截断偏移可能会改变精确的时间点；如果时间点必须保持不变，请先转换为UTC。如果业务需要保留秒级时区偏移，请在传入sqala前手动归一化，例如先转换为UTC，或按业务规则截断到分钟。
+
+`OffsetDateTime`和`OffsetTime`都提供了`withOffsetSameInstant`，可以在保持时间点不变的前提下把偏移量归一化到分钟或UTC：
+
+```scala
+val input = OffsetDateTime.of(
+    2024, 1, 2, 3, 4, 5, 123456789,
+    ZoneOffset.ofHoursMinutesSeconds(9, 7, 6)
+)
+
+// 保持时间点不变，偏移量归一化到分钟
+val normalized = input.withOffsetSameInstant(ZoneOffset.ofHoursMinutes(9, 7))
+// 2024-01-02T03:03:59.123456789+09:07
+
+// 或直接归一化到UTC
+val utc = input.withOffsetSameInstant(ZoneOffset.UTC)
+// 2024-01-01T17:56:59.123456789Z
+```
+
+注意不要用`withOffsetSameLocal`来做这种归一化，它只改偏移量、不调整本地时间，会改变实际时间点。
