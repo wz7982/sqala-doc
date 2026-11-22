@@ -79,7 +79,7 @@ val query =
 
 ```scala
 val query =
-    from(Post).map(p => jsonObjectAgg(p.id value p.title))
+    from(Post).map(p => jsonObjectAgg(p.id -> p.title))
 ```
 
 ## JSON_ARRAYAGG
