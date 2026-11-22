@@ -38,5 +38,5 @@ extension [L <: Int](x: Expr[Json, ?])(using QueryContext[L])
 ```scala
 val query =
     from(Post)
-        .map(p => jsonObject("id" value p.id) ->> "id")
+        .map(p => jsonObject("id" -> p.id) ->> "id")
 ```
