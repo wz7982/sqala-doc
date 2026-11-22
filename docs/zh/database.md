@@ -31,6 +31,32 @@ object DB:
 
 通常情况下，MySQL数据库填写`false`，PostgreSQL和Oracle等数据库填写`true`。
 
+## 方言的两个层次
+
+sqala有两套方言类型，用途不同：
+
+| 类型 | 包 | 用途 | 生成的SQL |
+| --- | --- | --- | --- |
+| `Dialect` | `sqala.dialect` | `.sql(...)`、`queryToString`等纯文本SQL生成 | 字面量直接内联 |
+| `JdbcDialect` | `sqala.jdbc.dialect` | `JdbcContext`执行 | `?`占位符和参数数组 |
+
+`JdbcDialect`继承自`Dialect`，但它的printer会把普通字面量转成`?`并收集参数。所以：
+
+- 不要用`*JdbcDialect`调用`.sql()`，否则会得到没有参数值的占位符SQL。
+- `JdbcContext`需要`JdbcDialect`，传入普通的`*Dialect`会编译失败。
+
+```scala
+import sqala.dialect.PostgresqlDialect
+import sqala.jdbc.dialect.PostgresqlJdbcDialect
+
+val sql = query.sql(PostgresqlDialect, true)                   // 纯文本SQL
+val db = JdbcContext(dataSource, PostgresqlJdbcDialect, true)  // 执行SQL
+```
+
+文本方言包括`PostgresqlDialect`、`MysqlDialect`、`OracleDialect`、`SqlserverDialect`、`SqliteDialect`、`H2Dialect`。
+
+JDBC方言包括`PostgresqlJdbcDialect`、`MysqlJdbcDialect`、`OracleJdbcDialect`。
+
 ## JDBC参数与内联表达式
 
 sqala默认优先使用JDBC预编译语句的`?`占位符。普通字面量会被收集为参数，并在执行时通过`PreparedStatement`绑定：

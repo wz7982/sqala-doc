@@ -246,6 +246,15 @@ libraryDependencies += "tools.jackson.module" %% "jackson-module-scala" % "3.1.8
 
 Spring Boot会自动收集`JacksonModule`类型的Bean并注册到`JsonMapper`。
 
+Jackson目前还不支持直接对Scala 3命名元组（named tuple）做JSON序列化。Controller不要直接返回sqala查询得到的命名元组；请定义一个专门的接收类，把查询结果映射过去再返回：
+
+```scala
+case class UserResponse(id: Int, name: String)
+
+val rows = db.fetch(...) // sqala查询结果，例如命名元组
+val response = rows.map(row => UserResponse(row.id, row.name))
+```
+
 ## 多数据源
 
 自动配置只在存在唯一或`@Primary`的`DataSource`时创建`JdbcContext`和回退的`PlatformTransactionManager`。存在多个`DataSource`且没有`@Primary`时，这两个自动配置会跳过，应用仍可正常启动，需要按数据源自行声明。

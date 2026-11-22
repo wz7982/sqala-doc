@@ -54,6 +54,8 @@ val query =
 `sql`方法用于生成SQL字符串，参数是方言和转义模式（参考[数据库交互](./database.md)）:
 
 ```scala
+import sqala.dialect.PostgresqlDialect
+
 val query =
     select(column("a", "x").as("col1"))
         .from(table("a"))
@@ -86,6 +88,8 @@ val exprTree: sqala.ast.expr.SqlExpr = e.ast
 在查询树转换完毕后，我们可以这样来生成SQL：
 
 ```scala
+import sqala.dialect.PostgresqlDialect
+
 val printer = PostgresqlDialect.printer(standardEscapeStrings)
 // 或是printTable、printExpr等方法，您可以自行查看sqala.printer.SqlPrinter中的相关定义
 printer.printQuery(queryTree)
