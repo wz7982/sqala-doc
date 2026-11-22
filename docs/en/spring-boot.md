@@ -246,6 +246,15 @@ libraryDependencies += "tools.jackson.module" %% "jackson-module-scala" % "3.1.8
 
 Spring Boot collects every `JacksonModule` bean and registers it with the `JsonMapper`.
 
+Jackson does not currently support direct JSON serialization of Scala 3 named tuples. Do not return named tuples produced by sqala queries directly from a controller. Define a dedicated response class and map the query result into it:
+
+```scala
+case class UserResponse(id: Int, name: String)
+
+val rows = db.fetch(...) // sqala query result, for example a named tuple
+val response = rows.map(row => UserResponse(row.id, row.name))
+```
+
 ## Multiple Data Sources
 
 Auto-configuration creates `JdbcContext` and the fallback `PlatformTransactionManager` only when there is exactly one or an `@Primary` `DataSource`. With multiple `DataSource`s and no `@Primary`, those two auto-configurations are skipped and the application still starts; declare them per data source.

@@ -31,6 +31,32 @@ If you are not sure which escaping mode your database uses, you can send the que
 
 Usually, MySQL databases use `false`, while databases such as PostgreSQL and Oracle use `true`.
 
+## Two Dialect Layers
+
+sqala has two dialect types with different purposes:
+
+| Type | Package | Purpose | Generated SQL |
+| --- | --- | --- | --- |
+| `Dialect` | `sqala.dialect` | Plain SQL text generation such as `.sql(...)` and `queryToString` | Literals are inlined |
+| `JdbcDialect` | `sqala.jdbc.dialect` | Execution through `JdbcContext` | `?` placeholders and a parameter array |
+
+`JdbcDialect` extends `Dialect`, but its printer turns ordinary literals into `?` and collects their values. Therefore:
+
+- Do not call `.sql()` with a `*JdbcDialect`; it would produce placeholder SQL without the parameter values.
+- `JdbcContext` requires a `JdbcDialect`; passing a plain `*Dialect` does not compile.
+
+```scala
+import sqala.dialect.PostgresqlDialect
+import sqala.jdbc.dialect.PostgresqlJdbcDialect
+
+val sql = query.sql(PostgresqlDialect, true)                   // plain SQL text
+val db = JdbcContext(dataSource, PostgresqlJdbcDialect, true)  // executable SQL
+```
+
+Text dialects include `PostgresqlDialect`, `MysqlDialect`, `OracleDialect`, `SqlserverDialect`, `SqliteDialect`, and `H2Dialect`.
+
+JDBC dialects include `PostgresqlJdbcDialect`, `MysqlJdbcDialect`, and `OracleJdbcDialect`.
+
 ## JDBC Parameters and Inlined Expressions
 
 sqala prefers JDBC prepared statement `?` placeholders. Ordinary literals are collected as parameters and bound through a `PreparedStatement` at execution time:

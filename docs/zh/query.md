@@ -48,6 +48,8 @@ FROM
 `sql`方法用于生成SQL字符串，参数是方言和转义模式（参考[数据库交互](./database.md)）:
 
 ```scala
+import sqala.dialect.PostgresqlDialect
+
 val query =
     from(User)
 

@@ -54,6 +54,8 @@ Both `select` and `from` can be called multiple times; the calls are concatenate
 The `sql` method generates a SQL string. Its arguments are the dialect and the escaping mode (see [Database Interaction](./database.md)):
 
 ```scala
+import sqala.dialect.PostgresqlDialect
+
 val query =
     select(column("a", "x").as("col1"))
         .from(table("a"))
@@ -86,6 +88,8 @@ val exprTree: sqala.ast.expr.SqlExpr = e.ast
 After transforming the query tree, you can generate SQL like this:
 
 ```scala
+import sqala.dialect.PostgresqlDialect
+
 val printer = PostgresqlDialect.printer(standardEscapeStrings)
 // Or methods such as printTable and printExpr; see the relevant definitions in sqala.printer.SqlPrinter
 printer.printQuery(queryTree)
