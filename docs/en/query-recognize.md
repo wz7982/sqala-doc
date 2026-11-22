@@ -29,8 +29,8 @@ val query =
     from:
         StockPrice.matchRecognize(s =>
             // Partitioning and sorting, similar to window functions
-            s.partitionBy(s.stockSymbol)
-                .sortBy(s.tradeTime)
+            s.partitionBy(t => t.stockSymbol)
+                .sortBy(t => t.tradeTime)
                 // Row matching mode; supports oneRowPerMatch and allRowsPerMatch
                 .oneRowPerMatch
                 // Predefined labels, created with string literals; fields with the corresponding names are generated for the pattern later
@@ -115,13 +115,13 @@ Each clause of `matchRecognize` also has compile-time semantic checks:
 ```scala
 val query =
     // Compile error: Only columns of the source table can be used in matchRecognize partitionBy.
-    from(Post).matchRecognize(s => s.partitionBy(count()))
+    from(Post).matchRecognize(s => s.partitionBy(_ => count()))
 
 val q2 =
     from(Post).matchRecognize(s =>
-        s.partitionBy(s.id)
+        s.partitionBy(t => t.id)
             // Compile error: Only columns of the source table can be used in matchRecognize sortBy.
-            .sortBy(count())
+            .sortBy(_ => count())
     )
 ```
 
