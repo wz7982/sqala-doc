@@ -29,6 +29,7 @@ export default defineConfig({
               { text: 'Spring Boot 集成', link: 'spring-boot' },
               { text: 'ZIO 集成', link: 'zio' },
               { text: '性能基准', link: 'benchmark' },
+              { text: '代码生成插件', link: 'codegen' },
               {
                 text: '查询',
                 collapsed: false,
@@ -82,6 +83,7 @@ export default defineConfig({
               { text: 'Spring Boot Integration', link: 'spring-boot' },
               { text: 'ZIO Integration', link: 'zio' },
               { text: 'Benchmark', link: 'benchmark' },
+              { text: 'Code Generation Plugin', link: 'codegen' },
               {
                 text: 'Query',
                 collapsed: false,
