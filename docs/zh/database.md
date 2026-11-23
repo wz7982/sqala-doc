@@ -154,7 +154,7 @@ val result: Option[User] = db.findByPrimaryKey[User](1)
 
 此方法的类型参数为实体类的类型，值参数为实体类主键（sqala会自动从注解信息中推断主键类型，您无需额外配置类型信息，并且这个操作是完全类型安全的）。
 
-此方法返回类型为实体类类型的`Option`类型 。
+此方法返回类型为实体类类型的`Option`类型。
 
 之所以使用`findByPrimaryKey`而不是`findById`等名称，是因为sqala支持联合主键推导，将参数类型推导为元组类型：
 
