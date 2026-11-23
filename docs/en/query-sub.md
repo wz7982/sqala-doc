@@ -251,7 +251,7 @@ WHERE
 
 ### ALL Subqueries
 
-In SQL, the semantics of an `ALL` or `SOME` subquery is that the match succeeds only when **all rows** in the subquery match the outer value. `<> ALL` is equivalent to a `NOT IN` subquery:
+In SQL, the semantics of an `ALL` subquery is that the match succeeds only when **all rows** in the subquery match the outer value. `<> ALL` is equivalent to a `NOT IN` subquery:
 
 ```scala
 val query =
