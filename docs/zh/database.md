@@ -146,7 +146,7 @@ Spring Boot项目中的日志配置请参考[Spring Boot 集成](./spring-boot.m
 
 ## 按主键查询数据
 
-sqala支持直接使用主键查询数据，，请确保实体类上使用`primaryKey`或`autoInc`注解配置了主键字段，然后使用`db.findByPrimaryKey`方法查询数据：
+sqala支持直接使用主键查询数据，请确保实体类上使用`primaryKey`或`autoInc`注解配置了主键字段，然后使用`db.findByPrimaryKey`方法查询数据：
 
 ```scala
 val result: Option[User] = db.findByPrimaryKey[User](1)
