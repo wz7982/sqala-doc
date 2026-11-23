@@ -252,7 +252,7 @@ FROM
     "person" AS "t1"
 GROUP BY
     CUBE(
-        CASE WHEN CASE WHEN "t1"."age" <= 30 THEN '青少年' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN '中年' ELSE '老年' END,
+        CASE WHEN "t1"."age" <= 30 THEN '青少年' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN '中年' ELSE '老年' END,
         "t1"."nation",
         "t1"."gender"
     )
