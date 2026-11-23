@@ -58,7 +58,7 @@ val query =
 
 The measured support for time overlap in the latest versions of each major database is as follows:
 
-| Database Type | EXTRACT Support |
+| Database Type | OVERLAPS Support |
 |------------|-------------|
 | PostgreSQL | ✅ |
 | MySQL | ❌ |
