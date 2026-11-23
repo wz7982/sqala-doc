@@ -403,7 +403,7 @@ val query =
 生成的SQL表达式为：
 
 ```sql
-CASE WHEN "t1"."id" = 1 THEN 1 WHEN "t1"."id" = 2 THEN "t1"."id" ELSE CAST(NULL AS INTEGER)
+CASE WHEN "t1"."id" = 1 THEN 1 WHEN "t1"."id" = 2 THEN "t1"."id" ELSE CAST(NULL AS INTEGER) END
 ```
 
 sqala对返回值类型的推导能力极强，在关系运算部分我们定义极端的例子：

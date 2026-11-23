@@ -252,7 +252,7 @@ FROM
     "person" AS "t1"
 GROUP BY
     CUBE(
-        CASE WHEN CASE WHEN "t1"."age" <= 30 THEN 'Youth' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN 'Middle-aged' ELSE 'Elderly' END,
+        CASE WHEN "t1"."age" <= 30 THEN 'Youth' WHEN "t1"."age" <= 60 AND "t1"."age" > 30 THEN 'Middle-aged' ELSE 'Elderly' END,
         "t1"."nation",
         "t1"."gender"
     )

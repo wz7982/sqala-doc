@@ -403,7 +403,7 @@ val query =
 The generated SQL expression is:
 
 ```sql
-CASE WHEN "t1"."id" = 1 THEN 1 WHEN "t1"."id" = 2 THEN "t1"."id" ELSE CAST(NULL AS INTEGER)
+CASE WHEN "t1"."id" = 1 THEN 1 WHEN "t1"."id" = 2 THEN "t1"."id" ELSE CAST(NULL AS INTEGER) END
 ```
 
 sqala has very strong return type inference. In the relational operations section we defined an extreme example:

@@ -141,7 +141,7 @@ val e =
 The generated SQL is:
 
 ```sql
-CASE WHEN "a" = 1 THEN 1 WHEN "a" = 2 THEN 2 ELSE 3
+CASE WHEN "a" = 1 THEN 1 WHEN "a" = 2 THEN 2 ELSE 3 END
 ```
 
 ## Sorting
