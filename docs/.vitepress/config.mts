@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   title: 'sqala',
   description: '类型安全的Scala3查询库',
-  base: '/sqala-doc',
+  base: '/',
   rewrites: {
     'zh/:rest*': ':rest*',
   },
