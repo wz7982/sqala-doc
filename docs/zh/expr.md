@@ -234,8 +234,6 @@ val query =
     from(User).filter(u => !u.name.isEmpty)
 ```
 
-也可以使用`=== None`/`<> None`的写法，但推荐使用`isEmpty`/`!isEmpty`，语义更直观。
-
 ### IN
 
 `in`方法对应SQL的`IN`运算符，sqala支持两种`in`模式，第一种是使用`Seq`、`List`等传入一个值的集合，这是最常见的用法：
