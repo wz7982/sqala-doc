@@ -234,8 +234,6 @@ val query =
     from(User).filter(u => !u.name.isEmpty)
 ```
 
-You can also use `=== None`/`<> None`, but `isEmpty`/`!isEmpty` is recommended because its semantics are more intuitive.
-
 ### IN
 
 The `in` method corresponds to SQL's `IN` operator. sqala supports two `in` modes. The first is to pass a collection of values such as `Seq` or `List`, which is the most common usage:
