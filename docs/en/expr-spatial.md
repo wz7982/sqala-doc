@@ -1,6 +1,6 @@
 # Spatial Operations
 
-> The features on this page are part of the `sqala-static-ext` module. You need to add this module as a dependency and import:
+> The features on this page belong to the `sqala-static-ext` module. Add this module as a dependency and import the following:
 >
 > ```scala
 > import sqala.static.dsl.*
@@ -10,7 +10,9 @@
 
 ## Spatial Functions
 
-sqala supports some of the standard spatial operations defined in ISO/IEC 13249, and supports MySQL and the PostGIS extension for PostgreSQL.
+sqala supports a subset of the standard spatial operations defined in ISO/IEC 13249. It supports MySQL and the PostGIS extension for PostgreSQL.
+
+Except for `stGeomFromText`, which requires a string as its first argument and a number as its second, the operands of all other functions must be geometry-typed expressions; passing an expression of another type causes a compile error.
 
 |     Function            |      Corresponding SQL Function |
 |:-----------------------:|:-----------------------------:|
@@ -34,3 +36,15 @@ sqala supports some of the standard spatial operations defined in ISO/IEC 13249,
 |`stUnion(a, b)`          |`ST_Union(a, b)`               |
 |`stDifference(a, b)`     |`ST_Difference(a, b)`          |
 |`stSymDifference(a, b)`  |`ST_SymDifference(a, b)`       |
+
+## Geometry Value Types
+
+`sqala.metadata` provides the geometry value types: `Geometry`, `Point`, `LineString`, `Polygon`, `MultiPoint`, `MultiLineString`, `MultiPolygon`, and `GeometryCollection`. They share the same structure: `value` is a WKT string and `srid` is the spatial reference system identifier. For example:
+
+```scala
+import sqala.metadata.Point
+
+val p = Point("POINT(1 2)", 4326)
+```
+
+Entity fields can be declared directly as these types to participate in spatial queries; geometry columns in query results are also decoded into the corresponding value types.

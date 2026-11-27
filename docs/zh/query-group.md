@@ -1,10 +1,10 @@
 # 分组查询
 
-分组`GROUP BY`操作是数据统计中不可缺少的功能，sqala也对分组查询有着深入的支持。
+分组`GROUP BY`是数据统计中不可或缺的功能，sqala对分组查询也提供了深入的支持。
 
 ## 简单分组
 
-分组操作通常与[聚合函数](./expr-agg.md)配合使用，sqala中使用`groupBy`方法创建分组，比如我们需要统计每个频道的帖子数量：
+分组操作通常与[聚合函数](./expr-agg.md)配合使用。sqala中使用`groupBy`方法创建分组，例如统计每个频道的帖子数量：
 
 ```scala
 val query =
@@ -25,9 +25,9 @@ GROUP BY
     "t1"."channel_id"
 ```
 
-在分组后的`sortBy`/`having`/`map`中，均多了一个参数，这个参数代表当前分组集（如果是两表连接之后的分组则有三个参数，以此类推）。
+分组之后的`sortBy`/`having`/`map`均多出一个参数，代表当前的分组集（若是两表连接之后再分组则有三个参数，以此类推）。
 
-使用元组或命名元组支持支持多个分组[表达式](./expr.md)：
+使用元组或命名元组可支持多个分组[表达式](./expr.md)：
 
 ```scala
 val query =
@@ -50,7 +50,7 @@ GROUP BY
     "t1"."title"
 ```
 
-需要注意的是，大多数数据库都不允许在分组后的操作中出现非分组表达式，因此以下的SQL是错误的：
+需要注意的是，大多数数据库都不允许分组后的操作中出现非分组表达式，因此以下SQL是错误的：
 
 ```sql
 SELECT
@@ -63,7 +63,7 @@ GROUP BY
     "t1"."channel_id"
 ```
 
-sqala也会在这样的查询中生成编译错误：
+sqala也会对此类查询给出编译错误：
 
 ```scala
 val query =
@@ -73,7 +73,7 @@ val query =
         .map((g, p) => (g, p.title, count()))
 ```
 
-如果我们只想在一个分组中返回任意的`title`字段值，使用`ANY_VALUE`聚合函数即可，在sqala中对应的方法为`anyValue`：
+若只想在一个分组中返回任意一个`title`字段值，使用`ANY_VALUE`聚合函数即可，其在sqala中对应的方法为`anyValue`：
 
 ```scala
 val query =
@@ -84,7 +84,7 @@ val query =
 
 ## 分组后过滤
 
-`having`方法用于分组后过滤数据，使用方式与`filter`类似：
+`having`方法用于在分组后过滤数据，用法与`filter`类似：
 
 ```scala
 val query =
@@ -110,7 +110,7 @@ HAVING
 
 ### 语义检查
 
-`groupBy`和`having`中的表达式同样会在编译期检查：
+`groupBy`和`having`中的表达式同样会在编译期接受检查：
 
 ```scala
 val q1 =
@@ -136,11 +136,11 @@ val q4 =
 
 ## 多维分组
 
-除了简单的分组外，sqala支持多维分组操作。
+除简单分组外，sqala还支持多维分组操作。
 
 ### CUBE分组
 
-SQL的`GROUP BY CUBE(a, b, c)`将会在分组中生成每一种组合的情况，也就是说`CUBE (a, b, c)`相当于合并以下分组：
+SQL的`GROUP BY CUBE(a, b, c)`会在分组中生成每一种组合，即`CUBE (a, b, c)`相当于合并以下分组：
 
 |   分组   |
 |:--------:|
@@ -155,11 +155,11 @@ SQL的`GROUP BY CUBE(a, b, c)`将会在分组中生成每一种组合的情况�
 
 共8种情况（2的n次方）。
 
-`CUBE`分组在制作多维数据集时非常有用，sqala既然宣称支持：“不止是简单的CRUD”，当然也支持`CUBE`分组功能。
+`CUBE`分组在构建多维数据集时非常有用，sqala既然宣称“不止是简单的CRUD”，自然也支持`CUBE`分组。
 
-我们以一个人口表的“年龄段”，“民族”，“性别”三个维度统计人数。年龄段以“小于30岁分为青少年，30-60岁分为中年，60岁以上分为老年”分段统计。
+以下以一张人口表为例，按“年龄段”、“民族”、“性别”三个维度统计人数。年龄段按“30岁及以下为青少年，31-60岁为中年，60岁以上为老年”分段。
 
-我们使用`groupBySets`配合`cube`方法创建`CUBE`分组：
+使用`groupBySets`配合`cube`方法创建`CUBE`分组：
 
 ```scala
 case class Person(id: Int, age: Int, nation: String, gender: String)
@@ -201,9 +201,9 @@ GROUP BY
     )
 ```
 
-可以看到，分组使用命名元组可以极大程度简化代码。
+可见，分组时使用命名元组能够极大简化代码。
 
-需要注意的是，即使数据中没有可空字段，但`CUBE`还是会生成本来不存在的空值，这是`CUBE`的语义决定的，因此，sqala会将此查询结果推断成：
+需要注意的是，即使数据中不含可空字段，`CUBE`仍会产生原本不存在的空值，这是由`CUBE`的语义决定的。因此，sqala会将该查询的结果类型推断为：
 
 ```scala
 // 返回类型为List[(age: Option[String], nation: Option[String], gender: Option[String], count: Long)]
@@ -212,7 +212,7 @@ val result = db.fetch(query)
 
 ### GROUPING表达式
 
-既然多维分组集会产生额外的空值，那我们怎么区分“分组产生的空值是数据原本就有的，还是因为多维分组额外产生的”，为此，SQL推出了配套的`GROUPING`表达式，`GROUPING`的结果为1则说明空值是分组额外产生的，结果为0则说明空值是原本数据中就有的，在sqala中，我们使用`grouping`方法创建此表达式：
+既然多维分组集会产生额外的空值，那么如何区分空值是数据原本就有的，还是多维分组额外产生的？为此，SQL引入了配套的`GROUPING`表达式：结果为1说明空值由分组额外产生，结果为0说明空值在原数据中就已存在。在sqala中，使用`grouping`方法创建该表达式：
 
 ```scala
 val query =
@@ -260,7 +260,7 @@ GROUP BY
 
 ### ROLLUP分组
 
-SQL的`GROUP BY ROLLUP(a, b, c)`将会在分组中生成逐级分组，也就是说`ROLLUP (a, b, c)`相当于合并以下分组：
+SQL的`GROUP BY ROLLUP(a, b, c)`会生成逐级递进的分组，即`ROLLUP (a, b, c)`相当于合并以下分组：
 
 |   分组   |
 |:--------:|
@@ -271,13 +271,13 @@ SQL的`GROUP BY ROLLUP(a, b, c)`将会在分组中生成逐级分组，也就是
 
 共4种情况（n + 1）。
 
-在sqala中生成`ROLLUP`分组的方式与`CUBE`类似，把`cube`换成`rollup`即可，不赘述。
+在sqala中，创建`ROLLUP`分组的方式与`CUBE`类似，将`cube`替换为`rollup`即可，不再赘述。
 
 ### GROUPING SETS分组
 
-SQL的`GROUP BY GROUPING SETS`分组将按指定的分组集来产生分组结果，比如我们想做到类似`ROLLUP`的效果，则需要写成：
+SQL的`GROUP BY GROUPING SETS`分组将按指定的分组集产生分组结果。例如，要实现类似`ROLLUP`的效果，需要写成：
 
-`GROUP BY GROUPING SETS((), a, (a, b), (a, b, c))`，`groupBySets`配合`groupingSets`方法传入该分组集产生的分组的嵌套元组，空分组集使用`Unit`类型的字面量`()`来指定：
+`GROUP BY GROUPING SETS((), a, (a, b), (a, b, c))`。`groupBySets`配合`groupingSets`方法传入这些分组集对应的嵌套元组，空分组集使用`Unit`类型字面量`()`指定：
 
 ```scala
 val query =
@@ -288,7 +288,7 @@ val query =
 
 ### 兼容性
 
-多维分组各主流数据库最新版本实测支持程度如下：
+各主流数据库的最新版本对多维分组的实测支持程度如下：
 
 | 方法 | PostgreSQL | MySQL | Oracle |
 | ------ | ------------ | ------- | -------- |

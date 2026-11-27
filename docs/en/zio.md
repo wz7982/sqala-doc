@@ -2,21 +2,21 @@
 
 sqala does not ship an official ZIO module. JDBC is a synchronous, blocking API, so the recommended approach is to run sqala calls through `ZIO.attemptBlocking` and keep each transaction inside a single synchronous block.
 
-This page describes the recommended pattern and the pitfalls to avoid.
+This page describes the recommended pattern and several incorrect usages to avoid.
 
 ## Dependency
 
 ```scala
 libraryDependencies ++= Seq(
-    "com.wz7982" %% "sqala-jdbc" % "latest.integration",
-    "com.wz7982" %% "sqala-slf4j" % "latest.integration",
+    "cn.sqala" %% "sqala-jdbc" % "latest.integration",
+    "cn.sqala" %% "sqala-slf4j" % "latest.integration",
     "dev.zio" %% "zio" % "2.1.27",
     "com.zaxxer" % "HikariCP" % "6.2.1",
     "org.postgresql" % "postgresql" % "42.7.4"
 )
 ```
 
-`sqala-slf4j` is optional. Without it, `Logger` falls back to `Logger.noop` and no SQL is logged.
+`sqala-slf4j` is an optional dependency. Without it, `Logger` falls back to `Logger.noop` and no SQL is logged.
 
 ## Why `attemptBlocking`
 
@@ -30,7 +30,7 @@ val users: ZIO[Any, Throwable, List[User]] =
     ZIO.attemptBlocking(db.fetch(from(User)))
 ```
 
-`ZIO.attemptBlocking` moves the call to ZIO's blocking thread pool.
+`ZIO.attemptBlocking` moves the call to ZIO's blocking thread pool, so CPU-intensive tasks are not slowed down.
 
 ## Building Layers
 
@@ -93,7 +93,7 @@ val userServiceLayer: ZLayer[JdbcContext, Nothing, UserService] =
 
 ## Transactions
 
-sqala transactions are **synchronous and lexically scoped**. In ZIO, the whole transaction must run inside **one** `ZIO.attemptBlocking`:
+sqala transactions are **synchronous and lexically scoped**. In ZIO, the whole transaction must run inside **a single** `ZIO.attemptBlocking`:
 
 ```scala
 import sqala.static.dsl.*
@@ -107,7 +107,7 @@ def transfer(fromId: Int, toId: Int, amount: BigDecimal): ZIO[Any, Throwable, Un
     }.unit
 ```
 
-The block runs on a single blocking thread. The connection stays bound for the whole block, and commit or rollback happens when it finishes.
+The block runs on a single blocking thread. The connection stays bound for the whole block, and commit or rollback happens when the block finishes.
 
 ### Wrong: putting a ZIO inside the transaction block
 
@@ -118,7 +118,7 @@ db.executeTransaction {
 }
 ```
 
-`executeTransaction` takes a synchronous block. The returned `ZIO` is treated as a plain value, the transaction commits immediately, and the `insert` never runs.
+`executeTransaction` takes a synchronous block. The returned `ZIO` is treated as a plain value, the transaction commits immediately, and the `insert` is never executed.
 
 ### Wrong: spanning effects
 
@@ -131,17 +131,17 @@ for
 yield ()
 ```
 
-A transaction cannot cross effect boundaries. Sharing a transaction across effects requires pinning the connection to a thread or fiber, which is outside sqala's scope; `zio-jdbc` is a better fit for that requirement.
+A transaction cannot cross effect boundaries. Sharing a transaction across effects requires pinning the connection to a thread or fiber, which is outside sqala's scope; `zio-jdbc` is a better fit for that scenario.
 
 ## Logging
 
-sqala's `Logger` is a Scala `given`, not a ZIO environment service. The simplest option is to import it in the service:
+sqala's `Logger` is a Scala `given`, not a ZIO environment service. The simplest option is to import it inside the service:
 
 ```scala
 import sqala.slf4j.given
 ```
 
-To provide it through a `ZLayer`, bind it manually at the call site:
+If it must be provided through a `ZLayer`, it has to be bound manually at the call site:
 
 ```scala
 def fetchUsers: ZIO[Logger, Throwable, List[User]] =
@@ -157,11 +157,11 @@ def fetchUsers: ZIO[Logger, Throwable, List[User]] =
 ZIO.attemptBlocking(db.fetch(from(User))).timeout(5.seconds)
 ```
 
-`timeout` only makes the fiber return; the JDBC call itself may not be interruptible, and the underlying thread may keep running. For a hard limit, configure a timeout at the database or connection-pool level.
+`timeout` only ensures that the fiber returns; the JDBC call itself may not be interruptible, and the underlying thread may keep running. For a hard limit, configure a timeout at the database or connection-pool level.
 
 ## Streaming
 
-`cursorFetch` is a synchronous callback API. It can run inside a blocking effect:
+`cursorFetch` is a synchronous, callback-based API. It can run inside a blocking effect:
 
 ```scala
 ZIO.attemptBlocking {
@@ -171,4 +171,4 @@ ZIO.attemptBlocking {
 }
 ```
 
-A `ZStream` integration would need a `Queue` and a separate fiber to bridge the callback. sqala does not provide one.
+Streaming as a `ZStream` would currently require bridging the callback with a `Queue` and a separate fiber; sqala does not provide a `ZStream` integration.

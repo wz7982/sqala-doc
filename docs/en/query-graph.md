@@ -8,11 +8,11 @@
 > ```
 
 
-Property graph queries are a feature newly introduced in the SQL 2023 standard for matching complex graph-shaped data. However, among mainstream relational databases only Oracle currently supports this feature, while PostgreSQL is expected to support it in version 19.
+Property graph queries are a new feature introduced in the SQL 2023 standard for matching complex graph-shaped data. Currently, Oracle is the only mainstream relational database that supports this feature; PostgreSQL is expected to add support in version 19.
 
-sqala chooses to implement the feature based on the SQL standard first, so that once your database supports it you can adopt it seamlessly, without waiting for the query library to catch up.
+sqala implements this feature against the SQL standard first, so that once your database supports it, you can adopt it seamlessly without waiting for the query library to catch up.
 
-First we need to describe the graph data in sqala:
+First, describe the graph data in sqala:
 
 ```scala
 case class Person(id: Int, name: String)
@@ -26,7 +26,7 @@ val friendGraph = createGraph(name = "friend_graph")(
 )
 ```
 
-Then use `graphTable` to create a graph query:
+Then, use `graphTable` to create a graph query:
 
 ```scala
 val query =

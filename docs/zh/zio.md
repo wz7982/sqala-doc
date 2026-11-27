@@ -1,26 +1,26 @@
 # ZIO 集成
 
-sqala没有提供官方的ZIO模块。JDBC本身是同步阻塞API，推荐的集成方式是用`ZIO.attemptBlocking`把sqala的调用放到阻塞线程池，事务边界仍然保持在一个同步块内。
+sqala没有提供官方的ZIO模块。JDBC本身是同步阻塞API，推荐的集成方式是用`ZIO.attemptBlocking`把sqala调用放到阻塞线程池执行，事务边界则保持在一个同步块内。
 
-本文说明推荐的写法，以及几个容易踩的坑。
+本文介绍推荐的写法，以及几个常见的错误用法。
 
 ## 引入依赖
 
 ```scala
 libraryDependencies ++= Seq(
-    "com.wz7982" %% "sqala-jdbc" % "latest.integration",
-    "com.wz7982" %% "sqala-slf4j" % "latest.integration",
+    "cn.sqala" %% "sqala-jdbc" % "latest.integration",
+    "cn.sqala" %% "sqala-slf4j" % "latest.integration",
     "dev.zio" %% "zio" % "2.1.27",
     "com.zaxxer" % "HikariCP" % "6.2.1",
     "org.postgresql" % "postgresql" % "42.7.4"
 )
 ```
 
-`sqala-slf4j`是可选的。不引入时，`Logger`会退化为`Logger.noop`，不输出SQL日志。
+`sqala-slf4j`是可选依赖。不引入时，`Logger`会退化为`Logger.noop`，不输出SQL日志。
 
 ## 为什么需要`attemptBlocking`
 
-JDBC调用会阻塞线程。如果直接在ZIO的默认执行器上执行，会占用计算线程，影响其他effect。
+JDBC调用会阻塞线程。若直接在ZIO的默认执行器上执行，会占用计算线程，拖累其他effect。
 
 ```scala
 import zio.*
@@ -93,7 +93,7 @@ val userServiceLayer: ZLayer[JdbcContext, Nothing, UserService] =
 
 ## 事务
 
-sqala的事务是**同步、词法作用域**的。在ZIO中，必须把整个事务放进**一个**`ZIO.attemptBlocking`里：
+sqala的事务是**同步、词法作用域**的。在ZIO中，必须把整个事务放在**同一个**`ZIO.attemptBlocking`内：
 
 ```scala
 import sqala.static.dsl.*
@@ -107,7 +107,7 @@ def transfer(fromId: Int, toId: Int, amount: BigDecimal): ZIO[Any, Throwable, Un
     }.unit
 ```
 
-`executeTransaction`的块会完整运行在同一个阻塞线程上，连接在块内保持绑定，提交或回滚都在块结束时完成。
+`executeTransaction`的代码块完整运行在同一个阻塞线程上，连接在块内保持绑定，提交或回滚均在块结束时完成。
 
 ### 错误写法一：把ZIO放进事务块
 
@@ -118,7 +118,7 @@ db.executeTransaction {
 }
 ```
 
-`executeTransaction`的参数是同步块，返回的`ZIO`会被当作普通值返回，事务立即提交，`insert`根本不会执行。
+`executeTransaction`的参数是同步块，其中返回的`ZIO`只会被当作普通值处理，事务立即提交，`insert`实际上并不会执行。
 
 ### 错误写法二：跨effect保持事务
 
@@ -131,17 +131,17 @@ for
 yield ()
 ```
 
-事务不能跨越effect边界。如果需要在多个effect之间共享事务，需要自己把连接固定在一个线程或fiber上，这已经超出sqala的使用范围；这种场景更适合`zio-jdbc`。
+事务不能跨越effect边界。若需要在多个effect之间共享事务，就必须自行把连接固定在一个线程或fiber上，这已经超出sqala的使用范围；这种场景更适合`zio-jdbc`。
 
 ## 日志
 
-sqala的`Logger`是Scala的`given`，不是ZIO的环境服务。最简单的做法是在Service里导入：
+sqala的`Logger`是Scala的`given`，不是ZIO的环境服务。最简单的做法是在Service内直接导入：
 
 ```scala
 import sqala.slf4j.given
 ```
 
-如果一定要通过`ZLayer`提供，需要在调用点手动绑定：
+若确需通过`ZLayer`提供，则要在调用点手动绑定：
 
 ```scala
 def fetchUsers: ZIO[Logger, Throwable, List[User]] =
@@ -157,11 +157,11 @@ def fetchUsers: ZIO[Logger, Throwable, List[User]] =
 ZIO.attemptBlocking(db.fetch(from(User))).timeout(5.seconds)
 ```
 
-`timeout`只保证fiber在超时后返回，JDBC调用本身不一定能被中断，底层线程可能继续执行。需要硬性限制时，请在数据库或连接池层面设置超时。
+`timeout`只保证fiber在超时后返回；JDBC调用本身不一定能被中断，底层线程可能仍在继续执行。需要硬性限制时，请在数据库或连接池层面设置超时。
 
 ## 流式查询
 
-`cursorFetch`是基于回调的同步API，可以放进一个阻塞effect里处理：
+`cursorFetch`是基于回调的同步API，可以放在一个阻塞effect内处理：
 
 ```scala
 ZIO.attemptBlocking {
@@ -171,4 +171,4 @@ ZIO.attemptBlocking {
 }
 ```
 
-如果需要`ZStream`形式的流式输出，目前需要自己用`Queue`加一个单独fiber桥接；sqala没有提供`ZStream`集成。
+如果需要`ZStream`形式的流式输出，目前需自行用`Queue`和一个单独的fiber做桥接；sqala没有提供`ZStream`集成。

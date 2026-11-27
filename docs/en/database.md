@@ -1,10 +1,10 @@
 # Database Interaction
 
-After configuring the metadata of entity classes, we also need to configure the database connection information. Currently sqala uses JDBC to support database interaction.
+After configuring the metadata of entity classes, you also need to configure the database connection information. sqala currently uses JDBC to interact with databases.
 
-sqala requires a connection pool that extends `javax.sql.DataSource` as the connection manager. You can use any connection pool you like, such as Hikari, Druid, DBCP, C3P0, etc.
+sqala requires a connection pool implementing `javax.sql.DataSource` as the connection manager. Any connection pool you prefer works, such as Hikari, Druid, DBCP, or C3P0.
 
-We need to create an instance of `sqala.jdbc.JdbcContext`. To avoid resource leaks, it is best to put this instance in a singleton `object`:
+Next, create an instance of `sqala.jdbc.JdbcContext`. To avoid resource leaks, it is best to keep this instance in a singleton `object`:
 
 ```scala
 import sqala.jdbc.JdbcContext
@@ -17,7 +17,7 @@ object DB:
     val db = JdbcContext(dataSource, PostgresqlJdbcDialect, true)
 ```
 
-Besides the connection pool, the second parameter passed to the context constructor is the JDBC dialect used by the database. Currently sqala has built-in support for the following dialects (all can be imported from `sqala.jdbc.dialect`):
+The second parameter of the context constructor is the JDBC dialect used by the database. sqala currently has built-in support for the following dialects (all can be imported from `sqala.jdbc.dialect`):
 
 | JDBC Dialect |
 | :----------------------: |
@@ -25,15 +25,15 @@ Besides the connection pool, the second parameter passed to the context construc
 | `MysqlJdbcDialect` |
 | `OracleJdbcDialect` |
 
-The third parameter is `standardEscapeStrings`. It controls how **strings that must be inlined into the SQL text** are escaped, such as JSON paths, values explicitly inlined with `asInlinedExpr`, and special syntax required by some dialects. Ordinary string, numeric, boolean, and time literals are preferably passed as JDBC `?` placeholders and bound by a `PreparedStatement`, so they are not affected by this parameter.
+The third parameter is `standardEscapeStrings`. It controls how **strings that must be inlined into the SQL text** are escaped, such as JSON paths, values explicitly inlined with `asInlinedExpr`, and special syntax required by some dialects. Ordinary string, numeric, boolean, and time literals are passed as JDBC `?` placeholders whenever possible and bound by a `PreparedStatement`, so they are not affected by this parameter.
 
-If you are not sure which escaping mode your database uses, you can send the query `SELECT '//'` to the database. If the database returns `//`, set it to `true`; if it returns `/`, set it to `false`.
+If you are unsure which escaping mode your database uses, send the query `SELECT '\\'` to the database: if it returns `\\` (two backslashes), set the parameter to `true`; if it returns `\` (a single backslash), set it to `false`.
 
 Usually, MySQL databases use `false`, while databases such as PostgreSQL and Oracle use `true`.
 
 ## Two Dialect Layers
 
-sqala has two dialect types with different purposes:
+sqala has two dialect types serving different purposes:
 
 | Type | Package | Purpose | Generated SQL |
 | --- | --- | --- | --- |
@@ -42,7 +42,7 @@ sqala has two dialect types with different purposes:
 
 `JdbcDialect` extends `Dialect`, but its printer turns ordinary literals into `?` and collects their values. Therefore:
 
-- Do not call `.sql()` with a `*JdbcDialect`; it would produce placeholder SQL without the parameter values.
+- Do not call `.sql()` with a `*JdbcDialect`; doing so produces placeholder SQL without the parameter values.
 - `JdbcContext` requires a `JdbcDialect`; passing a plain `*Dialect` does not compile.
 
 ```scala
@@ -59,7 +59,7 @@ JDBC dialects include `PostgresqlJdbcDialect`, `MysqlJdbcDialect`, and `OracleJd
 
 ## JDBC Parameters and Inlined Expressions
 
-sqala prefers JDBC prepared statement `?` placeholders. Ordinary literals are collected as parameters and bound through a `PreparedStatement` at execution time:
+sqala prefers the `?` placeholders of JDBC prepared statements. Ordinary literals are collected as parameters and bound through a `PreparedStatement` at execution time:
 
 ```scala
 val id = 1
@@ -71,17 +71,17 @@ val query =
 // SELECT ... FROM "user" WHERE "id" = ?
 ```
 
-However, the SQL syntax supported by sqala is much broader than ordinary value parameters. The following cases still require values to be inlined into the SQL text:
+However, the SQL syntax supported by sqala is far broader than ordinary value parameters. The following cases still require values to be inlined into the SQL text:
 
 1. **Some values are themselves part of the SQL syntax and cannot be parameterized**: JSON paths in JSON features (such as `'$.a ? (@ > 1)'`) are written inside string constants and cannot be replaced with placeholders; row pattern quantifiers in `MATCH_RECOGNIZE` and quantifiers in property graph queries are also part of the SQL syntax. Some dialect-specific syntax may likewise require literals to appear directly in the SQL text.
 
-2. **When the same expression appears repeatedly, it must remain exactly identical**: PostgreSQL matches by expression structure in `GROUP BY`. If placeholders are used, `SELECT x + ? FROM t GROUP BY x + ?` will be compiled by the JDBC driver into `x + $1` and `x + $2`, and the database will consider these to be two different expressions and refuse to execute the statement; if values are inlined directly, `SELECT x + 1 FROM t GROUP BY x + 1` is generated, both sides have the same structure, and this problem does not occur.
+2. **When the same expression appears repeatedly, it must remain exactly identical**: PostgreSQL matches by expression structure in `GROUP BY`. If placeholders are used, `SELECT x + ? FROM t GROUP BY x + ?` will be compiled by the JDBC driver into `x + $1` and `x + $2`, and the database will consider these to be two different expressions and refuse to execute the statement; if values are inlined directly, `SELECT x + 1 FROM t GROUP BY x + 1` is generated, both sides share the same structure, and the problem does not arise.
 
-3. **`?` is itself an operator in some SQL syntax**: for example, in the row pattern quantifiers of `MATCH_RECOGNIZE` (`A?` meaning zero or one occurrence), `A*?`, `A+?`, and the quantifiers in property graph queries, `?` is part of the syntax. If it is treated as a placeholder as well, the JDBC driver will mistake these syntax symbols for parameters, and the statement cannot be executed at all.
+3. **`?` is itself an operator in some SQL syntax**: for example, in the row pattern quantifiers of `MATCH_RECOGNIZE` (`A?` meaning zero or one occurrence), `A*?`, `A+?`, and the quantifiers in property graph queries, `?` is part of the syntax. If `?` is treated as a placeholder as well, the JDBC driver will mistake these syntax symbols for parameters, and the statement cannot be executed at all.
 
-For these cases, sqala automatically marks the literals that need to be inlined in the syntax tree (for example, JSON paths and row pattern quantifiers). If your own expression also needs to be forced inline, use `asInlinedExpr`, which renders the value directly as a SQL literal instead of generating a `?` placeholder. See the "Inlined Expressions" section in [Expressions](./expr.md) for usage and examples.
+In these cases, sqala automatically marks the literals that need inlining in the syntax tree (for example, JSON paths and row pattern quantifiers). If a business expression also needs to be forced inline, use `asInlinedExpr`, which renders the value directly as a SQL literal instead of generating a `?` placeholder. See the "Inlined Expressions" section of [Expressions](./expr.md) for usage and examples.
 
-Values inlined by `asInlinedExpr` are safely escaped by sqala according to the configured dialect and `standardEscapeStrings`. For ordinary queries, prefer plain values or `asExpr` so that sqala can bind them through JDBC `?` parameters, which is usually more efficient.
+Values inlined by `asInlinedExpr` are safely escaped by sqala according to the configured dialect and `standardEscapeStrings`. For ordinary queries, prefer plain values or `asExpr` so that sqala can bind them through JDBC `?` placeholders, which is usually more efficient.
 
 ### Escaping Inlined Strings
 
@@ -120,7 +120,7 @@ given Logger = JdkLogger("sqala")
 If you use SLF4J, add the `sqala-slf4j` module:
 
 ```scala
-libraryDependencies += "com.wz7982" %% "sqala-slf4j" % "latest.integration"
+libraryDependencies += "cn.sqala" %% "sqala-slf4j" % "latest.integration"
 ```
 
 Then import its default `given`:
@@ -142,21 +142,21 @@ Apart from `sqala-jdbc`, `sqala-slf4j` depends only on `slf4j-api` and does not 
 
 For Spring Boot logging configuration, see [Spring Boot Integration](./spring-boot.md).
 
-After configuring the connection information, we can use sqala to connect to the database and execute queries.
+With the connection information configured, sqala can connect to the database and execute queries.
 
 ## Querying Data by Primary Key
 
-sqala supports querying data directly by primary key. Make sure the primary key field is configured with the `primaryKey` or `autoInc` annotation on the entity class, then use the `db.findByPrimaryKey` method to query data:
+sqala supports querying data directly by primary key. Make sure the entity class declares its primary key field with the `primaryKey` or `autoInc` annotation, then query data with the `db.findByPrimaryKey` method:
 
 ```scala
 val result: Option[User] = db.findByPrimaryKey[User](1)
 ```
 
-The type parameter of this method is the type of the entity class, and the value parameter is the primary key of the entity class (sqala automatically infers the primary key type from the annotation information, so you do not need to configure type information additionally, and this operation is fully type-safe).
+The type parameter of this method is the type of the entity class, and the value parameter is the primary key of the entity class (sqala infers the primary key type automatically from the annotations, so no extra type configuration is needed, and the operation is fully type-safe).
 
 The return type of this method is `Option` of the entity class type.
 
-The reason for using `findByPrimaryKey` rather than names such as `findById` is that sqala supports composite primary key inference, inferring the parameter type as a tuple type:
+The method is named `findByPrimaryKey` rather than `findById` because sqala supports composite primary key inference, inferring the parameter type as a tuple type:
 
 ```scala
 case class Entity(@primaryKey x: Int, @primaryKey y: String, z: Int)
@@ -173,7 +173,7 @@ val result: List[User] = db.fetchByPrimaryKeys[User](ids)
 
 The return type of this method is `List` of the entity class type.
 
-For composite primary keys, just use a collection of tuples:
+For composite primary keys, use a collection of tuples:
 
 ```scala
 val keys = List((1, "a"), (2, "b"), (3, "c"))
@@ -182,9 +182,9 @@ val result: List[Entity] = db.fetchByPrimaryKeys[Entity](keys)
 
 ## Querying Data
 
-`db.fetch` is the main way to query data with sqala, using the powerful type system of Scala 3 to provide fully type-safe query operations.
+`db.fetch` is sqala's primary way of querying data, using Scala 3's powerful type system to provide fully type-safe query operations.
 
-The `db.fetch` method works with the [query DSL](./query.md) to query data and returns the corresponding `List` type result:
+The `db.fetch` method works with the [query DSL](./query.md) and returns the corresponding `List` result:
 
 ```scala
 import sqala.static.dsl.*
@@ -196,7 +196,7 @@ val query =
 val result = db.fetch(query)
 ```
 
-If you do not want to use the type inferred automatically by sqala, we can use the `db.fetchTo` method to pass the type parameter manually, but if the type does not match the actual return, **a type conversion error may be raised at runtime**:
+If you do not want to use the type inferred by sqala, you can use the `db.fetchTo` method to pass the type parameter manually; however, if the type does not match the actual result, **a type conversion error may be thrown at runtime**:
 
 ```scala
 import sqala.static.dsl.*
@@ -209,7 +209,7 @@ val result: List[SomeType] = db.fetchTo[SomeType](query)
 
 ## Querying a Single Row
 
-`db.find` is the single-row optimized version of `db.fetch`. It returns `Option` instead of `List`, and automatically optimizes the query by adding information such as `LIMIT 1` (depending on the database dialect):
+`db.find` is the single-row optimized version of `db.fetch`. It returns `Option` instead of `List`, and automatically optimizes the query by adding a clause such as `LIMIT 1` (depending on the database dialect):
 
 ```scala
 import sqala.static.dsl.*
@@ -221,13 +221,13 @@ val query =
 val result = db.find(query)
 ```
 
-If you do not want to use the type inferred automatically by sqala, just use the `db.findTo` method. Its usage is similar to `db.fetchTo`, so we will not elaborate here.
+If you do not want to use the type inferred by sqala, just use the `db.findTo` method. Its usage is similar to that of `db.fetchTo`, so it is not elaborated here.
 
 ## Querying Row Count
 
-`db.fetchCount` gets the number of rows returned by a query and returns a `Long` type result. To improve the performance and result accuracy of such queries, this method automatically optimizes the query:
+`db.fetchCount` gets the number of rows returned by a query and returns a `Long` result. To improve the performance and result accuracy of such queries, the method optimizes the query automatically:
 
-1. **Remove redundant information**: first remove `ORDER BY` and `LIMIT` from the outermost query, which are unnecessary when counting the total number of rows and only slow down the database response or affect result accuracy;
+1. **Remove redundant information**: remove `ORDER BY` and `LIMIT` from the outermost query first, since they are unnecessary when counting the total number of rows and only slow down the database response or affect result accuracy;
 2. **Simple query optimization**: if the outermost query is a `SELECT` query and does not contain `DISTINCT`, `GROUP BY`, or similar information, directly replace the select list with `COUNT(*)`;
 3. **Complex query optimization**: if the outermost query is not a `SELECT` query (such as `UNION`) or contains `DISTINCT`, `GROUP BY`, or similar information, use the original query as a subquery and query `COUNT(*)` in the outer query.
 
@@ -242,7 +242,7 @@ val result: Long = db.fetchCount(query)
 
 ## Querying Existence
 
-The `db.fetchExists` method queries whether data exists. It is used in scenarios where you do not care about the actual data or the number of rows and only care about whether data exists, and its performance is usually better than calling `db.fetchCount` and then checking whether the returned count is greater than 0:
+The `db.fetchExists` method checks whether data exists. Use it in scenarios where you only care about existence rather than the actual data or row count; its performance is usually better than calling `db.fetchCount` and checking whether the returned count is greater than 0:
 
 ```scala
 import sqala.static.dsl.*
@@ -255,7 +255,7 @@ val result: Boolean = db.fetchExists(query)
 
 ## Pagination Queries
 
-The `db.page` method is used for pagination queries and returns a `Page` type result. The `Page` type is defined as follows:
+The `db.page` method performs pagination queries and returns a `Page` result. The `Page` type is defined as follows:
 
 ```scala
 case class Page[T](
@@ -265,6 +265,12 @@ case class Page[T](
     pageNo: Int,     // Current page number
     data: List[T]    // Paged data
 )
+```
+
+`Page` also provides a `map` method that transforms the element type while preserving the paging metadata:
+
+```scala
+val result: Page[UserDTO] = db.page(query, 10, 1).map(u => UserDTO(u.id, u.name))
 ```
 
 The parameters of `db.page` are: the query statement, the page size, the page number, and whether the total row count needs to be queried (defaults to `true`).
@@ -278,7 +284,7 @@ val query =
 val result = db.page(query, 10, 1)
 ```
 
-Querying the row count and total number of pages on every page is unnecessary. We can usually query the count and total number of pages only on the first page, to avoid wasting database performance:
+Querying the row count and total number of pages on every page is unnecessary; usually they only need to be queried on the first page, which avoids wasting database performance:
 
 ```scala
 import sqala.static.dsl.*
@@ -299,11 +305,11 @@ val user = User(0, "Alice")
 val result: Int = db.insert(user)
 ```
 
-Fields configured with the `autoInc` annotation in the entity class do not appear in the SQL statement, so the values of the corresponding fields can be anything.
+Fields annotated with `autoInc` in the entity class do not appear in the SQL statement, so the values of the corresponding fields can be anything.
 
 The return value of the `db.insert` method is the number of affected rows.
 
-If you have a collection of entities, we can use the `db.insertBatch` method to write them in batches:
+For a collection of entities, use the `db.insertBatch` method to write them in batches:
 
 ```scala
 val users = List(User(0, "Alice"), User(0, "Bob"))
@@ -311,7 +317,7 @@ val users = List(User(0, "Alice"), User(0, "Bob"))
 val result: Int = db.insertBatch(users)
 ```
 
-If you want to get the auto-increment primary key generated by the database after insertion, we can use `db.insertAndReturn`:
+If you want the auto-increment primary key generated by the database after insertion, use `db.insertAndReturn`:
 
 ```scala
 val user = User(0, "Alice")
@@ -319,13 +325,13 @@ val user = User(0, "Alice")
 val result: User = db.insertAndReturn(user)
 ```
 
-After the database successfully executes the insert, `db.insertAndReturn` binds the primary key value returned by the database to a **new entity object**, and does **not** modify the original entity object **in place** like some Java query libraries do.
+Once the insert succeeds, `db.insertAndReturn` binds the primary key returned by the database to a **new entity object**; it does **not** modify the original entity object **in place** the way some Java query libraries do.
 
-For more complex insert requirements, please refer to the [CUD DSL](./update.md) section.
+For more complex insert requirements, see the [CUD DSL](./update.md) section.
 
 ## Updating Data
 
-sqala supports using entity objects to update the values of other fields **by primary key**. Make sure the primary key field is configured with the `primaryKey` or `autoInc` annotation on the entity class, then use the `db.update` method to update data:
+sqala supports using entity objects to update the values of other fields **by primary key**. Make sure the entity class declares its primary key field with the `primaryKey` or `autoInc` annotation, then use the `db.update` method to update data:
 
 ```scala
 val user = User(0, "Alice")
@@ -335,7 +341,7 @@ val result: Int = db.update(user)
 
 `db.update` returns the number of affected rows.
 
-To handle nullable fields differently, `db.update` supports an extra parameter `skipNone`, which defaults to `false`. That is, sqala's default strategy is to map `None` values to database `NULL` updates; if `skipNone` is set to `true`, fields whose value is `None` are skipped when generating SQL:
+To handle nullable fields differently, `db.update` accepts an extra parameter `skipNone`, which defaults to `false`: by default, sqala maps `None` values to database `NULL` updates. If `skipNone` is set to `true`, fields whose value is `None` are skipped when generating SQL:
 
 ```scala
 val user = User(1, "Alice")
@@ -343,7 +349,9 @@ val user = User(1, "Alice")
 val result: Int = db.update(user, skipNone = true)
 ```
 
-For more complex update requirements, please refer to the [CUD DSL](./update.md) section.
+Note that if `skipNone` skips every field, `db.update` returns `0` directly and executes no SQL at all.
+
+For more complex update requirements, see the [CUD DSL](./update.md) section.
 
 ## Inserting or Updating Data
 
@@ -355,19 +363,19 @@ val user = User(1, "Alice")
 val result: Int = db.save(user)
 ```
 
-This operation is dialect-compatible and generates different commands in different databases.
+This operation handles dialect differences automatically and generates different commands on different databases.
 
 ## Deleting Data by Primary Key
 
-sqala supports deleting data directly by primary key. Make sure the primary key field is configured with the `primaryKey` or `autoInc` annotation on the entity class, then use the `db.deleteByPrimaryKey` method to delete data:
+sqala supports deleting data directly by primary key. Make sure the entity class declares its primary key field with the `primaryKey` or `autoInc` annotation, then use the `db.deleteByPrimaryKey` method to delete data:
 
 ```scala
 val result: Int = db.deleteByPrimaryKey[User](1)
 ```
 
-The usage is similar to `findByPrimaryKey`.
+The usage is similar to that of `findByPrimaryKey`.
 
-You can also use the `db.deleteByPrimaryKeys` method to delete in batches:
+You can also use `db.deleteByPrimaryKeys` to delete in batches:
 
 ```scala
 val result: Int = db.deleteByPrimaryKeys[User](List(1, 2, 3))
@@ -375,7 +383,7 @@ val result: Int = db.deleteByPrimaryKeys[User](List(1, 2, 3))
 
 ## Executing Statements
 
-For non-query statements, use the `db.execute` method to execute them, and it returns the number of affected rows as an `Int`. For building such statements, please refer to the [CUD DSL](./update.md):
+For non-query statements, use the `db.execute` method, which returns the number of affected rows as an `Int`. See the [CUD DSL](./update.md) for building such statements:
 
 ```scala
 val result: Int = db.execute(...)
@@ -383,7 +391,7 @@ val result: Int = db.execute(...)
 
 ## Cursor Queries
 
-In scenarios that need to operate on large amounts of data (for example, exporting data to a file), loading all data into memory at once leads to long response times and high memory usage, while pagination queries are inefficient. Therefore sqala supports JDBC cursor queries. Use the `db.cursorFetch` method to enable cursor queries:
+In scenarios that operate on large amounts of data (for example, exporting data to a file), loading all data into memory at once leads to long response times and high memory usage, while pagination queries are inefficient. Therefore sqala supports JDBC cursor queries, enabled through the `db.cursorFetch` method:
 
 ```scala
 import sqala.static.dsl.*
@@ -395,9 +403,9 @@ db.cursorFetch(query, 100): c =>
     // Operations on the data ...
 ```
 
-The first parameter of `db.cursorFetch` is the query statement, the second parameter is the number of rows fetched each time, and then you pass a function that operates on **each batch** of data, with type `Cursor[T] => R`.
+The first parameter of `db.cursorFetch` is the query statement, the second is the number of rows fetched each time, and the last is a function that processes **each batch** of data, with type `Cursor[T] => R`.
 
-The `Cursor` type is defined as:
+The `Cursor` type is defined as follows:
 
 ```scala
 case class Cursor[T](
@@ -408,6 +416,7 @@ case class Cursor[T](
 ```
 
 ## Returning SQL
+
 `db.showSql` returns the generated SQL string together with the corresponding argument array:
 
 ```scala
@@ -423,7 +432,7 @@ The `?` placeholders in `sql` correspond one-to-one, in order, with the argument
 
 ## Transactions
 
-The `db.executeTransaction` method is used to create and execute a transaction context. It is a function that takes a context; if an exception occurs inside, the transaction is **rolled back** and the exception is rethrown. If no exception occurs, the transaction is **committed** and the value returned by the function is returned:
+The `db.executeTransaction` method creates a transaction context and executes a block inside it. If an exception occurs, the transaction is **rolled back** and the exception is rethrown; otherwise, the transaction is **committed** and the block's return value is returned:
 
 ```scala
 import sqala.jdbc.*
@@ -439,7 +448,7 @@ try {
 }
 ```
 
-Using the context abstraction mechanism of Scala 3, we can easily share a transaction context between different methods (methods that need the transaction must be marked with `using JdbcTransactionContext`), which is compile-time type-safe **dependency injection**:
+Using Scala 3's context abstraction, a transaction context can be shared easily between methods (methods that need the transaction are marked with `using JdbcTransactionContext`), which is compile-time type-safe **dependency injection**:
 
 ```scala
 import sqala.jdbc.*
@@ -474,7 +483,7 @@ The isolation levels supported by sqala are:
 
 | Isolation Level | Description |
 | :------------------------------------: | :--------------: |
-| TransactionIsolation.None | Do not use transactions |
+| TransactionIsolation.None | Sets the JDBC isolation level to `TRANSACTION_NONE`; the transaction block still commits/rolls back normally, and the actual isolation semantics depend on the driver |
 | TransactionIsolation.ReadUncommitted | Read uncommitted |
 | TransactionIsolation.ReadCommitted | Read committed |
 | TransactionIsolation.RepeatableRead | Repeatable read |

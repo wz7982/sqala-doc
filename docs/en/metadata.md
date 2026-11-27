@@ -1,20 +1,20 @@
 # Metadata Configuration
 
-Before using sqala to build queries, we create entity classes that correspond to the database tables and add the metadata information that sqala requires.
+Before building queries with sqala, we create entity classes corresponding to the database tables and add the metadata that sqala requires.
 
 ## Adding Dependencies
 
-Before using sqala, make sure you add the sqala dependency:
+Before using sqala, make sure you have added the sqala dependency:
 
 ```scala
-libraryDependencies += "com.wz7982" % "sqala-jdbc_3" % "latest.integration"
+libraryDependencies += "cn.sqala" % "sqala-jdbc_3" % "latest.integration"
 ```
 
 Metadata-related settings usually require `import sqala.metadata.*`.
 
 ## Basic Configuration
 
-In the following documentation, we usually use a four-level data model of users, channels, posts, and comments to introduce sqala. The table creation statements and sample data are as follows:
+In the rest of the documentation, we typically use a four-level data model of users, channels, posts, and comments to introduce sqala. The table creation statements and sample data are as follows:
 
 ::: code-group
 ```sql [MySQL]
@@ -326,7 +326,7 @@ val query =
 
 The basic field types supported by sqala out of the box are:
 
-|Field Type             |Field Type             |Field Type             |
+|Type                   |                       |                       |
 |:---------------------:|:---------------------:|:---------------------:|
 |scala.Int              |scala.Long             |scala.Float            |
 |scala.Double           |scala.String           |scala.Boolean          |
@@ -338,17 +338,17 @@ Both `Option` and `Array` can be combined with the types above, for example `Opt
 
 In addition, to support `JSON` data and spatial data in SQL, the following data types are defined in the `sqala.metadata` package.
 
-However, apart from the `Json` type, since JDBC has no standard for such data types and database driver implementations differ significantly, sqala does not provide built-in deserialization. You need to convert them to basic data types with the corresponding SQL functions when building queries:
+However, apart from the `Json` type, since JDBC has no standard for such data types and database driver implementations differ significantly, sqala does not provide built-in deserialization. When building queries, you need to convert them to basic data types using the corresponding SQL functions:
 
-|Field Type             |Field Type             |Field Type              |
-|:---------------------:|:---------------------:|:----------------------:|
-|Point                  |LineString             |Polygon                 |
+|Type                   |                       |                       |
+|:---------------------:|:---------------------:|:---------------------:|
+|Point                  |LineString             |Polygon                |
 |MultiPoint             |MultiLineString        |MultiPolygon            |
 |GeometryCollection     |Geometry               |Json                    |
 
 ## Custom Field Types
 
-In the example above, we use `Int` to receive the `state` field of the post and comment tables, but using `Int` to manage such an enum field is unsafe, and magic numbers have no real meaning. So we would rather use Scala 3's `enum` to manage such fields:
+In the example above, we use `Int` for the `state` field of the post and comment tables. However, managing such an enum field with `Int` is unsafe, and magic numbers carry no real meaning, so we would rather use Scala 3's `enum` for such fields:
 
 ```scala
 enum DataState:
@@ -380,9 +380,9 @@ val query =
     from(Post).filter(p => p.state === DataState.Active)
 ```
 
-sqala returns a compile error. The reason is that sqala does not know how to handle such a field, generate a query for it, or deserialize it from query results.
+sqala reports a compile error. The reason is that sqala does not know how to handle such a field: how to generate a query for it, or how to deserialize it from query results.
 
-Therefore the custom type needs a `CustomField` implementation. To avoid importing it at every query site, put the implementation in the type's companion object.
+Therefore, the custom type needs a `CustomField` implementation. To avoid importing it at every query site, put the implementation in the type's companion object.
 
 For a parameterless Scala 3 enum, sqala derives the implementation from annotations. Declare the database value on each case and add one `given`:
 
@@ -468,7 +468,7 @@ The two type parameters of `CustomField` are the type to implement and the basic
 
 ## Setting Primary Keys
 
-sqala supports the `primaryKey` and `autoInc` annotations to mark primary key fields and auto-increment fields. Since the primary keys of the sample tables we created above are all auto-increment primary keys, we change the entity class definitions to:
+sqala supports the `primaryKey` and `autoInc` annotations to mark primary key fields and auto-increment fields. Since the primary keys of the sample tables created above are all auto-increment, we change the entity class definitions to:
 
 ```scala
 import sqala.metadata.*
@@ -512,7 +512,7 @@ sqala supports multiple `primaryKey` fields in one entity class, but only one `a
 
 ## Custom Names
 
-If the entity class and database table do not follow the camelCase-to-snake_case rule, you can use the `table` and `column` annotations to manage names manually:
+If the entity class and database table do not follow the camelCase-to-snake_case rule, you can use the `table` and `column` annotations to specify names manually:
 
 ```scala
 import sqala.metadata.*
@@ -523,4 +523,4 @@ case class SomeTable(
 )
 ```
 
-After completing the metadata configuration, you can start using sqala to build queries and create, update, and delete statements.
+Once the metadata configuration is complete, you can start using sqala to build queries and create, update, and delete statements.

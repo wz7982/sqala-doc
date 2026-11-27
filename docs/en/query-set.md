@@ -4,7 +4,7 @@ Set operations are also common in SQL, and sqala provides built-in support for t
 
 ## Union
 
-In SQL, `UNION` and `UNION ALL` represent union operations. The difference is that the former removes duplicates from the union of the two queries, equivalent to `UNION DISTINCT`, while the latter does not remove duplicates. In sqala, use the `union` and `unionAll` methods to combine two queries:
+In SQL, `UNION` and `UNION ALL` represent union operations. The former removes duplicates from the union of the two queries, equivalent to `UNION DISTINCT`, while the latter keeps all rows. In sqala, use the `union` and `unionAll` methods to combine two queries:
 
 ```scala
 val q1 = from(User).filter(u => u.id === 1).map(u => (id = u.id, name = u.name))
@@ -39,7 +39,7 @@ UNION ALL
 
 ## Type Inference for Set Operations
 
-sqala makes the types of the two queries participating in a set operation as compatible as possible. The two queries must have exactly the same number of fields, but their return types do not need to be identical; they only need to be type-compatible.
+sqala reconciles the types of the two queries participating in a set operation as much as possible. The two queries must have exactly the same number of fields, but their return types do not need to be identical; they only need to be type-compatible.
 
 Suppose the row type of the first query is `(Option[Int], String, Long)`,
 
@@ -53,7 +53,7 @@ If the first query returns a named tuple and the second query returns a tuple, t
 
 ## Intersect
 
-In SQL, `INTERSECT` and `INTERSECT ALL` represent intersect operations. In sqala, use the `intersect` and `intersectAll` methods to combine two queries:
+In SQL, `INTERSECT` and `INTERSECT ALL` represent intersection operations. In sqala, use the `intersect` and `intersectAll` methods to combine two queries:
 
 ```scala
 val q1 = from(User).filter(u => u.id >= 5).map(u => (id = u.id, name = u.name))
@@ -86,7 +86,7 @@ INTERSECT ALL
 
 ## Except
 
-In SQL, `EXCEPT` and `EXCEPT ALL` represent except operations. In sqala, use the `except` and `exceptAll` methods to combine two queries:
+In SQL, `EXCEPT` and `EXCEPT ALL` represent difference operations. In sqala, use the `except` and `exceptAll` methods to combine two queries:
 
 ```scala
 val q1 = from(User).filter(u => u.id >= 5).map(u => (id = u.id, name = u.name))
@@ -161,6 +161,8 @@ LIMIT 5 OFFSET 10
 ```
 
 The lambda parameter of `sortBy` has the return type of the set operation result, so you can use the projected field names directly. The generated `ORDER BY` references the aliases of the output columns of the set operation, while `drop` and `take` generate the corresponding pagination clauses for the dialect (the example shows PostgreSQL's `LIMIT` and `OFFSET`).
+
+After `sortBy`, a set query can also call `takeWithTies` to generate a `FETCH n ROWS WITH TIES` clause; its dialect restrictions are the same as described in the [query DSL](./query.md) (MySQL does not support it).
 
 ## Compatibility
 

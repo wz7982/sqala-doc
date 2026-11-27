@@ -2,22 +2,22 @@
 
 sqala provides an optional sbt plugin that reads a PostgreSQL or MySQL schema and generates entity case classes.
 
-It does not change sqala's runtime behavior; the generated code is ordinary case class source.
+It does not change sqala's runtime behavior; the generated code is just ordinary case classes.
 
 ## Requirements
 
 - sbt 1.x
 - PostgreSQL or MySQL
-- A database account that can read the schema
+- A database account with permission to read the schema
 
 ## Add the plugin
 
 ```scala
 // project/plugins.sbt
-addSbtPlugin("com.wz7982" % "sqala-sbt-codegen" % "0.1.0")
+addSbtPlugin("cn.sqala" % "sqala-sbt-codegen" % "0.1.0")
 ```
 
-For local development, you can publish the plugin from the `codegen-sbt` directory in the sqala repository:
+For local development, you can also publish the plugin locally from the `codegen-sbt` directory of the sqala repository:
 
 ```bash
 cd codegen-sbt
@@ -69,7 +69,7 @@ Do not hard-code the password in `build.sbt`.
 sbt sqalaGenerate
 ```
 
-Generated files depend on `sqalaOutputMode`.
+The location of the generated files depends on `sqalaOutputMode`.
 
 ## Output modes
 
@@ -81,7 +81,7 @@ Files are written to:
 target/scala-3.x/src_managed/main/sqala-codegen/
 ```
 
-Note that running `sqalaGenerate` only writes files; it does **not** add them to compilation automatically. sbt does not compile files under `sourceManaged` unless they are part of the build's sources.
+Note that running `sqalaGenerate` only writes files; it does **not** automatically add them to the compilation. sbt does not compile files under `sourceManaged` unless they are part of the build's sources.
 
 The recommended setup is to add the task as a source generator:
 
@@ -89,7 +89,7 @@ The recommended setup is to add the task as a source generator:
 Compile / sourceGenerators += sqalaGenerate.taskValue
 ```
 
-This runs generation before every `compile` and includes the returned files as sources. It also means every compile reads the database.
+This runs generation before every `compile` and includes the returned files as sources. Note that this makes every compile read the database.
 
 If you do not want every compile to connect to the database, run:
 
@@ -104,7 +104,7 @@ Compile / unmanagedSourceDirectories +=
     (Compile / sourceManaged).value / "sqala-codegen"
 ```
 
-After that, `compile` will compile the already generated files without reconnecting. Running `sbt clean` removes them, so you need to regenerate.
+After that, `compile` will compile the already-generated files without reconnecting. Running `sbt clean` removes them, so you need to regenerate.
 
 ### `OutputMode.Source`
 
@@ -127,7 +127,7 @@ produces:
 src/main/scala/generated/com/example/domain/User.scala
 ```
 
-This directory is under `src/main/scala`, so it is compiled normally. No `sourceGenerators` or `unmanagedSourceDirectories` setting is required.
+This directory is under `src/main/scala`, so it is compiled as usual. No `sourceGenerators` or `unmanagedSourceDirectories` setting is required.
 
 Source mode is intended for teams that want to commit and review generated code. A `.sqala-codegen-manifest` file records generated files. On the next run, only files tracked by the manifest are cleaned up; unrelated user files in the same directory are left alone.
 
@@ -166,7 +166,7 @@ case class User(
 Rules:
 
 - The raw table name is always written to `@table("...")`
-- Nullable columns become `Option[T]`
+- Nullable columns become `Option[T]`; primary keys are the exception — they stay as `T` even when nullable in the database
 - Primary keys use `@primaryKey`
 - Auto-increment primary keys use both `@primaryKey` and `@autoInc`
 - `@column("...")` is added when the database column name does not round-trip through sqala's default CamelCase to snake_case conversion
@@ -209,7 +209,7 @@ case class UserProfile(...)
 
 ## Unsupported types
 
-The generator does not generate the following automatically:
+The following SQL types are not generated as-is; they are handled as follows:
 
 - `BLOB` / `BINARY` / `VARBINARY`: the column is skipped with a warning
 - arrays: the column is skipped with a warning
@@ -240,7 +240,7 @@ Database enums are generated as `String` by default. To use a Scala enum:
 1. Map the database type to your enum with `sqalaTypeMappings`, and provide the corresponding `CustomField` / codec instances.
 2. Or copy the generated entity into `src/main/scala` and remove that table from `sqalaTables` so it is not overwritten.
 
-The output directory is managed source. Every `sqalaGenerate` run deletes and rewrites it, so edits to generated files are not preserved.
+Rewrite behavior depends on the output mode: in `OutputMode.Managed`, every `sqalaGenerate` run deletes and rewrites the whole output directory, so edits to generated files are not preserved; in `OutputMode.Source`, only the files recorded in the previous generation manifest are deleted and rewritten, leaving other files in the directory untouched.
 
 ## Settings
 

@@ -1,10 +1,10 @@
 # 关联表
 
-在上一部分中，我们介绍了如何使用sqala构建单表查询，而表关联是关系型数据库不可或缺的功能，sqala也对关联查询进行了全面且深入的支持。
+在上一部分中，我们介绍了如何使用sqala构建单表查询。表关联是关系型数据库不可或缺的功能，sqala对关联查询也提供了全面且深入的支持。
 
 ## 多表查询
 
-sqala也像数据库一样，支持在`from`中传入多个表：
+与数据库一样，sqala也支持在`from`中传入多个表：
 
 ```scala
 val query =
@@ -13,7 +13,7 @@ val query =
         .take(10)
 ```
 
-但会将多个表视为一个表元组，而不是动态参数列表，因此在`filter`等后续操作中我们可以保留安全的类型，并递归处理元组，生成`CROSS JOIN`表：
+但多个表会被视为一个表元组，而不是动态参数列表，因此在`filter`等后续操作中仍能保持类型安全；元组会被递归处理，最终生成`CROSS JOIN`表：
 
 ```sql
 SELECT
@@ -43,12 +43,12 @@ FROM
     )
 WHERE
     "t1"."id" = "t2"."channel_id" AND "t2"."id" = "t3"."post_id"
-LIMIT ?
+LIMIT 10
 ```
 
-sqala会自动将参与查询的所有表的字段在`SELECT`中平铺，避免生成`SELECT *`。
+sqala会自动将参与查询的所有表的字段平铺在`SELECT`中，避免生成`SELECT *`。
 
-这个查询返回的数据类型会自动推导成`List[(Channel, Post, Comment)]`，不管是`from`多表还是后文中介绍的所有关联操作，均不会产生诸如其他Scala查询库的`((Channel, Post), Comment)`嵌套元组返回类型，这是一个很重要的行为，可以极大简化后续操作，而这是使用Scala3的元组库的递归推导能力实现的平铺任意深度的表元组，是Scala2不具备的能力。
+该查询的返回类型会自动推导为`List[(Channel, Post, Comment)]`。无论是`from`多表，还是后文介绍的所有关联操作，都不会产生其他Scala查询库中`((Channel, Post), Comment)`式的嵌套元组返回类型。这是一个很重要的行为，可以极大简化后续操作；其实现依赖于Scala 3元组库的递归推导能力——可平铺任意深度的表元组，这是Scala 2不具备的能力。
 
 ## 表连接
 
@@ -62,9 +62,9 @@ sqala支持如下的连接类型：
 |`fullJoin`    |`FULL OUTER JOIN`   |
 |`crossJoin`   |`CROSS JOIN`        |
 
-以上方法除了`crossJoin`外均配合`on`方法，在`from`中使用。
+除`crossJoin`外，以上方法均需配合`on`方法，在`from`中使用。
 
-**需要注意的是，sqala的表连接方法不是大多数查询库采用的`from.join.on`形式，而是把`join`作为`from`的参数处理，这是符合SQL标准语义的，而且在子查询表、函数表等复杂情况下可以提供更统一的调用形式。**
+**需要注意的是，sqala的表连接方法并非大多数查询库采用的`from.join.on`形式，而是将`join`作为`from`的参数处理。这符合SQL标准语义，也能在子查询表、函数表等复杂情况下提供更统一的调用形式。**
 
 两表连接形式为：
 
@@ -131,13 +131,13 @@ FROM
     INNER JOIN "comment" AS "t3" ON "t2"."id" = "t3"."post_id"
 ```
 
-`on`方法中的参数会随着连接表数量增多而增多，但仍然会保持平铺，而不会产生嵌套结构。
+`on`方法的参数会随连接表数量的增加而增加，但始终保持平铺，不会产生嵌套结构。
 
 ## 表连接的类型推导
 
-我们知道，数据库对于外连接的可空侧，比如`LEFT JOIN`的右侧表，会自动补空值，查询结果可能会产生在原本数据中不存在的空值，即使你的表中没有任何可空字段。
+对于外连接的可空侧（如`LEFT JOIN`的右侧表），数据库会自动补空值，因此查询结果可能出现原本数据中并不存在的空值，即使表中没有任何可空字段。
 
-因此如果将外连接的情况，比如：
+因此，若外连接的场景，比如：
 
 ```scala
 val query =
@@ -147,7 +147,7 @@ val query =
         .leftJoin(Comment).on((_, p, c) => p.id === c.postId)
 ```
 
-还机械地推导为`List[(Channel, Post, Comment)]`类型，在连接数据库反序列化的时候将不再安全，sqala在这种情况下会智能地将返回类型推导为：
+仍机械地推导为`List[(Channel, Post, Comment)]`类型，则从数据库反序列化时将不再安全。这种情况下，sqala会将返回类型智能推导为：
 
 ```scala
 val query =
@@ -184,7 +184,7 @@ val query =
     .map((_, _, c) => c.id)
 ```
 
-即使原本实体类中`Comment`的`id`字段为`Int`，是一个非空字段，但sqala仍会聪明地将返回类型推导为：
+即使实体类中`Comment`的`id`字段原本是非空的`Int`类型，sqala也会将返回类型智能推导为：
 
 ```scala
 val query =
@@ -198,7 +198,7 @@ val query =
 val result = db.fetch(query)
 ```
 
-但是如果原本字段本身就是`Option`可空字段，sqala也不会多此一举，产生诸如`Option[Option[T]]`的类型：
+但如果字段本身就是`Option`可空类型，sqala也不会多此一举，产生诸如`Option[Option[T]]`的类型：
 
 ```scala
 val query =
@@ -212,11 +212,11 @@ val query =
 val result = db.fetch(query)
 ```
 
-sqala这样的推导策略在尽力简化返回类型的同时，保持类型安全性。您可以专注于业务逻辑，把类型安全交给sqala管理。
+sqala的推导策略在尽力简化返回类型的同时保持类型安全。您可以专注于业务逻辑，把类型安全交给sqala。
 
 ## 灵活的连接顺序
 
-sqala跟SQL一样，支持灵活调整连接顺序，而不是只支持A先连接B再连接C这样的操作：
+与SQL一样，sqala支持灵活调整连接顺序，而不局限于A先连接B、再连接C这样的操作：
 
 ```scala
 val query =
@@ -258,11 +258,11 @@ FROM
 
 返回类型推导为`List[(Channel, Post, Option[Comment])]`。
 
-支持灵活的连接顺序归功于sqala底层使用树结构存储连接表，而不是线性列表结构。
+灵活的连接顺序得益于sqala底层使用树结构而非线性列表来存储连接表。
 
 ## 横向表
 
-`LATERAL`是SQL中一个强大的功能，其可以在`FROM`的表中引用前一个表的字段，为每行数据产生一个新的关联结果集，比如我们需要处理这样一个需求：“分别统计每个频道里点赞数前2的帖子，并汇总到一个列表中”，就可以使用`LATERAL`功能，sqala也为此类需求带来了开箱即用的工具：
+`LATERAL`是SQL中一个强大的功能：它可以在`FROM`的表中引用前一个表的字段，为每行数据产生一个新的关联结果集。例如处理这样一个需求——“分别取出每个频道里点赞数最高的前2个帖子，并汇总到一个列表中”——就可以使用`LATERAL`功能，sqala也为此类需求提供了开箱即用的工具：
 
 ```scala
 val query =
@@ -276,13 +276,13 @@ val query =
         ).on((c, p) => c.id === p.channelId)
 ```
 
-这样的需求在传统ORM中，要么会生成`N + 1`的SQL语句，循环查询带来高IO开销，要么完全不支持这样的表达，退回到手写SQL。而使用sqala您可以轻松处理这样的复杂需求。
+这类需求在传统ORM中，要么生成`N + 1`条SQL语句，循环查询带来高IO开销，要么完全无法表达，只能退回手写SQL。而使用sqala可以轻松处理这类复杂需求。
 
-此例子中配合`joinLateral`使用了sqala的子查询功能，对于更多子查询的介绍请参考[子查询](./query-sub)部分。
+此示例配合`joinLateral`使用了sqala的子查询功能，更多子查询的介绍请参考[子查询](./query-sub)。
 
-sqala支持使用`joinLateral`和`leftJoinLateral`以及`crossJoinLateral`创建`LATERAL`表（由于数据库限制，不允许右外连接和全外连接使用`LATERAL`功能）。
+sqala支持使用`joinLateral`、`leftJoinLateral`和`crossJoinLateral`创建`LATERAL`表（由于数据库限制，右外连接和全外连接不能使用`LATERAL`功能）。
 
-各主流数据库最新版本实测支持程度如下：
+各主流数据库最新版本的实测支持情况如下：
 
 | 数据库类型 | LATERAL 支持 |
 |------------|--------------|

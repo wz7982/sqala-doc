@@ -13,7 +13,7 @@ val query =
         .take(10)
 ```
 
-However, it treats the multiple tables as a tuple of tables rather than a dynamic parameter list. Therefore, in subsequent operations such as `filter`, we can retain type safety, and the tuple is processed recursively to generate a `CROSS JOIN` table:
+However, it treats the multiple tables as a tuple of tables rather than a dynamic parameter list. This allows subsequent operations such as `filter` to retain type safety, and the tuple is processed recursively to generate a `CROSS JOIN` table:
 
 ```sql
 SELECT
@@ -43,12 +43,12 @@ FROM
     )
 WHERE
     "t1"."id" = "t2"."channel_id" AND "t2"."id" = "t3"."post_id"
-LIMIT ?
+LIMIT 10
 ```
 
 sqala automatically flattens the fields of all tables involved in the query into the `SELECT` clause, avoiding generating `SELECT *`.
 
-The data type returned by this query is automatically inferred as `List[(Channel, Post, Comment)]`. Neither a multi-table `from` nor any of the join operations described later produces nested tuple return types such as `((Channel, Post), Comment)` found in other Scala query libraries. This is an important behavior that greatly simplifies subsequent operations, and it is achieved by using the recursive inference capability of the Scala 3 tuple library to flatten table tuples of arbitrary depth, a capability Scala 2 does not have.
+The data type returned by this query is automatically inferred as `List[(Channel, Post, Comment)]`. Neither a multi-table `from` nor any of the join operations described later produces nested tuple return types such as the `((Channel, Post), Comment)` found in other Scala query libraries. This is an important behavior that greatly simplifies subsequent operations. It is achieved through the recursive inference of the Scala 3 tuple library, which flattens table tuples of arbitrary depth — a capability Scala 2 does not have.
 
 ## Table Joins
 
@@ -135,7 +135,7 @@ The parameters of the `on` method increase as the number of joined tables grows,
 
 ## Type Inference for Table Joins
 
-As we know, for the nullable side of an outer join, such as the right-hand table of `LEFT JOIN`, the database automatically fills in null values. The query result may therefore contain null values that do not exist in the original data, even if your table has no nullable fields at all.
+For the nullable side of an outer join, such as the right-hand table of a `LEFT JOIN`, the database automatically fills in null values. The query result may therefore contain nulls that do not exist in the original data, even if your table has no nullable fields at all.
 
 Therefore, if the outer join case, for example:
 
@@ -147,7 +147,7 @@ val query =
         .leftJoin(Comment).on((_, p, c) => p.id === c.postId)
 ```
 
-were still mechanically inferred as the `List[(Channel, Post, Comment)]` type, it would no longer be safe when deserializing from the database. In such cases, sqala intelligently infers the return type as:
+were still mechanically inferred as `List[(Channel, Post, Comment)]`, deserializing the results from the database would no longer be safe. In such cases, sqala intelligently infers the return type as:
 
 ```scala
 val query =
@@ -198,7 +198,7 @@ val query =
 val result = db.fetch(query)
 ```
 
-However, if the field itself is already an `Option` nullable field, sqala does not do anything unnecessary and produce types such as `Option[Option[T]]`:
+However, if the field itself is already a nullable `Option` field, sqala does nothing superfluous; it never produces types such as `Option[Option[T]]`:
 
 ```scala
 val query =
@@ -216,7 +216,7 @@ This inference strategy simplifies return types as much as possible while mainta
 
 ## Flexible Join Order
 
-Like SQL, sqala supports flexibly adjusting the join order, rather than only supporting operations such as A joining B and then joining C:
+Like SQL, sqala supports flexibly adjusting the join order, instead of only allowing A to join B and then C:
 
 ```scala
 val query =
@@ -258,11 +258,11 @@ FROM
 
 The return type is inferred as `List[(Channel, Post, Option[Comment])]`.
 
-Flexible join order is possible because sqala stores joined tables in a tree structure rather than a linear list structure.
+Flexible join order is possible because sqala stores joined tables in a tree structure rather than a linear list.
 
 ## Lateral Tables
 
-`LATERAL` is a powerful SQL feature that allows tables in `FROM` to reference fields of a preceding table and produce a new related result set for each row. For example, suppose we need to handle this requirement: "count the top 2 posts by like count in each channel, and aggregate them into a single list". We can use the `LATERAL` feature, and sqala provides an out-of-the-box tool for such requirements:
+`LATERAL` is a powerful SQL feature that allows a table in `FROM` to reference fields of a preceding table and produce a new related result set for each row. For example, to handle the requirement "get the top 2 posts by like count in each channel and aggregate them into a single list", we can use `LATERAL`, and sqala provides an out-of-the-box tool for such requirements:
 
 ```scala
 val query =

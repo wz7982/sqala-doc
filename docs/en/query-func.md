@@ -1,6 +1,6 @@
 # Function Tables
 
-> The features on this page belong to the `sqala-static-ext` module, which requires an additional dependency. Import:
+> The features on this page belong to the `sqala-static-ext` module, which must be added as an extra dependency. Import the following:
 >
 > ```scala
 > import sqala.static.dsl.*
@@ -8,11 +8,11 @@
 > ```
 
 
-sqala supports the function table feature of SQL (currently only PostgreSQL supports standard function table operations), letting you use the result of a function call as a table.
+sqala supports SQL function tables (currently, only PostgreSQL supports standard function table operations), letting you use the result of a function call as a table.
 
 ## UNNEST
 
-`unnest` corresponds to the SQL standard function table `UNNEST`, which flattens an array field so it can be used as a table. We use the field `x` for subsequent operations:
+`unnest` corresponds to the SQL-standard function table `UNNEST`, which flattens an array field so that it can be used as a table. Use the field `x` in subsequent operations:
 
 ```scala
 val query =
@@ -30,7 +30,7 @@ WHERE
     "t1"."x" > 1
 ```
 
-`unnestWithOrdinal` adds an ordinal number after expanding the array; use the `ordinal` field for subsequent operations on the ordinal:
+`unnestWithOrdinal` adds an ordinal column after expanding the array; use the `ordinal` field in subsequent operations:
 
 ```scala
 val query =
@@ -49,7 +49,7 @@ WHERE
     "t1"."ordinal" > 1
 ```
 
-We can use the `joinLateral` feature to reference an array field of the left-hand table:
+With the `crossJoinLateral` feature, we can reference an array field from the left-hand table:
 
 ```scala
 case class Entity(arr: Array[Int])
@@ -72,9 +72,9 @@ FROM
 
 ## Custom Function Tables
 
-Apart from the `unnest` function table from the SQL standard, sqala has no built-in function tables, but it supports custom ones. Let us use PostgreSQL's `generate_series` to generate a series as an example.
+Apart from the SQL-standard `unnest` function table, sqala has no built-in function tables but supports custom ones. The following example uses PostgreSQL's `generate_series`.
 
-First, create a receiving structure:
+First, create a structure to receive the result:
 
 ```scala
 case class GenerateSeries(x: Int)
@@ -91,9 +91,9 @@ def generateSeries[L <: Int](start: Int, end: Int)(using QueryContext[L]) =
     )
 ```
 
-The first parameter is the function name, the second parameter is the argument list, and the third parameter indicates whether an ordinal is needed.
+The first parameter is the function name, the second is the argument list, and the third indicates whether an ordinal is needed.
 
-Then we can use it in a query:
+The function table can then be used in a query:
 
 ```scala
 val query =

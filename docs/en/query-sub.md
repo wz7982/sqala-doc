@@ -19,7 +19,7 @@ val query =
         from(User).map(u => (col1 = u.id, col2 = u.name))
 ```
 
-A table subquery must project to a tuple because sqala automatically extracts information from the named tuple and generates fields for the subquery, which you can then use in subsequent clauses:
+A table subquery must project to a named tuple because sqala automatically extracts information from it and generates fields for the subquery, which you can then use in subsequent clauses:
 
 ```scala
 val query =
@@ -48,13 +48,13 @@ WHERE
     "t2"."c1" > 5
 ```
 
-sqala also manages the table aliases and column aliases of subqueries automatically, so you don't need to spend any effort on that.
+sqala also manages the table aliases and column aliases of subqueries automatically, so you don't need to worry about them.
 
 ## Row Subqueries
 
-A row subquery is used as an expression, which requires projecting to an [aggregate function](./expr-agg.md) in `map`, or calling `take(1)` to ensure that the query returns at most one row.
+A row subquery is used as an expression: it must project to an [aggregate function](./expr-agg.md) in `map`, or call `take(1)` (or even `take(0)`; both narrow the inferred row count to a single row) to ensure that the query returns at most one row.
 
-For example, if we need to find "posts with more likes than the average number of likes of posts in the same channel", we can write:
+For example, to find "posts with more likes than the average like count of posts in the same channel", we can write:
 
 ```scala
 val query =
@@ -151,7 +151,7 @@ val query =
 
 ### EXISTS Subqueries
 
-An `EXISTS` subquery is used to test existence and does not care about the actual data inside `EXISTS`. For example, we might find "users with the same name":
+An `EXISTS` subquery tests existence and does not care about the actual data inside it. For example, to find "users with the same name":
 
 ```scala
 val query =
@@ -181,7 +181,7 @@ WHERE
 
 ### IN Subqueries
 
-An `IN` subquery is used to find rows whose data is contained in the corresponding field data of the subquery. For example, we might find "posts that have comments":
+An `IN` subquery finds entries whose corresponding field value appears in the subquery's result. For example, to find "posts that have comments":
 
 ```scala
 val query =
@@ -297,7 +297,7 @@ The measured support for subqueries with quantifiers in the latest versions of m
 
 ## Scalar Subqueries
 
-A subquery returning one row and one column can be used in `map`. For example, we might query "a user's ID and the title of any one post they published":
+A subquery returning one row and one column can be used in `map`. For example, to query "a user's ID and the title of any one of their posts":
 
 ```scala
 val query =

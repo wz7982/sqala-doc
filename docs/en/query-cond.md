@@ -1,10 +1,10 @@
 # Conditional Query Building
 
-sqala provides a static, type-safe DSL for building queries, but it also supports building queries under different conditions to some extent. Below are some common use cases.
+sqala provides a static, type-safe DSL for building queries, but it also supports assembling queries under different conditions to some extent. Below are some common use cases.
 
 ## Dynamic Sorting
 
-sqala provides `filterIf` for filtering operations but no similar operation for sorting. However, we can achieve dynamic sorting like this:
+sqala provides `filterIf` for filtering, but no similar operation exists for sorting. Dynamic sorting can still be achieved as follows:
 
 ```scala
 // Assume this comes from user input
@@ -21,7 +21,7 @@ val query =
 
 ## Dynamic Grouping
 
-We can build dynamic queries like this:
+A dynamic grouping query can be built as follows:
 
 ```scala
 case class Data(dim1: Int, dim2: Int, dim3: Int, measure: Int)
@@ -43,7 +43,7 @@ val query = grouping.map((g, d) => (g, sum(d.measure)))
 
 ## Generating OR Conditions from a List
 
-We can build a group of `LIKE` conditions connected with `OR`. This example shows the flexibility of query building in sqala:
+We can build a set of `LIKE` conditions connected with `OR`. This example demonstrates the flexibility of query building in sqala:
 
 ```scala
 val list = List("a", "b", "c")
@@ -54,7 +54,7 @@ val query =
 
 ## Encapsulating Shared Operations
 
-Since every operation in sqala actually produces an object, we can easily encapsulate it in a method. Note, however, that such an encapsulation method needs `(using QueryContext[L])`:
+Since every operation in sqala produces an object, it can easily be encapsulated in a method. Note that such an encapsulating method requires `(using QueryContext[L])`:
 
 ```scala
 // The L parameter is used internally by sqala and represents the level at which the query is located
@@ -70,7 +70,7 @@ val q2 =
 
 ## Improving Readability
 
-A subquery can be extracted into a variable inside the lambda of clauses such as `filter` to improve code readability:
+A subquery can be extracted into a variable inside the lambda of clauses such as `filter` to improve readability:
 
 ```scala
 val query =
@@ -79,4 +79,4 @@ val query =
         p.likeCount > avgQuery
 ```
 
-Note that a subquery must be defined in a deeper scope than where it is used. It cannot be defined outside first and then referenced, otherwise you get a compile error: `A subquery cannot be referenced from an outer or sibling scope; it must be defined in a deeper scope.`
+Note that a subquery must be defined in a scope nested deeper than where it is used; defining it in an outer scope and referencing it later results in a compile error: `A subquery cannot be referenced from an outer or sibling scope; it must be defined in a deeper scope.`

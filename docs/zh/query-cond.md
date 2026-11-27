@@ -1,10 +1,10 @@
 # 条件构建查询
 
-sqala提供了静态且类型安全的DSL用于构建查询，但也支持在一定程度上使用不同条件构建查询，以下是一些常用用例。
+sqala提供了静态且类型安全的查询构建DSL，但也支持在一定程度上依据不同条件构建查询，以下为几种常用示例。
 
 ## 动态排序
 
-sqala对于过滤操作提供了`filterIf`，但对于排序没有提供类似的操作，但我们可以这样达到动态排序目的：
+sqala为过滤操作提供了`filterIf`，排序虽无对应操作，但可以按以下方式实现动态排序：
 
 ```scala
 // 假设是用户传参
@@ -21,7 +21,7 @@ val query =
 
 ## 动态分组
 
-我们可以这样做动态查询：
+动态分组查询可以按以下方式构建：
 
 ```scala
 case class Data(dim1: Int, dim2: Int, dim3: Int, measure: Int)
@@ -43,7 +43,7 @@ val query = grouping.map((g, d) => (g, sum(d.measure)))
 
 ## 按列表生成OR条件
 
-我们可以这样构建，一组使用`OR`连接的`LIKE`条件，这个例子可以看到sqala构建查询的灵活性：
+我们可以构建一组由`OR`连接的`LIKE`条件，该示例体现了sqala构建查询的灵活性：
 
 ```scala
 val list = List("a", "b", "c")
@@ -54,7 +54,7 @@ val query =
 
 ## 封装共用操作
 
-由于sqala的各种操作实际上都是产生一个对象，因此我们可以很容易地将其封装在方法内，但请注意，这样的封装方法需要`(using QueryContext[L])`：
+sqala的各类操作实际上都会生成一个对象，因此很容易将其封装在方法中。请注意，此类封装方法需要`(using QueryContext[L])`：
 
 ```scala
 // L参数是sqala内部处理使用的，表示查询所在层级
@@ -70,7 +70,7 @@ val q2 =
 
 ## 提升可读性
 
-子查询可以在`filter`等子句的Lambda内部提取为变量，以提高代码可读性：
+子查询可以在`filter`等子句的Lambda内部提取为变量，以提升代码可读性：
 
 ```scala
 val query =
@@ -79,4 +79,4 @@ val query =
         p.likeCount > avgQuery
 ```
 
-注意子查询必须定义在使用它的更深层作用域中，不能先定义在外部再引用，否则会返回编译错误：`A subquery cannot be referenced from an outer or sibling scope; it must be defined in a deeper scope.`
+注意，子查询必须定义在其使用处所在的更深层作用域中，不能先定义于外部作用域再引用，否则会产生编译错误：`A subquery cannot be referenced from an outer or sibling scope; it must be defined in a deeper scope.`
