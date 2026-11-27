@@ -69,7 +69,7 @@ With sqala, you can:
             .where(column("a") === value(1))
     ```
 
-6. **SQL parser**: The `dynamic` module includes a hand-written recursive descent SQL parser with no third-party parser dependency. It can parse SQL snippets into expressions through `unsafeExpr`, making it easy to migrate existing SQL or handle dynamic query snippets (note: it only validates syntax, not semantics, and untrusted input must not be concatenated).
+6. **SQL parser**: The `dynamic` module includes a hand-written recursive descent SQL parser with no third-party parser dependency.
 
 7. **Strong batch decoding performance**: It uses Scala 3's `inline` capability to generate decoding code at compile time. For 10,000-row batch queries, decoding throughput is close to hand-written JDBC (about 94%) and is typically higher than reflection/proxy-based frameworks such as MyBatis, Hibernate, and jOOQ.
 
