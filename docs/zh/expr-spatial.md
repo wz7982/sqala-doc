@@ -10,7 +10,9 @@
 
 ## 空间函数
 
-sqala支持ISO/IEC 13249中定义的部分标准空间操作，支持MySQL和PostgreSQL的PostGIS插件。
+sqala支持ISO/IEC 13249中定义的部分标准空间操作，兼容MySQL与PostgreSQL的PostGIS插件。
+
+除`stGeomFromText`要求第一个参数为字符串、第二个参数为数值外，其余函数的操作数均须为几何类型表达式，传入其它类型会产生编译错误。
 
 |     函数                |      对应的SQL函数             |
 |:-----------------------:|:-----------------------------:|
@@ -34,3 +36,15 @@ sqala支持ISO/IEC 13249中定义的部分标准空间操作，支持MySQL和Pos
 |`stUnion(a, b)`          |`ST_Union(a, b)`               |
 |`stDifference(a, b)`     |`ST_Difference(a, b)`          |
 |`stSymDifference(a, b)`  |`ST_SymDifference(a, b)`       |
+
+## 几何值类型
+
+`sqala.metadata`提供了几何值类型：`Geometry`、`Point`、`LineString`、`Polygon`、`MultiPoint`、`MultiLineString`、`MultiPolygon`、`GeometryCollection`。它们的结构一致：`value`为WKT字符串，`srid`为空间参考系统标识，例如：
+
+```scala
+import sqala.metadata.Point
+
+val p = Point("POINT(1 2)", 4326)
+```
+
+实体字段可直接声明为这些类型以参与空间查询；查询结果中的几何列也会解码为对应的值类型。

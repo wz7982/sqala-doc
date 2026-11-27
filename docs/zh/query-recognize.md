@@ -8,11 +8,11 @@
 > ```
 
 
-`MATCH_RECOGNIZE`是SQL 2016标准中推出的强大数据分析功能，用于复杂事件处理。它可以匹配一个连续事件，并计算结果，但目前主流关系型数据库中只有Oracle支持此功能，而PostgreSQL数据库将会在后续版本推出此功能。
+`MATCH_RECOGNIZE`是SQL 2016标准引入的强大数据分析功能，用于复杂事件处理。它可以匹配连续的事件序列并计算结果。目前主流关系型数据库中仅Oracle支持此功能，PostgreSQL计划在后续版本中推出。
 
-sqala选择先基于SQL标准做功能实现，待您的数据库支持此功能后便可以无缝接入，而无需等待查询库跟进。
+sqala选择先基于SQL标准实现该功能，待您的数据库支持后即可无缝接入，无需等待查询库跟进。
 
-我们假设有这样一个需求：“查询股票连续下跌之后连续上涨的V型曲线数据”，首先创建这样一个实体类：
+假设有如下需求：“查询股票连续下跌之后连续上涨的V型曲线数据”。首先创建对应的实体类：
 
 ```scala
 case class StockPrice(
@@ -22,7 +22,7 @@ case class StockPrice(
 )
 ```
 
-数据表的`matchRecognize`方法用于创建模式识别：
+数据表的`matchRecognize`方法用于创建行模式识别查询：
 
 ```scala
 val query =
@@ -73,7 +73,7 @@ val query =
         )
 ```
 
-`define`、`pattern`、`measures`中的`d.xxx`只能使用`predefine`中声明的名字，拼写错误会直接编译错误；`define`返回的命名元组也必须和`predefine`的名字一致。
+`define`、`pattern`、`measures`中的`d.xxx`只能使用`predefine`中声明的名字，拼写错误会直接导致编译失败；`define`返回的命名元组也必须与`predefine`中的名字一致。
 
 生成的SQL为：
 
@@ -110,7 +110,7 @@ FROM
 
 ## 语义检查
 
-`matchRecognize` 的各个子句也有编译期语义检查：
+`matchRecognize`的各子句同样提供编译期语义检查：
 
 ```scala
 val query =
@@ -125,4 +125,4 @@ val q2 =
     )
 ```
 
-`define`中只能使用模式变量和作用于它们的聚合函数，否则会报 `Only pattern variables and aggregate functions over them can be used in matchRecognize define.`；`measures`中的表达式同理，错误文案为 `Measures expressions accept pattern variables and aggregate functions over them.`。
+`define`中只能使用模式变量及作用于其上的聚合函数，否则将报错`Only pattern variables and aggregate functions over them can be used in matchRecognize define.`；`measures`中的表达式同理，错误文案为`Measures expressions accept pattern variables and aggregate functions over them.`。

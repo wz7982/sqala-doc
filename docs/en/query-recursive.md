@@ -1,12 +1,12 @@
 # Recursive Queries
 
-The comment table in the metadata section actually stores tree-shaped data, with the `id` field associated with the `parentId` field. If we need to query all comments along with the comments they reference, a traditional ORM would either load all data into memory or issue queries in a loop, both of which increase IO overhead. sqala instead supports a type-safe and very convenient recursive query syntax.
+The comment table in the metadata section actually stores tree-shaped data, linked through the `id` and `parentId` fields. To query all comments together with the comments they reference, a traditional ORM would either load all the data into memory or issue queries in a loop, both of which increase IO overhead. sqala, on the other hand, provides a type-safe and highly convenient recursive query syntax.
 
 ## Building Recursive Queries
 
-Following the example of the Oracle database, sqala uses the `connectBy` method to create recursive queries, but converts them into the standard SQL `CTE` feature.
+Following the example of the Oracle database, sqala uses the `connectBy` method to create recursive queries, then converts them into standard SQL `CTE`s.
 
-The `connectBy` and `startWith` methods declare the recursive association condition and the initial condition:
+The `connectBy` and `startWith` methods declare the recursive join condition and the initial condition, respectively:
 
 ```scala
 val postId = 1
@@ -19,9 +19,9 @@ val query =
         .map((c, level) => (id = c.id, parentId = c.parentId, content = c.content, level = level))
 ```
 
-The first parameter of the function passed to `connectBy` is the table reference of the current level, and the second parameter is the table reference of the recursive level.
+The first parameter of the function passed to `connectBy` is the table reference for the current level; the second parameter is the table reference for the recursive level.
 
-The lambda of `map` takes one more parameter than an ordinary query: `level`, which represents the current recursion level and starts counting from 1. `level` does not need to be computed manually; it increments automatically with the CTE.
+The lambda of `map` takes one extra parameter compared with an ordinary query: `level`, which represents the current recursion level and starts counting from 1. You do not need to compute `level` manually; it increments automatically with the CTE.
 
 The generated SQL is:
 
@@ -72,7 +72,7 @@ FROM
     "cte1" AS "t3"
 ```
 
-The `maxDepth` method declares the maximum level of a recursive query; recursion stops beyond that level:
+The `maxDepth` method sets the maximum level of a recursive query; recursion stops once that level is exceeded:
 
 ```scala
 val postId = 1
@@ -86,7 +86,7 @@ val query =
         .map((c, level) => (id = c.id, parentId = c.parentId, content = c.content, level = level))
 ```
 
-If you need to customize the fields carried in the recursive CTE (for example, to pass a root node's field through the recursion), you can use `preMap`. Its first parameter is the projection of the initial row, and its second parameter is the projection of the recursive row. The lambda parameters of the recursive projection are, in order, the current row, the previous-level row, and the current level:
+To customize the fields carried by the recursive CTE (for example, to pass a root node's field through the recursion), use `preMap`. Its first parameter is the projection of the initial row, and its second is the projection of the recursive row; the lambda parameters of the recursive projection are, in order, the current row, the previous-level row, and the current level:
 
 ```scala
 val postId = 1
@@ -106,7 +106,7 @@ val query =
 
 ## Sorting and Pagination
 
-Recursive queries also support `sortBy`, whose lambda takes one more parameter than an ordinary query: `level`. The first parameter is a row of the recursive CTE and the second is the current level, so you can sort by level and other fields at the same time:
+Recursive queries also support `sortBy`, whose lambda takes one extra parameter compared with an ordinary query: `level`. The first parameter is a row of the recursive CTE and the second is the current level, so you can sort by level and other fields simultaneously:
 
 ```scala
 val postId = 1
@@ -134,7 +134,7 @@ ORDER BY
     "t3"."c1" DESC
 ```
 
-`drop` and `take` paginate the final result of a recursive query and can be used whether or not `sortBy` was called first. They act on the final query after the CTE and do not affect the recursive process:
+`drop` and `take` paginate the final result of a recursive query, with or without a preceding `sortBy`. They apply to the final query after the CTE and do not affect the recursion itself:
 
 ```scala
 val postId = 1
@@ -167,7 +167,7 @@ LIMIT 5 OFFSET 10
 
 ## Compatibility
 
-The measured support for recursive CTEs in the latest versions of mainstream databases is as follows:
+Tested support for recursive CTEs in the latest versions of mainstream databases is as follows:
 
 | Database | CTE Support |
 |------------|----------|

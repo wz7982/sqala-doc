@@ -1,20 +1,20 @@
 # 元数据配置
 
-在使用sqala创建查询之前，我们创建与数据表对应的实体类并添加sqala需要的元数据信息。
+在使用 sqala 创建查询之前，需要先创建与数据表对应的实体类，并添加 sqala 所需的元数据信息。
 
 ## 引入依赖
 
-在使用sqala之前，确保引入sqala的依赖：
+在使用 sqala 之前，请确保已引入其依赖：
 
 ```scala
-libraryDependencies += "com.wz7982" % "sqala-jdbc_3" % "latest.integration"
+libraryDependencies += "cn.sqala" % "sqala-jdbc_3" % "latest.integration"
 ```
 
-元数据相关的设置通常需要`import sqala.metadata.*`。
+元数据相关的设置通常需要 `import sqala.metadata.*`。
 
 ## 基础配置
 
-在以后的文档中，我们通常以用户、频道、帖子、评论四级的数据模型为例介绍sqala，建表语句和示例数据如下：
+后续文档中，我们通常以用户、频道、帖子、评论四级数据模型为例介绍 sqala。建表语句和示例数据如下：
 
 ::: code-group
 ```sql [MySQL]
@@ -271,7 +271,7 @@ INSERT INTO "comment" ("post_id", "author_id", "content", "create_time", "parent
 
 :::
 
-我们在Scala里创建对应的`case class`实体类：
+我们在 Scala 中创建对应的 `case class` 实体类：
 
 ```scala
 import java.time.LocalDateTime
@@ -309,11 +309,11 @@ case class Comment(
 )
 ```
 
-`case class`的字段名和类型与数据库表结构对应，可空字段使用`Option`。
+`case class` 的字段名和类型与数据库表结构对应，可空字段使用 `Option`。
 
-在默认情况下，sqala将**驼峰风格字段名映射到蛇形风格**的数据库列名。
+默认情况下，sqala 将**驼峰风格字段名映射到蛇形风格**的数据库列名。
 
-sqala无需像其他查询库那样额外定义一个表结构对象，在创建好`case class`后，我们就可以使用实体类的**伴生对象**来构建查询了：
+sqala 无需像其他查询库那样额外定义表结构对象。创建好 `case class` 后，即可使用实体类的**伴生对象**构建查询：
 
 ```scala
 import sqala.static.dsl.*
@@ -324,31 +324,31 @@ val query =
 
 ## 支持的字段类型
 
-sqala内置支持的基础字段类型为：
+sqala 内置支持的基础字段类型为：
 
-|字段类型                |字段类型               |字段类型               |
-|:---------------------:|:---------------------:|:---------------------:|
-|scala.Int              |scala.Long             |scala.Float            |
+|类型                |                    |                    |
+|:------------------:|:------------------:|:------------------:|
+|scala.Int           |scala.Long          |scala.Float         |
 |scala.Double           |scala.String           |scala.Boolean          |
 |scala.math.BigDecimal  |java.time.LocalDate    |java.time.LocalTime    |
 |java.time.LocalDateTime|java.time.OffsetTime   |java.time.OffsetDateTime|
 |scala.Option[T]        |scala.Array[T]         |                        |
 
-其中`Option`和`Array`均支持跟以上类型组合使用，比如`Option[Array[Option[Int]]]`。
+其中 `Option` 和 `Array` 均可与上述类型组合使用，例如 `Option[Array[Option[Int]]]`。
 
-此外，为了支持SQL中的`JSON`数据和空间数据，在`sqala.metadata`包中定义了下面的数据类型。
+此外，为支持 SQL 中的 `JSON` 数据和空间数据，`sqala.metadata` 包中还定义了以下数据类型。
 
-但除了`Json`类型之外，由于JDBC没有此类数据类型的标准，各数据库驱动实现差异较大，所以sqala没有内置反序列化实现，需要在构建查询时配合对应类型的SQL函数等操作转为基础数据类型：
+但除 `Json` 类型外，由于 JDBC 没有此类数据类型的标准，各数据库驱动的实现差异较大，sqala 未提供内置的反序列化实现，需要在构建查询时配合相应类型的 SQL 函数等操作将其转换为基础数据类型：
 
-|字段类型                |字段类型               |字段类型                 |
-|:---------------------:|:---------------------:|:----------------------:|
-|Point                  |LineString             |Polygon                 |
+|类型                |                    |                      |
+|:------------------:|:------------------:|:--------------------:|
+|Point               |LineString          |Polygon               |
 |MultiPoint             |MultiLineString        |MultiPolygon            |
 |GeometryCollection     |Geometry               |Json                    |
 
 ## 自定义字段类型
 
-在上面的例子中，我们使用`Int`来接收帖子和评论表的`state`字段，但是使用`Int`管理这样的枚举字段，既不安全，魔法数值也没有实际意义，因此我们更希望使用Scala3的`enum`来管理这样的字段：
+在上述示例中，我们使用 `Int` 接收帖子表和评论表的 `state` 字段。但用 `Int` 管理此类枚举字段既不安全，魔法数值也没有实际意义，因此我们更希望使用 Scala 3 的 `enum` 管理此类字段：
 
 ```scala
 enum DataState:
@@ -356,7 +356,7 @@ enum DataState:
     case Deleted
 ```
 
-然后我们将实体类改为：
+随后将实体类改为：
 
 ```scala
 case class Post(
@@ -380,11 +380,11 @@ val query =
     from(Post).filter(p => p.state === DataState.Active)
 ```
 
-sqala会返回一个编译错误。原因是sqala不知道如何处理这样的字段，为其生成查询，或从查询结果中反序列化。
+sqala 会报出编译错误。原因是 sqala 不知道如何处理此类字段——不知如何为其生成查询，或从查询结果中反序列化。
 
-因此我们需要为自定义类型提供`CustomField`实现。为了避免在构建查询时频繁导入，建议将实现放入自定义类型的伴生对象中。
+因此，我们需要为自定义类型提供 `CustomField` 实现。为避免构建查询时频繁导入，建议将实现放入自定义类型的伴生对象中。
 
-对于无参数的Scala 3枚举，sqala可以根据注解自动派生实现。在每个case上声明数据库值，再写一行`given`即可。
+对于无参数的 Scala 3 枚举，sqala 可以根据注解自动派生实现：在每个 case 上声明数据库值，再写一行 `given` 即可。
 
 ### 映射为整数
 
@@ -399,7 +399,7 @@ object DataState:
     given CustomField[DataState, Int] = CustomField.derived
 ```
 
-`@enumValue`是必填的。sqala**不会**回退到`ordinal`，因为调整case顺序会静默改变已存储的数据。
+`@enumValue` 是必填的。sqala **不会**回退到 `ordinal`，因为调整 case 顺序会静默改变已存储的数据。
 
 ### 映射为字符串
 
@@ -414,7 +414,7 @@ object Status:
     given CustomField[Status, String] = CustomField.derived
 ```
 
-`@enumName`可以省略，省略时使用case名。因此重命名case会改变数据库值，需要稳定值时请显式声明`@enumName`。
+`@enumName` 可以省略，省略时使用 case 名。因此重命名 case 会改变数据库值，需要稳定值时请显式声明 `@enumName`。
 
 ### 使用
 
@@ -428,28 +428,28 @@ val query =
     from(Post).filter(p => p.state === DataState.Active)
 ```
 
-`Option[DataState]`、查询参数、插入、更新和结果解码都可以直接使用，不需要额外声明。
+`Option[DataState]`、查询参数、插入、更新和结果解码均可直接使用，无需额外声明。
 
 ### 编译期校验
 
 宏会在编译期拒绝：
 
-- 带类型参数或case参数的枚举
-- `Int`映射下缺少`@enumValue`的case
-- 注解与存储类型不匹配，例如`Int`映射使用`@enumName`
+- 带类型参数或 case 参数的枚举
+- `Int` 映射下缺少 `@enumValue` 的 case
+- 注解与存储类型不匹配，例如 `Int` 映射使用 `@enumName`
 - 重复的数据库值
 - 非字面量注解参数
 
 ### 运行时校验
 
-解码到未声明的值时抛出`EnumDecodeException`，其中包含枚举全名和实际值。这通常意味着数据库里出现了枚举未覆盖的值，或者列缺少check约束。
+解码到未声明的值时会抛出 `EnumDecodeException`，其中包含枚举全名和实际值。这通常意味着数据库中出现了枚举未覆盖的值，或者列缺少 check 约束。
 
 ### 手动实现
 
-以下情况需要手写`CustomField`：
+以下情况需要手动实现 `CustomField`：
 
-- 枚举带参数，例如`enum Color(val code: Int)`
-- 类型是Java枚举
+- 枚举带参数，例如 `enum Color(val code: Int)`
+- 类型是 Java 枚举
 - 数据库值需要从其他字段或外部逻辑推导
 
 ```scala
@@ -464,11 +464,11 @@ object DataState:
             case Deleted => 0
 ```
 
-`CustomField`的两个类型参数分别为要实现的类型，和要映射到的基础类型；`fromValue`方法处理如何从基础类型创建自定义类型的值，`toValue`方法含义反之。
+`CustomField` 的两个类型参数分别为要实现的类型和要映射到的基础类型；`fromValue` 方法定义如何从基础类型创建自定义类型的值，`toValue` 方法则相反。
 
 ## 设置主键
 
-sqala支持`primaryKey`和`autoInc`注解标记主键字段和自增字段，由于上文中我们创建的示例表主键都是自增主键，因此我们把实体类定义改为：
+sqala 支持使用 `primaryKey` 和 `autoInc` 注解标记主键字段和自增字段。由于上文创建的示例表主键均为自增主键，我们将实体类定义改为：
 
 ```scala
 import sqala.metadata.*
@@ -508,11 +508,11 @@ case class Comment(
 )
 ```
 
-sqala支持一个实体类中有多个`primaryKey`字段，但只支持一个`autoInc`字段。
+sqala 支持一个实体类中有多个 `primaryKey` 字段，但只支持一个 `autoInc` 字段。
 
 ## 自定义名称
 
-如果实体类和数据库表不符合驼峰风格字段名映射到蛇形风格规则的话，可以使用`table`和`column`注解手动管理名称：
+如果实体类和数据库表不符合驼峰风格字段名映射到蛇形风格的规则，可以使用 `table` 和 `column` 注解手动指定名称：
 
 ```scala
 import sqala.metadata.*
@@ -523,4 +523,4 @@ case class SomeTable(
 )
 ```
 
-在完成元数据配置后，就可以开始使用sqala构建查询和增删改语句了。
+完成元数据配置后，就可以开始使用 sqala 构建查询和增删改语句了。

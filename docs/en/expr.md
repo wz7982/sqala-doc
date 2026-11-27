@@ -1,10 +1,10 @@
 # Expressions
 
-sqala includes an SQL expression type `Expr`, which wraps an SQL AST and gives sqala powerful abstraction capabilities. Below we introduce some commonly used sqala expressions.
+sqala includes a SQL expression type `Expr`, which wraps a SQL AST and gives sqala powerful abstraction capabilities. Below, we introduce some commonly used sqala expressions.
 
 ## Fields
 
-Field expressions are one of the most basic expressions. When building a query, sqala automatically generates the corresponding field expressions for the companion object of an entity class. For example, if a field in the entity class is of type `Int`, sqala automatically generates the corresponding `Expr[Int]` version that stores the table name and column name information from the database:
+Field expressions are among the most basic expressions. When building a query, sqala automatically generates the corresponding field expressions on the companion object of an entity class. For example, if a field in the entity class is of type `Int`, sqala generates the corresponding `Expr[Int]` version, which stores the database table name and column name:
 
 ```scala
 // u.id is a field-type expression
@@ -14,14 +14,14 @@ val query =
 
 ## Values
 
-Values of the data types built into sqala, such as `Int` and `String`, or values of types that implement `CustomField`, can all be used as sqala value expressions. They can appear naturally in queries without being explicitly converted to `Expr`. This is achieved using the powerful contextual abstraction capabilities of Scala 3:
+Values of sqala's built-in data types, such as `Int` and `String`, as well as values of types that implement `CustomField`, can all be used as sqala value expressions. They can appear naturally in queries without being explicitly converted to `Expr`, thanks to the powerful contextual abstraction capabilities of Scala 3:
 
 ```scala
 val query =
     from(User).map(u => (u.id, 1, "a"))
 ```
 
-sqala manages nullable values with `Option`. Since `None` has no actual type, use `Option.empty[T]` to construct an empty value in a plain value position:
+sqala manages nullable values with `Option`. Since `None` has no concrete type, use `Option.empty[T]` to construct an empty value in a plain value position:
 
 ```scala
 val query =
@@ -30,7 +30,7 @@ val query =
 
 ## Conversion Expressions
 
-In almost all features built into sqala, you can seamlessly compute with `Expr`, subqueries, values, and other types mixed together (this capability is handled by the `trait AsExpr`). However, in some custom features such as custom functions and custom operators, for convenience, sqala lets you explicitly convert values and subqueries to the `Expr` type.
+In almost all of sqala's built-in features, you can seamlessly mix `Expr`, subqueries, values, and other types in computations (this capability is provided by the `AsExpr` trait). However, for some custom features such as custom functions and custom operators, sqala also lets you explicitly convert values and subqueries to the `Expr` type for convenience.
 
 `asExpr` is the conversion method. The example above can also be written as:
 
@@ -66,7 +66,7 @@ GROUP BY
     "t1"."x" + 1
 ```
 
-If a normal value is used (`t.x + offset`), PostgreSQL receives two different parameter expressions, `x + $1` and `x + $2`, and considers the expression in `SELECT` to be missing from `GROUP BY`; `asInlinedExpr` makes both sides the same literal `x + 1`.
+If a normal value is used (`t.x + offset`), PostgreSQL receives two different parameter expressions, `x + $1` and `x + $2`, and therefore treats the expression in `SELECT` as not appearing in `GROUP BY`; `asInlinedExpr` turns both sides into the same literal `x + 1`.
 
 The same query can also be rewritten as a subquery to avoid repeating the expression in `GROUP BY`:
 
@@ -93,28 +93,21 @@ GROUP BY
     "t2"."c1"
 ```
 
+Note that the two examples use different display conventions: the first shows the output of plain-text generation via `.sql(dialect)` (values inlined as literals), while the second shows what JDBC actually sends at execution time (ordinary values passed as `?` placeholders). See the "Two Levels of Dialects" section of [Database Interaction](./database.md) for the difference between the two paths.
+
 Values inlined by `asInlinedExpr` are safely escaped by sqala according to the configured dialect and escaping settings. For ordinary queries, prefer `asExpr` or plain values so that sqala can bind them through `?` parameters.
 
 See [Database Interaction](./database.md) for more about JDBC parameters and inlined expressions.
 
 ## Native Expressions
 
-Some database dialects may contain special syntax that the sqala expression system cannot generalize, such as MySQL's full-text search syntax. In such cases, you can use the `rawExpr` string interpolator to create a native expression, and then use the `as` method to declare the expression type:
-
-```scala
-val word = "abc"
-val query =
-    from(Post)
-        .filter(p => rawExpr"MATCH(${p.title}) AGAINST(${word})".as[Boolean])
-```
-
-The expression interpolator supports values, [expressions](./expr.md), and tuples composed of them. You do not need to manually concatenate quotes or other symbols in the string; sqala handles them automatically and performs safe escaping.
+For special SQL syntax that the sqala expression system cannot express (such as MySQL full-text search), you can write raw SQL fragments with the `rawExpr` interpolator. See [Custom Expressions](./expr-custom.md) for details.
 
 ## Relational Operations
 
 ### Symbolic Operators
 
-Besides fields and values, the most common expressions are relational operation expressions, which are often used in methods such as `filter`, `on`, and `having` of query expressions.
+Besides fields and values, the most common expressions are relational operation expressions, which are often used in query methods such as `filter`, `on`, and `having`.
 
 sqala supports the following symbolic relational operators:
 
@@ -135,14 +128,14 @@ val query =
     from(User).filter(u => u.name === "Dave")
 ```
 
-Thanks to sqala's powerful type compatibility, the right side of an operator can be not only a value but also another expression or a subquery. This case is often used in join conditions:
+Thanks to sqala's powerful type compatibility, the right side of an operator can be not only a value but also another expression or a subquery. This is common in join conditions:
 
 ```scala
 val query =
     from(User).filter(u => u.id === u.id)
 ```
 
-Operators such as `===` do not require both sides to have the same type; they only need to be compatible as allowed by the SQL standard. For example, we know that databases allow comparisons between numeric types across types, and also allow direct comparisons between nullable and non-nullable types. For instance, the following SQL is valid:
+Operators such as `===` do not require both sides to have the same type; they only need to be compatible as allowed by the SQL standard. For example, databases allow comparisons between different numeric types, and they also allow direct comparisons between nullable and non-nullable types. The following SQL is valid:
 
 ```sql
 SELECT
@@ -157,7 +150,7 @@ val query =
     from(User).filter(u => u.id === Option(1L))
 ```
 
-We know that databases allow comparisons between time types and strings, so sqala allows expressions of time and string types to be compared directly:
+Databases allow comparisons between time types and strings, so sqala lets expressions of time and string types be compared directly:
 
 ```scala
 val query =
@@ -171,7 +164,7 @@ Here is an extreme example that demonstrates sqala's type compatibility. Suppose
 case class Entity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int]]]])
 ```
 
-Both fields of the entity class are `Int` arrays nested two levels deep, and they differ only in their nullability strategy. sqala allows two array fields like these with the **same number of levels** and compatible types to be compared:
+Both fields of the entity class are `Int` arrays nested two levels deep, differing only in their nullability strategy. sqala allows two array fields like these to be compared as long as they have the **same number of levels** and compatible types:
 
 ```scala
 val query =
@@ -216,7 +209,7 @@ val query =
     from(User).filter(u => "Dave".asExpr === u.name)
 ```
 
-In rare cases, you need to let a comparison result (`Boolean`) participate in a comparison again, and then you must pay special attention to operator precedence. In Scala, `!=` has lower precedence than `<` and `>`, so `a != b < c` is parsed as `a != (b < c)`; but `<>` used by sqala starts with `<` and therefore has the same precedence as `<` and `>`, so `a <> b < c` is parsed as `(a <> b) < c`. This difference can change the semantics when a comparison result participates in a comparison again, for example `true <> false < true` (here `true` and `false` can be understood as expressions that return `Boolean`). In such cases, add parentheses manually to make the grouping explicit, for example `true <> (false < true)`.
+In rare cases, a comparison result (`Boolean`) must itself participate in another comparison, and then you must pay special attention to operator precedence. In Scala, `!=` has lower precedence than `<` and `>`, so `a != b < c` is parsed as `a != (b < c)`; but `<>` used by sqala starts with `<` and therefore has the same precedence as `<` and `>`, so `a <> b < c` is parsed as `(a <> b) < c`. This difference can change the semantics when a comparison result is compared again, for example `true <> false < true` (here `true` and `false` can be understood as expressions returning `Boolean`). In such cases, add parentheses manually to make the grouping explicit, for example `true <> (false < true)`.
 
 ### IS NULL
 
@@ -236,23 +229,23 @@ val query =
 
 ### IN
 
-The `in` method corresponds to SQL's `IN` operator. sqala supports two `in` modes. The first is to pass a collection of values such as `Seq` or `List`, which is the most common usage:
+The `in` method corresponds to SQL's `IN` operator. sqala supports two forms of `in`. The first is to pass a collection of values such as `Seq` or `List`, which is the most common usage:
 
 ```scala
 val query =
     from(User).filter(u => u.id.in(List(1, 2, 3)))
 ```
 
-**Since `IN ()` in SQL is usually a syntax error, sqala enables an optimization for empty collections that rewrites this part of the expression to `1 = 0`**.
+**Since `IN ()` in SQL is usually a syntax error, sqala enables an optimization for empty collections that rewrites the expression to `1 = 0`**.
 
-The `in` method can also accept a tuple of expressions, and this tuple is compatible with `Expr`, values, and subqueries at the same time:
+The `in` method can also accept a tuple of expressions, whose elements are each compatible with `Expr`, values, and subqueries:
 
 ```scala
 val query =
     from(User).filter(u => u.id.in(1, u.id, from(User).map(_.id).take(1)))
 ```
 
-Moreover, sqala's operators usually have extremely strong type compatibility. For example, the following is also valid:
+Moreover, sqala's operators usually have extremely strong type compatibility; for example, the following is also valid:
 
 ```scala
 val list: List[Option[Long]] = List(Some(1L), None, Some(2L))
@@ -261,7 +254,7 @@ val query =
     from(User).filter(u => u.id.in(list))
 ```
 
-But when the types do not match, a compile error is returned:
+But when the types do not match, this results in a compile error:
 
 ```scala
 val list: List[String] = List("a", "b", "c")
@@ -280,7 +273,7 @@ val query =
     from(User).filter(u => u.name.like("%Dave%"))
 ```
 
-`contains` is a simplified version of `like` that does not require you to write `%%` manually, but its right side is only compatible with `String`:
+`contains` is a simplified version of `like` that does not require you to write the `%` wildcards manually, but its right side accepts only `String`:
 
 ```scala
 val query =
@@ -305,7 +298,7 @@ val query =
 
 ## Logical Operations
 
-sqala supports the binary logical operations `&&` (corresponding to `AND`) and `||` (corresponding to `OR`):
+sqala supports the binary logical operators `&&` (corresponding to `AND`) and `||` (corresponding to `OR`):
 
 ```scala
 val query =
@@ -326,7 +319,7 @@ val query =
     from(User).filter(u => !(u.name === "Dave"))
 ```
 
-When the right side of `!` is an operator such as `like`, `in`, or `between`, what is actually generated is `NOT LIKE`, `NOT IN`, `NOT BETWEEN`, and so on.
+When `!` is applied to an operator such as `like`, `in`, or `between`, sqala actually generates `NOT LIKE`, `NOT IN`, `NOT BETWEEN`, and so on.
 
 ## Multi-column Comparison
 
@@ -354,7 +347,7 @@ val q4 =
         (u.id, u.name) === (Option(1L), from(User).map(uu => uu.name).take(1))
 ```
 
-In the example above, the types of `u.id` and `u.name` are `Expr[...]`, the type of `Option(1L)` is `Option[Long]`, and the type of the subquery is `Query[...]`. sqala guarantees compatibility for these types through the unified `trait AsExpr`, whereas "method overloading" in traditional programming languages would cause a combinatorial explosion in this scenario and therefore could not provide such an intuitive calling form.
+In the example above, the types of `u.id` and `u.name` are `Expr[...]`, the type of `Option(1L)` is `Option[Long]`, and the type of the subquery is `Query[...]`. sqala guarantees compatibility for these types through the unified `AsExpr` trait, whereas "method overloading" in traditional programming languages would run into a combinatorial explosion in this scenario and therefore could not support such an intuitive calling form.
 
 ## Numerical Operations
 
@@ -366,6 +359,15 @@ sqala supports the following numerical operators:
 | `-`       | `-`          |
 | `*`       | `*`          |
 | `/`       | `/`          |
+| unary `+` | `+expr`      |
+| unary `-` | `-expr`      |
+
+`+` and `-` also work in unary form:
+
+```scala
+val query =
+    from(User).map(u => -u.id)
+```
 
 ```scala
 val query =
@@ -376,7 +378,7 @@ sqala's numerical operations also have extremely strong type compatibility. For 
 
 sqala also supports the `%` operator, but it actually generates the SQL standard `MOD` function.
 
-Note in particular that, because databases handle division differently, sqala converts both operands to `DECIMAL(38, 10)` when generating SQL for compatibility, so that the division result is an exact decimal, that is, it generates `CAST(x AS DECIMAL(38, 10)) / CAST(y AS DECIMAL(38, 10))`. Therefore, if a field itself is of type `Double` or `Float`, this conversion may cause precision issues. It is recommended to avoid using division directly on such fields and to prefer exact numeric types such as `DECIMAL` (`BigDecimal` in Scala).
+Note in particular that, because databases handle division differently, sqala converts both operands of `/` to `DECIMAL(38, 10)` when generating SQL for compatibility, so that the division result is an exact decimal, i.e. `CAST(x AS DECIMAL(38, 10)) / CAST(y AS DECIMAL(38, 10))`. Therefore, if a field itself is of type `Double` or `Float`, this conversion may introduce precision issues; it is best to avoid using division directly on such fields and to prefer exact numeric types such as `DECIMAL` (`BigDecimal` in Scala).
 
 ## String Concatenation
 
@@ -404,7 +406,7 @@ The generated SQL expression is:
 CASE WHEN "t1"."id" = 1 THEN 1 WHEN "t1"."id" = 2 THEN "t1"."id" ELSE CAST(NULL AS INTEGER) END
 ```
 
-sqala has very strong return type inference. In the relational operations section we defined an extreme example:
+sqala has very strong return-type inference. In the relational operations section, we defined an extreme example:
 
 ```scala
 case class Entity(x: Array[Option[Array[Int]]], y: Option[Array[Array[Option[Int]]]])
@@ -418,7 +420,7 @@ val query =
         .map(e => caseWhen(e.x === e.y)(e.x).otherwise(e.y))
 ```
 
-After the database query, the return type is automatically inferred as:
+After the query, the return type is automatically inferred as:
 
 ```scala
 // Result type: List[Option[Array[Option[Array[Option[Int]]]]]]
@@ -446,7 +448,7 @@ val query =
     from(User).map(u => u.id.getOrElse(1))
 ```
 
-`nullIf` corresponds to SQL's `NULLIF` expression, which matches two values and returns `NULL` if they are the same:
+`nullIf` corresponds to SQL's `NULLIF` expression, which compares two values and returns `NULL` if they are equal:
 
 ```scala
 val query =
@@ -455,7 +457,7 @@ val query =
 
 ## Functions
 
-Because functions differ greatly across databases, sqala only has built-in the SQL functions defined in the ISO/IEC 9075 standard. Although these are standard functions, you should still consult the documentation of the database you actually use to see whether it supports them, and refer to the relevant database documentation for what these functions do. For anything not in this list of standard functions, you can use sqala's [custom expressions](./expr-custom.md) feature to create it yourself.
+Because functions differ greatly across databases, sqala only includes the SQL functions defined in the ISO/IEC 9075 standard. Although these are standard functions, you should still consult the documentation of the database you actually use to confirm that it supports them, and refer to that documentation for what each function does. For functions not in this standard list, you can use sqala's [custom expressions](./expr-custom.md) feature to create your own.
 
 Function usage example:
 
@@ -464,7 +466,7 @@ val query =
     from(User).map(u => substring(u.name, 1))
 ```
 
-The functions built into sqala are as follows (aggregate functions, window functions, time operation functions, JSON functions, and so on are not listed here):
+The functions built into sqala are as follows (aggregate functions, window functions, time operation functions, JSON functions, etc. are not listed here):
 
 |     Function           |      Corresponding SQL Function      |
 |:-----------------:|:-----------------------:|
@@ -472,10 +474,15 @@ The functions built into sqala are as follows (aggregate functions, window funct
 |`substring(a, b, c)`|`SUBSTRING(a FROM b FOR c)`|
 |`upper(a)`        |`UPPER(a)`                |
 |`lower(a)`        |`LOWER(a)`                |
+|`lpad(a, b)`      |`LPAD(a, b)`              |
 |`lpad(a, b, c)`   |`LPAD(a, b, c)`           |
+|`rpad(a, b)`      |`RPAD(a, b)`              |
 |`rpad(a, b, c)`   |`RPAD(a, b, c)`           |
+|`btrim(a)`        |`BTRIM(a)`                |
 |`btrim(a, b)`     |`BTRIM(a, b)`             |
+|`ltrim(a)`        |`LTRIM(a)`                |
 |`ltrim(a, b)`     |`LTRIM(a, b)`             |
+|`rtrim(a)`        |`RTRIM(a)`                |
 |`rtrim(a, b)`     |`RTRIM(a, b)`             |
 |`overlay(a, b, c)`|`OVERLAY(a PLACING b FROM c)`|
 |`overlay(a, b, c, d)`|`OVERLAY(a PLACING b FROM c FOR d)`|
@@ -509,6 +516,13 @@ The functions built into sqala are as follows (aggregate functions, window funct
 |`currentTimestamp()`|`CURRENT_TIMESTAMP`    |
 |`localTime()`     |`LOCALTIME`             |
 |`localTimestamp()`|`LOCALTIMESTAMP`        |
+
+For string expressions, sqala also provides Scala-idiomatic extension methods: `toUpperCase`, `toLowerCase`, `trim` (no argument, maps to `TRIM(a)`), and `length` (maps to `CHAR_LENGTH(a)`). They generate the same SQL as the standard functions `upper`/`lower`, etc., so you can use whichever style you prefer:
+
+```scala
+val query =
+    from(User).map(u => u.name.toUpperCase)
+```
 
 ## Type Conversion
 

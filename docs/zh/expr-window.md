@@ -1,10 +1,10 @@
 # 窗口函数
 
-窗口函数是SQL提供的高级分析功能，对[聚合函数](./expr-agg.md)或专用分析函数添加`OVER`子句，来创建窗口函数。
+窗口函数是SQL提供的高级分析功能，通过在[聚合函数](./expr-agg.md)或专用分析函数上添加`OVER`子句来创建。
 
-sqala提供了`over`方法，用于创建窗口，其参数为窗口的分组规则，排序规则和窗口函数框架。
+sqala提供`over`方法用于创建窗口，其参数为窗口的分区规则、排序规则和窗口框架。
 
-使用`partitionBy`方法创建窗口的分组规则，并配合`over`使用：
+使用`partitionBy`方法创建窗口的分区规则，并配合`over`使用：
 
 ```scala
 val query =
@@ -20,7 +20,7 @@ val query =
         .map(p => sum(p.likeCount).over(partitionBy(p.authorId).sortBy(p.id.desc)))
 ```
 
-`over`中也可以没有`partitionBy`：
+`over`中也可以省略`partitionBy`：
 
 ```scala
 val query =
@@ -28,7 +28,15 @@ val query =
         .map(p => sum(p.likeCount).over(sortBy(p.id.desc)))
 ```
 
-`over`中也支持窗口函数框架，`range`、`rows`、`groups`参数是单个边界信息，`rangeBetween`、`rowsBetween`、`groupsBetween`参数是两个边界信息：
+调用`over()`且不传入任何参数，则声明空窗口（既无分区也无排序），常用于`rowNumber()`等函数：
+
+```scala
+val query =
+    from(Post)
+        .map(p => (p.title, rowNumber().over()))
+```
+
+`over`也支持窗口框架：`range`、`rows`、`groups`的参数为单个边界，`rangeBetween`、`rowsBetween`、`groupsBetween`的参数为两个边界。其中`rows`可直接用于没有排序键的窗口；`range`和`groups`依赖排序键，只能在`sortBy`之后调用：
 
 ```scala
 val query =
@@ -54,9 +62,9 @@ val query =
             )
 ```
 
-边界支持`currentRow`、`unboundedPreceding`、`unboundedFollowing`、`n.preceding`、`n.following`。
+边界支持`currentRow`、`unboundedPreceding`、`unboundedFollowing`、`n.preceding`、`n.following`。其中`n.preceding`、`n.following`中的`n`必须是字面量常量，列引用不能作为边界。
 
-我们可以使用`excludeCurrentRow`、`excludeTies`、`excludeGroup`排除组间特定行：
+可以使用`excludeCurrentRow`、`excludeTies`、`excludeGroup`排除窗口框架内的特定行：
 
 ```scala
 val query =
@@ -70,7 +78,7 @@ val query =
             )
 ```
 
-sqala内置支持的窗口函数有：
+sqala内置支持的窗口函数如下：
 
 | 函数                                       | 对应的 SQL 函数                                       |
 |--------------------------------------------|------------------------------------------------------|
@@ -103,7 +111,7 @@ sqala内置支持的窗口函数有：
 
 ## 语义检查
 
-`over`只能用于聚合函数或窗口函数，否则会返回编译错误：
+`over`只能用于聚合函数或窗口函数，否则会产生编译错误：
 
 ```scala
 val query =
@@ -111,9 +119,9 @@ val query =
     from(Post).map(p => p.id.over())
 ```
 
-窗口函数不能嵌套，错误文案为 `Window function calls cannot be nested.`。
+窗口函数不能嵌套，错误信息为`Window function calls cannot be nested.`。
 
-窗口框架的起止边界必须按顺序排列，即`unboundedPreceding` < `n.preceding` < `currentRow` < `n.following` < `unboundedFollowing`，起始边界必须严格位于结束边界之前。`rows`、`range`、`groups`只接收起始边界，结束边界固定为`currentRow`，因此起始边界不能是`currentRow`或`unboundedFollowing`：
+窗口框架的起止边界必须有序排列，即`unboundedPreceding` < `n.preceding` < `currentRow` < `n.following` < `unboundedFollowing`，起始边界不得晚于结束边界（两者可以相等，如`rowsBetween(currentRow, currentRow)`即为合法用法）。`rows`、`range`、`groups`只接受起始边界，结束边界固定为`currentRow`，因此起始边界不能是`n.following`或`unboundedFollowing`：
 
 ```scala
 val q1 =
@@ -131,7 +139,7 @@ val q2 =
         )
 ```
 
-`rows`和`groups`的边界值必须是整数，`range`的边界类型则必须与窗口的排序键兼容（数值排序键对应数值边界，时间排序键对应`INTERVAL`边界），否则会返回编译错误：
+`rows`和`groups`的边界值必须是整数，`range`的边界类型则必须与窗口的排序键兼容（数值排序键对应数值边界，时间排序键对应`INTERVAL`边界），否则会产生编译错误：
 
 ```scala
 val q3 =

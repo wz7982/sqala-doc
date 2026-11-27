@@ -8,9 +8,9 @@
 > ```
 
 
-`JSON_TABLE` is a relatively new SQL standard used to flatten nested JSON data into a relational table that a relational database can process. sqala also supports JSON tables.
+`JSON_TABLE` is a relatively new SQL standard that flattens nested JSON data into relational tables a database can process. sqala supports JSON tables as well.
 
-The `jsonTable` method is used to create a JSON table. Its first parameter is the JSON data, the second parameter is the base JSON PATH, and the third parameter is the column definitions:
+The `jsonTable` method creates a JSON table: its first parameter is the JSON data, the second is the base JSON PATH, and the third is the column definitions:
 
 ```scala
 val query =
@@ -29,7 +29,7 @@ val query =
         )
 ```
 
-The column definitions support four kinds:
+The column definitions support the following four kinds:
 
 `ordinalColumn`, `pathColumn`, `existsColumn`, and `nestedColumns`.
 
@@ -54,14 +54,14 @@ FROM
     ) AS "t1"
 ```
 
-When generating the type, sqala flattens the fields in `nestedColumns` into the outer level, so the return type of the final query is:
+When generating the result type, sqala flattens the fields of `nestedColumns` into the outer level, so the final return type of the query is:
 
 ```scala
 // The return type is List[(o: Int, a: Option[Int], b: Option[String], c: Option[Boolean])]
 val result = db.fetch(query)
 ```
 
-We can use the `LATERAL` feature to let a JSON table take an outer field as its JSON input source:
+The `LATERAL` feature lets a JSON table take a field from the outer query as its JSON input source:
 
 ```scala
 case class Entity(json: Json)
@@ -107,7 +107,7 @@ FROM
     ) AS "t2"
 ```
 
-The tested support for JSON tables in the latest versions of mainstream databases is as follows:
+Tested support for JSON tables in the latest versions of mainstream databases is as follows:
 
 | Database | JSON_TABLE Support |
 |--------|-----------------|

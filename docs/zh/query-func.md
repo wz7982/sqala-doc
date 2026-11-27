@@ -8,11 +8,11 @@
 > ```
 
 
-sqala支持SQL中的函数表功能（目前仅PostgreSQL支持标准函数表操作），可以把函数调用结果当做表使用。
+sqala支持SQL的函数表功能（目前仅PostgreSQL支持标准函数表操作），可以将函数调用的结果作为表使用。
 
 ## UNNEST
 
-`unnest`对应SQL标准的函数表`UNNEST`，作用是把数组字段平铺，作为一个表使用，我们使用字段`x`进行后续操作：
+`unnest`对应SQL标准函数表`UNNEST`，用于将数组字段平铺为一张表，后续操作通过字段`x`进行：
 
 ```scala
 val query =
@@ -30,7 +30,7 @@ WHERE
     "t1"."x" > 1
 ```
 
-`unnestWithOrdinal`可以在展开数组之后添加序号，使用`ordinal`字段进行后续序号操作：
+`unnestWithOrdinal`在展开数组后附加序号列，后续操作通过`ordinal`字段进行：
 
 ```scala
 val query =
@@ -49,7 +49,7 @@ WHERE
     "t1"."ordinal" > 1
 ```
 
-我们可以用`joinLateral`功能引用左侧表的数组字段：
+借助`crossJoinLateral`功能，可以引用左侧表中的数组字段：
 
 ```scala
 case class Entity(arr: Array[Int])
@@ -72,9 +72,9 @@ FROM
 
 ## 自定义函数表
 
-除了SQL标准中的`unnest`函数表，sqala没有内置其他函数表，但支持自定义，我们以PostgreSQL的`generate_series`生成序列为例。
+除SQL标准的`unnest`函数表外，sqala未内置其他函数表，但支持自定义函数表。以下以PostgreSQL的`generate_series`为例。
 
-首先需要创建接收结构：
+首先创建用于接收结果的接收结构：
 
 ```scala
 case class GenerateSeries(x: Int)
@@ -91,9 +91,9 @@ def generateSeries[L <: Int](start: Int, end: Int)(using QueryContext[L]) =
     )
 ```
 
-第一个参数是函数名，第二个参数是参数列表，第三个参数是是否需要序号。
+第一个参数是函数名，第二个参数是参数列表，第三个参数表示是否需要序号。
 
-然后我们就可以在查询中使用：
+随后即可在查询中使用：
 
 ```scala
 val query =

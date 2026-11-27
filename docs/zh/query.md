@@ -1,27 +1,27 @@
 # 查询
 
-在配置好元数据和数据库连接上下文后，我们可以开始介绍查询构建了，sqala使用了类似Scala集合库风格的DSL来创建查询，力求降低学习成本。
+配置好元数据和数据库连接上下文后，就可以开始构建查询了。sqala使用类似Scala集合库风格的DSL创建查询，力求降低学习成本。
 
-sqala的查询功能需要导入`import sqala.static.dsl.*`，下文中不再重复说明。
+使用sqala的查询功能需要导入`import sqala.static.dsl.*`，后文不再重复说明。
 
-以下所有`sqala`提供的查询功能，都是**无副作用的**，也就是说，每一个操作都不会改变之前的查询对象，而是会返回一个新的查询对象，避免复杂查询构建时产生不符合预期的情况。
+以下所有`sqala`提供的查询功能都是**无副作用的**：每个操作都不会修改原有的查询对象，而是返回一个新的查询对象，避免构建复杂查询时产生不符合预期的结果。
 
-如无特殊说明，示例中生成的SQL均以PostgreSQL为例（因为PostgreSQL数据库对SQL标准支持最全面）。
+如无特殊说明，示例中生成的SQL均为PostgreSQL方言（PostgreSQL对SQL标准的支持最全面）。
 
 下文示例中标注为“编译错误”的注释均为sqala编译器实际输出的错误文案。
 
 ## 构建查询
 
-sqala的查询构建会自动管理表别名（您无需手动处理繁琐的别名管理），以及隔离sqala提供的运算符、函数等功能的作用域，避免抽象泄露。
+sqala的查询构建会自动管理表别名（无需手动处理繁琐的别名），并隔离其提供的运算符、函数等功能的作用域，避免抽象泄露。
 
-`from`方法用于创建一个基础的`SELECT`查询，我们可以将实体类的**伴生对象**传入其中，它会自动提供查询上下文：
+`from`方法用于创建基础的`SELECT`查询。将实体类的**伴生对象**传入其中，即可自动获得查询上下文：
 
 ```scala
 val query =
     from(User)
 ```
 
-sqala会自动生成表别名和列别名，避免冲突，并自动为标识符添加对应数据库的引号，避免字段名等信息与数据库关键字冲突等恼人的情况。并且，sqala会自动格式化生成的查询语句，方便调试。
+sqala会自动生成表别名和列别名以避免冲突，并为标识符添加对应数据库的引号，避免字段名与数据库关键字冲突等问题。此外，sqala会自动格式化生成的查询语句，便于调试。
 
 生成的SQL为：
 
@@ -33,9 +33,9 @@ FROM
     "user" AS "t1"
 ```
 
-在`db.fetch`之后会自动返回`List[User]`类型的结果。
+查询经`db.fetch`执行后，会自动返回`List[User]`类型的结果。
 
-各数据库方言生成的标识符的引号为：
+各数据库方言使用的标识符引号为：
 
 | 数据库类型 | 引号        |
 |------------|-------------|
@@ -45,7 +45,7 @@ FROM
 
 ## 生成SQL
 
-`sql`方法用于生成SQL字符串，参数是方言和转义模式（参考[数据库交互](./database.md)）:
+`sql`方法用于生成SQL字符串，参数是方言和转义模式（参考[数据库交互](./database.md)）：
 
 ```scala
 import sqala.dialect.PostgresqlDialect
@@ -58,14 +58,14 @@ val sql = query.sql(PostgresqlDialect, true)
 
 ## 排除列
 
-在某些业务场景中，可能有一些表字段（通常是长文本类字段）经常不参与查询，但同时表字段较多，此时如果使用`.map`显式写出需要查询的字段，会比较繁琐，这种场景下可以在表上使用`exclude`方法排除某些字段：
+在某些业务场景中，部分表字段（通常是长文本类字段）经常不参与查询，而表中字段较多，此时使用`.map`显式写出需要查询的字段较为繁琐。这种场景下可以在表上调用`exclude`方法排除某些字段：
 
 ```scala
 val query =
     from(Post).map(p => p.exclude("title", "createTime"))
 ```
 
-`exclude`的参数是字符串字面量，可以传多个；sqala会在编译期校验字段名：
+`exclude`的参数是字符串字面量，可传入多个；sqala会在编译期校验字段名：
 
 ```scala
 val query =
@@ -87,13 +87,13 @@ FROM
     "post" AS "t1"
 ```
 
-可以看到，此时查询中不会出现排除的字段。
+可以看到，此时生成的查询中不再出现被排除的字段。
 
-同时`exclude`方法会影响返回类型，sqala会从现有字段和排除字段中计算出一个命名元组类型，因此`exclude`操作也是类型安全的，而在`db.fetch`之后sqala推导出的返回类型为`List[(id: Int, authorId: Int, channelId: Int, viewCount: Int, likeCount: Int, state: DataState)]`
+同时，`exclude`方法会影响返回类型：sqala会从现有字段和排除字段中计算出一个命名元组类型，因此`exclude`操作也是类型安全的。在`db.fetch`之后，sqala推导出的返回类型为`List[(id: Int, authorId: Int, channelId: Int, viewCount: Int, likeCount: Int, state: DataState)]`
 
 ## 过滤
 
-`filter`方法用于过滤数据，其对应到SQL的`WHERE`子句，您可以像使用集合库一样使用sqala的过滤方法：
+`filter`方法用于过滤数据，对应SQL的`WHERE`子句。您可以像使用集合库一样使用sqala的过滤方法：
 
 ```scala
 val id = 4
@@ -102,7 +102,7 @@ val query =
     from(User).filter(u => u.id > id)
 ```
 
-其生成的SQL语句为：
+生成的SQL为：
 
 ```sql
 SELECT
@@ -114,11 +114,11 @@ WHERE
     "t1"."id" > 4
 ```
 
-sqala会自动处理传入字符串，**避免SQL注入**。
+sqala会自动处理传入的字符串，**避免SQL注入**。
 
 `filter`方法不会改变查询的返回类型。
 
-多次调用`filter`方法将会使用`AND`连接各个条件：
+多次调用`filter`方法时，各条件会使用`AND`连接：
 
 ```scala
 val id = 4
@@ -139,7 +139,7 @@ WHERE
     "t1"."id" > 4 AND "t1"."name" LIKE '小%'
 ```
 
-当然，上面的例子也可以直接使用`&&`运算符（更多运算符和表达式请参考[表达式](./expr.md)部分）：
+上述示例也可以直接使用`&&`运算符（更多运算符和表达式请参考[表达式](./expr.md)）：
 
 ```scala
 val id = 4
@@ -148,7 +148,7 @@ val query =
     from(User).filter(u => u.id > id && u.name.startsWith("小"))
 ```
 
-`filterIf`方法用于条件拼接，只有第一个参数为`true`时才会拼接此条件，此方法方便您处理动态查询条件：
+`filterIf`方法用于条件拼接：只有当第一个参数为`true`时才会拼接该条件，便于处理动态查询条件：
 
 ```scala
 val name: Option[String] = None
@@ -157,11 +157,11 @@ val query =
     from(User).filterIf(name.isDefined)(u => u.name === name)
 ```
 
-由于sqala使用内置SQL语法树来管理SQL语句，所以您无需像某些查询库那样手动拼接`WHERE TRUE`或`WHERE 1 = 1`，sqala总是会为您生成语法正确的SQL。
+由于sqala使用内置的SQL语法树管理语句，您无需像某些查询库那样手动拼接`WHERE TRUE`或`WHERE 1 = 1`，sqala总是生成语法正确的SQL。
 
 ### 语义检查
 
-如果过滤条件中含有聚合函数或窗口函数等不能放在`WHERE`子句中的表达式，sqala会在此情况下返回编译错误：
+如果过滤条件中包含聚合函数、窗口函数等不能出现在`WHERE`子句中的表达式，sqala会返回编译错误：
 
 ```scala
 val query =
@@ -175,7 +175,7 @@ val q2 =
 
 ## 投影
 
-`map`方法用于指定投影列表，其对应到SQL的`SELECT`子句，sqala允许投影到[表达式](./expr.md)，表，和其组成的元组或命名元组，并能够正确推导包括复杂投影和表连接在内的返回类型。您只需专注于业务逻辑的实现即可。
+`map`方法用于指定投影列表，对应SQL的`SELECT`子句。sqala允许投影到[表达式](./expr.md)、表，以及它们组成的元组或命名元组，并能正确推导包括复杂投影和表连接在内的返回类型，您只需专注于业务逻辑的实现即可。
 
 ### 投影到表达式
 
@@ -195,7 +195,7 @@ FROM
 
 此处返回类型会自动推导为`List[String]`。
 
-sqala允许像数据库一样，可空类型和非空类型混合运算，数值类型混合运算等，因此以下写法：
+与数据库一样，sqala允许可空类型与非空类型混合运算、不同数值类型混合运算等，因此以下写法：
 
 ```scala
 val query =
@@ -211,7 +211,7 @@ FROM
     "user" AS "t1"
 ```
 
-返回类型会自动推导为`List[Option[Long]]`，在自动推导出安全类型的同时，您也无需关心`Option`类型和非空类型繁琐的互操作问题。
+返回类型会自动推导为`List[Option[Long]]`。在自动推导出安全类型的同时，您也无需处理`Option`类型与非空类型之间繁琐的互操作问题。
 
 ### 投影到表
 
@@ -232,7 +232,7 @@ FROM
 
 此处返回类型会自动推导为`List[User]`。
 
-投影到表在某些场景下会比较有用，比如关联结果中一个表只需要部分字段，而另一个表需要全部字段，此时您可以使用投影到表来处理。
+投影到表在某些场景下很有用。例如关联结果中一个表只需要部分字段，而另一个表需要全部字段，此时可以使用投影到表来处理。
 
 ### 投影到元组
 
@@ -245,7 +245,7 @@ val query =
 
 ```sql
 SELECT
-    "t1"."id" AS "c1"
+    "t1"."id" AS "c1",
     "t1"."name" AS "c2"
 FROM
     "user" AS "t1"
@@ -255,7 +255,7 @@ FROM
 
 ### 投影到命名元组
 
-sqala充分利用了Scala 3.7版本的新特性命名元组，在较复杂的场景下（比如关联结果和只需要部分字段的情况），您可以直接使用命名元组管理投影，而无需预先创建数据接收DTO，避免大量的样板代码，并可以直接使用字段名来类型安全地引用返回字段，良好的字段命名也可以充当代码中的自解释文档：
+sqala充分利用了Scala 3的命名元组特性。在较复杂的场景下（比如关联结果中只需要部分字段），您可以直接使用命名元组管理投影，无需预先创建数据接收DTO，避免大量样板代码；同时可以直接使用字段名类型安全地引用返回字段，良好的字段命名也能充当代码中的自解释文档：
 
 ```scala
 val query =
@@ -273,7 +273,7 @@ for r <- result do
 
 ### 语义检查
 
-如果投影中同时含有列和聚合函数等不兼容的表达式，sqala将会返回编译错误：
+如果投影中同时包含列与聚合函数等不兼容的表达式，sqala会返回编译错误：
 
 ```scala
 val query =
@@ -283,7 +283,7 @@ val query =
 
 ## 使用for推导式
 
-sqala支持将只使用了`filter`和`map`操作的简单查询写成`for`推导式，您只需要绑定一次查询参数名，以提高可读性：
+sqala支持将只使用了`filter`和`map`操作的简单查询写成`for`推导式：只需绑定一次查询参数名，可读性更好：
 
 ```scala
 val query =
@@ -299,16 +299,21 @@ val query =
 
 ## 限制结果集
 
-`take`和`drop`对应SQL的`LIMIT`、`OFFSET`等操作，并自动进行了方言适配。
+`take`和`drop`对应SQL的`LIMIT`、`OFFSET`等操作，并已自动完成方言适配。
 
 ```scala
 val query =
     from(User).drop(2).take(3)
 ```
 
-此外，sqala支持标准SQL的`FETCH n ROWS WITH TIES`子句，使用`takeWithTies`即可。
+此外，sqala支持标准SQL的`FETCH n ROWS WITH TIES`子句，使用`takeWithTies`即可。由于“并列行”依赖排序键才有意义，`takeWithTies`只能在`sortBy`之后调用，否则编译失败：
 
-限制结果集操作在不同数据库方言下差异较大，下面列出各主流数据库方言适配情况，标记为❌的则是数据库本身不支持此操作，由于`MySQL`不允许单独使用`OFFSET`子句，因此在单独调用`drop`时，`LIMIT`值为`Long.MaxValue`：
+```scala
+val query =
+    from(User).sortBy(u => u.name).takeWithTies(5)
+```
+
+限制结果集的操作在不同数据库方言下差异较大，下面列出各主流数据库的方言适配情况，标记为❌表示数据库本身不支持该操作。由于MySQL不允许单独使用`OFFSET`子句，因此在单独调用`drop`时，`LIMIT`值为`Long.MaxValue`：
 
 | 方法 | PostgreSQL | MySQL | Oracle |
 | ------ | ------------ | ------- | -------- |
@@ -320,7 +325,7 @@ val query =
 
 ## 去重
 
-`mapDistinct`用于统计去重后的结果集，由于sqala需要在需要`ALL`、`DISTINCT`等量词的情况下统一风格，因此没有采用类似Scala集合库的`.map.distinct`调用形式：
+`mapDistinct`用于查询去重后的结果集。由于sqala需要在涉及`ALL`、`DISTINCT`等量词的情况下统一风格，因此没有采用类似Scala集合库的`.map.distinct`调用形式：
 
 ```scala
 val query =
@@ -338,9 +343,9 @@ FROM
 
 ## 排序
 
-`sortBy`方法用于排序数据，其对应到SQL的`ORDER BY`子句。
+`sortBy`方法用于对数据排序，对应SQL的`ORDER BY`子句。
 
-[表达式](./expr.md)配合排序规则作为`sortBy`的参数，如无显式指定排序规则，sqala会将其处理成`ASC`：
+[表达式](./expr.md)配合排序规则作为`sortBy`的参数；如未显式指定排序规则，sqala会将其视为`ASC`：
 
 ```scala
 val query =
@@ -382,7 +387,7 @@ sqala支持的排序规则和各主流数据库的支持程度如下：
 
 ### 投影后排序
 
-我们可以在调用`map`投影后创建排序：
+可以在调用`map`投影之后再排序：
 
 ```scala
 val query =
@@ -391,7 +396,7 @@ val query =
 
 此时`sortBy`方法的Lambda参数仍然代表当前操作的表。
 
-但如果是`mapDistinct`情况则有不同，由于SQL不允许在`SELECT DISTINCT`之后的`ORDER BY`中出现未在`SELECT`中出现的表达式，因此以下SQL是不合法的：
+但`mapDistinct`的情况有所不同：由于SQL不允许`SELECT DISTINCT`之后的`ORDER BY`中出现未出现在`SELECT`中的表达式，以下SQL是不合法的：
 
 ```sql
 SELECT DISTINCT
@@ -402,7 +407,7 @@ ORDER BY
     "t1"."id" DESC
 ```
 
-所以sqala在`mapDistinct`后的`sortBy`方法中，Lambda参数类型实际代表当前投影到的类型：
+因此，sqala在`mapDistinct`之后的`sortBy`方法中，Lambda的参数类型实际代表当前投影后的类型：
 
 ```scala
 val query =
@@ -423,7 +428,7 @@ val query =
 
 ## 使用内存集合创建查询
 
-sqala支持使用内存中的集合创建查询，后续作为子查询、和连接表使用：
+sqala支持使用内存中的集合创建查询，后续可作为子查询和连接表使用：
 
 ```scala
 val users = List(User(1, "小黑"), User(2, "小白"))
@@ -444,7 +449,7 @@ FROM
     ) AS "t1"("id", "name")
 ```
 
-此功能使用数据库的`VALUES`查询实现，各主流数据库最新版本实测支持程度如下：
+此功能通过数据库的`VALUES`查询实现，各主流数据库最新版本的实测支持情况如下：
 
 | 数据库类型 | VALUES 支持 |
 |------------|-------------|
@@ -454,14 +459,14 @@ FROM
 
 ## 查询锁
 
-sqala支持`forUpdate`等方法给查询加锁，对应数据库的相应加锁子句：
+sqala支持`forUpdate`等方法为查询加锁，对应数据库的相应加锁子句：
 
 ```scala
 val query =
     from(User).forShareSkipLocked
 ```
 
-查询加锁不是SQL标准内容，但大部分数据库的语法类似，因此sqala参照PostgreSQL和MySQL功能进行支持，加锁方法和各主流数据库最新版本实测支持程度如下：
+查询加锁并非SQL标准内容，但大多数数据库的语法类似，因此sqala参照PostgreSQL和MySQL的功能提供支持。加锁方法在各主流数据库最新版本中的实测支持情况如下：
 
 | 方法 | PostgreSQL | MySQL | Oracle |
 | ------ | ------------ | ------- | -------- |

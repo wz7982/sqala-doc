@@ -18,20 +18,20 @@
 
 ## Dependency
 
-The starter contains only adapter code. All Spring dependencies are `Provided`, and their versions come from the application's dependency management. Add the JDBC starter as well:
+The starter contains only adapter code. All Spring dependencies are marked `Provided`, so their versions come from the application's own dependency management. The JDBC starter therefore needs to be added as well:
 
 ```scala
 libraryDependencies ++= Seq(
-    "com.wz7982" %% "sqala-spring-boot-starter" % "latest.integration",
+    "cn.sqala" %% "sqala-spring-boot-starter" % "latest.integration",
     "org.springframework.boot" % "spring-boot-starter-jdbc" % "4.0.10"
 )
 ```
 
-`spring-boot-starter-jdbc` provides the `DataSource`, `spring-jdbc` and `spring-tx`. If the application already pulls in a JDBC starter through `spring-boot-starter-data-jpa`, MyBatis, or another framework, it does not need to be declared again.
+`spring-boot-starter-jdbc` provides the `DataSource`, `spring-jdbc` and `spring-tx`. If the application already pulls in a JDBC starter through `spring-boot-starter-data-jpa`, MyBatis, or another framework, there is no need to declare it again.
 
 ## Scala 3.9 Note
 
-When compiling with Scala 3.9.x, add the following dependency:
+When compiling with Scala 3.9.x, add the following dependency to your project:
 
 ```scala
 libraryDependencies += "io.micrometer" % "context-propagation" % "1.2.1"
@@ -48,9 +48,9 @@ owner.fullName = io.micrometer.context.ContextSnapshot
 while parsing .../spring-core-7.0.11.jar(org/springframework/core/PropagationContextElement.class)
 ```
 
-- Scala 3.10.x does not need this dependency
-- Projects that use only `sqala-jdbc` without Spring do not need it
-- Spring Boot 3.x (Spring Framework 6.x) does not need it
+- Scala 3.10.x has fixed this issue and does not need this dependency
+- Projects that use only `sqala-jdbc`, without Spring, do not need it
+- Spring Boot 3.x (Spring Framework 6.x) applications do not need it
 - `1.2.1` matches `micrometer-observation 1.16.9` managed by Spring Boot 4.0.10
 
 ## Quick Start
@@ -102,7 +102,7 @@ class UserService(
         List(a, b)
 ```
 
-`SqalaExecutionContext` and `SqalaLogging` are Spring beans. Inject them and import their `given` instances.
+`SqalaExecutionContext` and `SqalaLogging` are Spring beans. Inject them and import the `given` instances they provide.
 
 ### Controller
 
@@ -155,7 +155,7 @@ logging:
     sqala: debug
 ```
 
-`sqala.logging.level` controls the level sqala emits events at, while `logging.level.sqala` controls whether Logback accepts that level. If they disagree, successful statements may not be printed.
+`sqala.logging.level` controls the level at which sqala emits logs, while `logging.level.sqala` controls whether Logback accepts that level. If the two disagree, successful statements may not be printed.
 
 ## Auto-configuration
 
@@ -166,7 +166,7 @@ logging:
 | `SqalaLogging` | SLF4J is present | Holds a `Logger`, configured through `sqala.logging.*` |
 | `PlatformTransactionManager` | Exactly one or an `@Primary` `DataSource` exists and no other transaction manager is defined | Registers a `DataSourceTransactionManager` |
 
-Every auto-configuration uses `@ConditionalOnMissingBean`, so an application can override any of these beans.
+Every auto-configuration is guarded by `@ConditionalOnMissingBean`, so an application can override the defaults by declaring its own beans.
 
 ## Properties
 
@@ -174,7 +174,7 @@ Every auto-configuration uses `@ConditionalOnMissingBean`, so an application can
 
 | Property | Default | Description |
 | :--- | :--- | :--- |
-| `sqala.jdbc.dialect` | `postgresql` | Database dialect: `postgresql`, `mysql` or `oracle` |
+| `sqala.jdbc.dialect` | `postgresql` | Database dialect: `postgresql` (alias `postgres`), `mysql` or `oracle` |
 | `sqala.jdbc.standard-escape-strings` | `true` | Whether to use standard SQL string escaping |
 
 ### sqala.logging
@@ -191,7 +191,7 @@ Failed operations are always logged at `error`. `sqala.logging.level` only contr
 
 ## Transactions
 
-In a Spring Boot application, transaction boundaries belong entirely to Spring. **Do not use sqala's native transaction management here.** Use `@Transactional` or `TransactionTemplate` instead:
+In a Spring Boot application, transaction boundaries are managed entirely by Spring. **Using sqala's native transaction management here is not recommended.** Use `@Transactional` or `TransactionTemplate` directly:
 
 ```scala
 import org.springframework.transaction.annotation.Transactional
@@ -207,7 +207,7 @@ def transfer(): Unit =
 
 Spring transaction `timeout` values are applied to statements created by sqala. JDBC `SQLException`s are translated to Spring `DataAccessException`s, so Spring's default rollback rules apply.
 
-The adapter only translates JDBC `SQLException`s. If business code can throw other checked exceptions and you want Spring to roll back, use `@Transactional(rollbackFor = Array(classOf[Exception]))` or wrap them in a runtime exception.
+The adapter translates only JDBC `SQLException`s. If business code can throw other checked exceptions and you want Spring to roll back, use `@Transactional(rollbackFor = Array(classOf[Exception]))` or wrap them in runtime exceptions yourself.
 
 ## Logging
 
@@ -220,11 +220,11 @@ class UserService(logging: SqalaLogging):
     import logging.given
 ```
 
-**Do not use `import sqala.slf4j.given` in a Spring application.** It introduces a second `Logger` that uses default settings, so `sqala.logging.*` stops taking effect and the `given` instances may become ambiguous.
+**Do not use `import sqala.slf4j.given` in a Spring application.** It introduces a second `Logger` that uses default settings, so the `sqala.logging.*` properties stop taking effect and the `given` instances may become ambiguous.
 
 ## JSON Serialization
 
-Spring Boot 4 uses Jackson 3. When a controller returns a case class directly, register the Scala module:
+Spring Boot 4 uses Jackson 3. If a controller returns a case class directly, register the Scala module:
 
 ```scala
 import org.springframework.context.annotation.{Bean, Configuration}
@@ -257,7 +257,7 @@ val response = rows.map(row => UserResponse(row.id, row.name))
 
 ## Multiple Data Sources
 
-Auto-configuration creates `JdbcContext` and the fallback `PlatformTransactionManager` only when there is exactly one or an `@Primary` `DataSource`. With multiple `DataSource`s and no `@Primary`, those two auto-configurations are skipped and the application still starts; declare them per data source.
+Auto-configuration creates `JdbcContext` and the fallback `PlatformTransactionManager` only when there is exactly one or an `@Primary` `DataSource`. With multiple `DataSource`s and no `@Primary`, those two auto-configurations are skipped and the application still starts, but the corresponding beans must be declared per data source.
 
 `SqalaExecutionContext` is not bound to a fixed `DataSource`. It always uses the `DataSource` of the current `JdbcContext`, so one instance can serve multiple data sources. The starter registers it automatically.
 

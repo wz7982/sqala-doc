@@ -8,11 +8,11 @@
 > ```
 
 
-`MATCH_RECOGNIZE` is a powerful data analysis feature introduced in the SQL 2016 standard for complex event processing. It can match a sequence of consecutive events and compute a result. However, among mainstream relational databases only Oracle currently supports this feature, and PostgreSQL is expected to introduce it in a later version.
+`MATCH_RECOGNIZE` is a powerful data analysis feature introduced in the SQL 2016 standard for complex event processing. It matches sequences of consecutive events and computes results from them. Currently, Oracle is the only mainstream relational database that supports this feature; PostgreSQL is expected to introduce it in a later version.
 
-sqala chooses to implement the feature based on the SQL standard first, so that once your database supports it you can adopt it seamlessly, without waiting for the query library to catch up.
+sqala implements this feature against the SQL standard first, so that once your database supports it, you can adopt it seamlessly without waiting for the query library to catch up.
 
-Suppose we have this requirement: "query the V-shaped curve data of a stock falling continuously and then rising continuously". First, create an entity class like this:
+Suppose we have the following requirement: "query the V-shaped curve data of a stock that falls continuously and then rises continuously". First, create a corresponding entity class:
 
 ```scala
 case class StockPrice(
@@ -22,7 +22,7 @@ case class StockPrice(
 )
 ```
 
-The `matchRecognize` method of the table is used to create pattern recognition:
+The `matchRecognize` method of a table creates a row pattern recognition query:
 
 ```scala
 val query =
@@ -73,7 +73,7 @@ val query =
         )
 ```
 
-`d.xxx` in `define`, `pattern`, and `measures` can only use the names declared in `predefine`; a typo causes a compile error immediately. The named tuple returned by `define` must also match the names in `predefine`.
+In `define`, `pattern`, and `measures`, `d.xxx` may only use the names declared in `predefine`; a misspelling causes an immediate compile error. The named tuple returned by `define` must also match the names declared in `predefine`.
 
 The generated SQL is:
 
@@ -110,7 +110,7 @@ FROM
 
 ## Semantic Checks
 
-Each clause of `matchRecognize` also has compile-time semantic checks:
+The clauses of `matchRecognize` are also subject to compile-time semantic checks:
 
 ```scala
 val query =
@@ -125,4 +125,4 @@ val q2 =
     )
 ```
 
-`define` can only use pattern variables and aggregate functions over them; otherwise you get `Only pattern variables and aggregate functions over them can be used in matchRecognize define.`. The same applies to expressions in `measures`, with the error message `Measures expressions accept pattern variables and aggregate functions over them.`.
+`define` may only use pattern variables and aggregate functions applied to them; otherwise the error `Only pattern variables and aggregate functions over them can be used in matchRecognize define.` is reported. The same applies to expressions in `measures`, with the error message `Measures expressions accept pattern variables and aggregate functions over them.`.

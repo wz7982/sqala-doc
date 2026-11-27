@@ -1,10 +1,10 @@
 # Window Functions
 
-Window functions are an advanced analysis feature provided by SQL. They add an `OVER` clause to [aggregate functions](./expr-agg.md) or dedicated analytic functions to create window functions.
+Window functions are an advanced analytical feature of SQL: they are created by adding an `OVER` clause to an [aggregate function](./expr-agg.md) or a dedicated analytic function.
 
-sqala provides the `over` method to create a window. Its parameters are the window's partitioning rule, ordering rule, and window frame.
+sqala provides the `over` method to create a window, which takes the window's partitioning rule, ordering rule, and window frame as parameters.
 
-Use the `partitionBy` method to create the window's partitioning rule, together with `over`:
+Use the `partitionBy` method to define the window's partitioning rule, in combination with `over`:
 
 ```scala
 val query =
@@ -12,7 +12,7 @@ val query =
         .map(p => sum(p.likeCount).over(partitionBy(p.authorId)))
 ```
 
-After `partitionBy`, you can use the `sortBy` method to create the window's ordering rule:
+After `partitionBy`, use the `sortBy` method to define the window's ordering rule:
 
 ```scala
 val query =
@@ -28,7 +28,15 @@ val query =
         .map(p => sum(p.likeCount).over(sortBy(p.id.desc)))
 ```
 
-`over` also supports window frames. The parameters of `range`, `rows`, and `groups` are a single bound, while the parameters of `rangeBetween`, `rowsBetween`, and `groupsBetween` are two bounds:
+Calling `over()` with no arguments declares an empty window (with neither partitioning nor ordering), commonly used with functions such as `rowNumber()`:
+
+```scala
+val query =
+    from(Post)
+        .map(p => (p.title, rowNumber().over()))
+```
+
+`over` also supports window frames: `range`, `rows`, and `groups` take a single bound, while `rangeBetween`, `rowsBetween`, and `groupsBetween` take two bounds. `rows` can be applied directly to a window without an ordering key, whereas `range` and `groups` depend on the ordering key and can only be called after `sortBy`:
 
 ```scala
 val query =
@@ -54,9 +62,9 @@ val query =
             )
 ```
 
-The supported bounds are `currentRow`, `unboundedPreceding`, `unboundedFollowing`, `n.preceding`, and `n.following`.
+The supported bounds are `currentRow`, `unboundedPreceding`, `unboundedFollowing`, `n.preceding`, and `n.following`. For `n.preceding` and `n.following`, `n` must be a literal constant; a column reference cannot be used as a bound.
 
-You can use `excludeCurrentRow`, `excludeTies`, and `excludeGroup` to exclude specific rows from the group:
+You can use `excludeCurrentRow`, `excludeTies`, and `excludeGroup` to exclude specific rows from the window frame:
 
 ```scala
 val query =
@@ -70,7 +78,7 @@ val query =
             )
 ```
 
-The window functions included in sqala are:
+sqala includes the following built-in window functions:
 
 | Function                                   | Corresponding SQL Function                           |
 |--------------------------------------------|------------------------------------------------------|
@@ -103,7 +111,7 @@ The window functions included in sqala are:
 
 ## Semantic Checks
 
-`over` can only be used on aggregate functions or window functions; otherwise a compile error is returned:
+`over` can only be used on aggregate functions or window functions; otherwise, a compile error occurs:
 
 ```scala
 val query =
@@ -113,7 +121,7 @@ val query =
 
 Window functions cannot be nested, and the error message is `Window function calls cannot be nested.`
 
-The start and end bounds of a window frame must be in order, that is, `unboundedPreceding` < `n.preceding` < `currentRow` < `n.following` < `unboundedFollowing`, and the start bound must be strictly before the end bound. `rows`, `range`, and `groups` only accept a start bound, with the end bound fixed to `currentRow`, so the start bound cannot be `currentRow` or `unboundedFollowing`:
+The start and end bounds of a window frame must be ordered, that is, `unboundedPreceding` < `n.preceding` < `currentRow` < `n.following` < `unboundedFollowing`; the start bound must not come after the end bound (they may be equal — `rowsBetween(currentRow, currentRow)` is legal). `rows`, `range`, and `groups` accept only a start bound, with the end bound fixed to `currentRow`, so the start bound cannot be `n.following` or `unboundedFollowing`:
 
 ```scala
 val q1 =
@@ -131,7 +139,7 @@ val q2 =
         )
 ```
 
-The bound values of `rows` and `groups` must be integers, while the bound type of `range` must be compatible with the window's ordering key (a numeric ordering key corresponds to a numeric bound, and a time ordering key corresponds to an `INTERVAL` bound); otherwise a compile error is returned:
+The bound values of `rows` and `groups` must be integers, while the bound type of `range` must be compatible with the window's ordering key (a numeric ordering key corresponds to a numeric bound, and a time ordering key corresponds to an `INTERVAL` bound); otherwise, a compile error occurs:
 
 ```scala
 val q3 =

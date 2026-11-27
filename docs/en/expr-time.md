@@ -4,18 +4,18 @@ sqala supports the common time operations from the SQL standard.
 
 ## Time Intervals
 
-`Int` type values, combined with extension methods such as `year`, create time interval expressions, corresponding to SQL's `INTERVAL` expression. You can then use the `+` and `-` operators to calculate between a time-typed field and a time interval, returning a new time expression:
+`Int` values, combined with extension methods such as `year`, create time interval expressions, corresponding to SQL's `INTERVAL` expression. You can then use the `+` and `-` operators to add or subtract an interval and a time-typed field, producing a new time expression:
 
 ```scala
 // Query posts created within the last seven days
 val query =
     from(Post)
-        .filter(p => p.createTime >= currentTime() - 1.year)
+        .filter(p => p.createTime >= currentTimestamp() - 7.day)
 ```
 
 The time units supported by sqala are: `year`, `month`, `day`, `hour`, `minute`, and `second`.
 
-The measured support for time intervals in the latest versions of each major database is as follows:
+Measured support for time intervals in the latest versions of major databases is as follows:
 
 | Database Type | INTERVAL Support |
 |------------|-------------|
@@ -25,21 +25,21 @@ The measured support for time intervals in the latest versions of each major dat
 
 ## Extracting Time
 
-Time-typed expressions, combined with extension methods such as `year`, extract a time unit from a time field, corresponding to SQL's `EXTRACT` expression, and return a numeric type:
+Time-typed expressions, combined with extension methods such as `year`, extract a time unit from a time field. This corresponds to SQL's `EXTRACT` expression and returns a numeric type:
 
 ```scala
 val query =
     from(Post).map(p => p.createTime.year)
 ```
 
-The result of subtracting two times (which returns a time interval) can also be used to extract a time unit from it:
+You can also extract a time unit from the result of subtracting two times, which is itself a time interval:
 
 ```scala
 val query =
     from(Post).map(p => (currentTimestamp() - p.createTime).year)
 ```
 
-The measured support for extracting time in the latest versions of each major database is as follows:
+Measured support for extracting time units in the latest versions of major databases is as follows:
 
 | Database Type | EXTRACT Support |
 |------------|-------------|
@@ -49,14 +49,14 @@ The measured support for extracting time in the latest versions of each major da
 
 ## Time Overlap
 
-For a pair of two times, the `overlaps` method determines whether they overlap, corresponding to SQL's `OVERLAPS` operator:
+The `overlaps` method determines whether two time ranges, each given as a pair of start and end times, overlap, corresponding to SQL's `OVERLAPS` operator. Note that `overlaps` takes **one** tuple argument, not two separate arguments:
 
 ```scala
 val query =
-    from(Entity).filter(e => (e.d1, e.d2).overlaps(e.d3, e.d4))
+    from(Entity).filter(e => (e.d1, e.d2).overlaps((e.d3, e.d4)))
 ```
 
-The measured support for time overlap in the latest versions of each major database is as follows:
+Measured support for time overlap in the latest versions of major databases is as follows:
 
 | Database Type | OVERLAPS Support |
 |------------|-------------|
@@ -66,7 +66,7 @@ The measured support for time overlap in the latest versions of each major datab
 
 ## Time Data Types
 
-sqala uses the time types under `java.time.*` as built-in time types by default. The text SQL literal formats are as follows:
+By default, sqala uses the time types under `java.time.*` as its built-in time types. Time literal formats in plain-text SQL are as follows:
 
 | Time Type | PostgreSQL | MySQL | Oracle |
 | ---------- | ------------ | ------- | -------- |
@@ -76,7 +76,7 @@ sqala uses the time types under `java.time.*` as built-in time types by default.
 | `OffsetDateTime` | `TIMESTAMP WITH TIME ZONE '2020-01-01 00:00:00.123456789 +08:00'` | ❌ | `TO_TIMESTAMP_TZ('2020-01-01 00:00:00.123456789 +08:00', 'YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM')` |
 | `OffsetTime` | `TIME WITH TIME ZONE '00:00:00.123456789 +08:00'` | ❌ | ❌ |
 
-When executed through JDBC, PostgreSQL and MySQL do not inline these values. They emit a `?` placeholder and bind the corresponding `java.time` value with `PreparedStatement.setObject`. Oracle still uses `TO_DATE`, `TO_TIMESTAMP`, and `TO_TIMESTAMP_TZ` with the formatted string.
+When executed through JDBC, PostgreSQL and MySQL do not inline these values as literals. They emit a `?` placeholder and bind the corresponding `java.time` value with `PreparedStatement.setObject`. Oracle still uses `TO_DATE`, `TO_TIMESTAMP`, and `TO_TIMESTAMP_TZ` with the formatted string.
 
 sqala does not handle second-level time zone offsets (for example `+08:00:30`) at all. `OffsetDateTime` and `OffsetTime` values are formatted with minute precision, and Oracle's `TZH:TZM` cannot represent second-level offsets either. Truncating the offset can change the exact instant, so convert to UTC first if the instant must be preserved. If your application needs to preserve second-level offsets, normalize them manually before passing them to sqala, for example by converting to UTC or truncating them to minutes according to your business rules.
 

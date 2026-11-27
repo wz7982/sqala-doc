@@ -1,6 +1,6 @@
 # sqala简介
 
-sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scala的表达力与SQL的强大功能，通过Scala3强大的类型系统保障数据库操作的高效与安全。其名称源自Scala与SQL的结合。
+sqala是一个专为Scala 3设计的类型安全SQL查询库。它融合了Scala的表达力与SQL的强大功能，借助Scala 3强大的类型系统保障数据库操作的高效与安全。其名称源自Scala与SQL的结合。
 
 使用sqala，你可以：
 
@@ -18,7 +18,7 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
     val result = db.fetch(query)
     ```
 
-2. **使用Scala3新特性命名元组管理查询**：无需为投影、关联结果预先创建DTO，也无需`Map[String, Any]`，使用`.`调用返回字段且类型安全：
+2. **使用Scala 3新特性命名元组管理查询**：无需为投影、关联结果预先创建DTO，也无需`Map[String, Any]`，通过`.`访问返回字段且保持类型安全：
 
     ```scala
     val query =
@@ -31,7 +31,7 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
         println(r.id)
     ```
 
-3. **支持类型安全的主键查询**：按主键查询数据无需创建DSL，直接从实体类配置中读取主键类型作为参数类型并创建查询：
+3. **支持类型安全的主键查询**：按主键查询数据无需编写DSL，直接从实体类配置中读取主键类型作为参数类型并生成查询：
 
     ```scala
     // 返回类型为：Option[User]
@@ -69,9 +69,9 @@ sqala 是一个专为 Scala3设计的类型安全SQL查询库。它融合了Scal
             .where(column("a") === value(1))
     ```
 
-6. **SQL 解析器**：`dynamic` 模块内置手写的递归下降 SQL 解析器，不依赖任何第三方解析器库。
+6. **SQL 解析器**：`core` 模块内置手写的递归下降 SQL 解析器，不依赖任何第三方解析器库，动态查询 DSL 通过`unsafeExpr`等方法基于它解析SQL片段。
 
-7. **批量解码性能突出**：使用Scala3的`inline`能力在编译期生成解码代码。在10,000行批量查询中，解码吞吐接近手写JDBC（约94%），通常高于MyBatis、Hibernate、jOOQ等基于反射/代理映射的框架。
+7. **批量解码性能突出**：使用Scala 3的`inline`能力在编译期生成解码代码。在10,000行批量查询中，解码吞吐接近手写JDBC（约94%），通常高于MyBatis、Hibernate、jOOQ等基于反射/代理映射的框架。
 
 8. **透明性**：sqala不是传统ORM，查询DSL几乎会1比1生成查询，不会产生诸如N + 1等黑盒操作，性能可预测。
 
@@ -99,7 +99,7 @@ sqala使用同步JDBC，推荐配合JVM 21+的虚拟线程使用。
 
 sqala目前使用异常机制处理数据库错误。
 
-待 Scala3的实验性特性[CanThrow Capabilities](https://nightly.scala-lang.org/docs/reference/experimental/canthrow.html)成熟后，将升级为编译期可追溯的错误类型。
+待Scala 3的实验性特性[CanThrow Capabilities](https://nightly.scala-lang.org/docs/reference/experimental/canthrow.html)成熟后，将升级为编译期可追溯的错误类型。
 
 届时同步代码同时具备：简洁语法、虚拟线程高并发、以及类型安全错误管理。
 

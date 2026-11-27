@@ -8,16 +8,16 @@ sqala 提供了一个可选的 sbt 插件，用于读取 PostgreSQL 或 MySQL �
 
 - sbt 1.x
 - PostgreSQL 或 MySQL
-- 数据库账号需要能读取表结构
+- 数据库账号需要具有表结构的读取权限
 
 ## 添加插件
 
 ```scala
 // project/plugins.sbt
-addSbtPlugin("com.wz7982" % "sqala-sbt-codegen" % "0.1.0")
+addSbtPlugin("cn.sqala" % "sqala-sbt-codegen" % "0.1.0")
 ```
 
-如果是本地开发，也可以先在 sqala 仓库的 `codegen-sbt` 目录发布到本地：
+本地开发时，也可以先在 sqala 仓库的 `codegen-sbt` 目录将插件发布到本地：
 
 ```bash
 cd codegen-sbt
@@ -61,7 +61,7 @@ SQALA_DATABASE_USER
 SQALA_DATABASE_PASSWORD
 ```
 
-不要把密码直接写进 `build.sbt`。
+请勿将密码直接写入 `build.sbt`。
 
 ## 执行生成
 
@@ -81,7 +81,7 @@ sbt sqalaGenerate
 target/scala-3.x/src_managed/main/sqala-codegen/
 ```
 
-注意：只执行 `sqalaGenerate` 只会写文件，**不会自动加入编译**。sbt 不会自动编译 `sourceManaged` 目录下的文件，需要把它接入编译流程。
+注意：仅执行 `sqalaGenerate` 只会写出文件，**不会自动加入编译**。sbt 不会自动编译 `sourceManaged` 目录下的文件，需要将其接入编译流程。
 
 推荐接入 `sourceGenerators`：
 
@@ -89,7 +89,7 @@ target/scala-3.x/src_managed/main/sqala-codegen/
 Compile / sourceGenerators += sqalaGenerate.taskValue
 ```
 
-这样每次 `compile` 前都会执行生成，并把生成的文件作为源码编译。注意这会让每次编译都读取数据库。
+这样每次 `compile` 前都会执行生成，并把生成的文件作为源码编译。注意这会使每次编译都读取数据库。
 
 如果不想每次编译都连接数据库，可以先手动执行：
 
@@ -104,7 +104,7 @@ Compile / unmanagedSourceDirectories +=
     (Compile / sourceManaged).value / "sqala-codegen"
 ```
 
-之后 `compile` 会直接编译已经生成的文件，不会再连接数据库。但执行 `sbt clean` 后需要重新生成。
+之后 `compile` 会直接编译已生成的文件，不再连接数据库；但执行 `sbt clean` 后需要重新生成。
 
 ### `OutputMode.Source`
 
@@ -127,11 +127,11 @@ sqalaOutputPackage := "com.example.domain"
 src/main/scala/generated/com/example/domain/User.scala
 ```
 
-这个目录本身就在 `src/main/scala` 下，所以 sbt 会正常编译，不需要再配置 `sourceGenerators` 或 `unmanagedSourceDirectories`。
+该目录位于 `src/main/scala` 之下，sbt 会正常编译，无需再配置 `sourceGenerators` 或 `unmanagedSourceDirectories`。
 
-Source 模式适合需要提交、评审生成代码的团队。生成目录中会有一个 `.sqala-codegen-manifest` 文件记录生成的文件；下次生成时只会清理 manifest 中记录且不再生成的文件，不会删除同目录下的其他用户文件。
+Source 模式适合需要提交和评审生成代码的团队。生成目录中会包含一个 `.sqala-codegen-manifest` 文件，用于记录生成的文件；下次生成时只会清理 manifest 中记录且不再生成的文件，不会删除同目录下的其他用户文件。
 
-生成文件每次都会覆盖，不要直接修改。需要持久定制时，请使用 `sqalaTypeMappings`，或把对应表移出生成范围后手工接管实体。
+生成文件每次都会被覆盖，请勿直接修改。需要持久定制时，请使用 `sqalaTypeMappings`，或将对应表移出生成范围后手工接管实体。
 
 ## 生成的代码
 
@@ -166,7 +166,7 @@ case class User(
 规则：
 
 - 原始表名始终写入 `@table("...")`
-- 可空列生成 `Option[T]`
+- 可空列生成 `Option[T]`；主键列例外：即使在数据库中可空，也保持 `T` 而不包 `Option`
 - 主键生成 `@primaryKey`
 - 自增主键同时生成 `@primaryKey` 和 `@autoInc`
 - 列名和默认 CamelCase 到 snake_case 转换不一致时，生成 `@column("...")`
@@ -183,7 +183,7 @@ case class User(
 | `TableNaming.PascalCase` | `UserProfile` | `UserProfile` |
 | `TableNaming.KebabCase` | `user-profile` | `UserProfile` |
 
-表名本身不受影响，仍然通过 `@table` 保留：
+表名本身不受影响，仍通过 `@table` 保留原始名称：
 
 ```scala
 @table("user_profile")
@@ -209,7 +209,7 @@ case class UserProfile(...)
 
 ## 不支持的类型
 
-以下类型不会被自动生成：
+以下SQL类型不会被原样生成，处理方式如下：
 
 - `BLOB` / `BINARY` / `VARBINARY`：跳过该列并警告
 - 数组：跳过该列并警告
@@ -217,7 +217,7 @@ case class UserProfile(...)
 - 数据库枚举：生成 `String` 并警告
 - `UUID`：生成 `String` 并警告
 
-如果主键列被跳过，整个表会被跳过。
+如果主键列被跳过，整个表都会被跳过。
 
 ### 自定义类型映射
 
@@ -231,16 +231,16 @@ sqalaTypeMappings := Map(
 )
 ```
 
-生成器只负责写出类型名，对应的 `JdbcEncoder`、`JdbcDecoder`、`CustomField` 或 `AsSqlExpr` 需要用户自己提供。
+生成器只负责写出类型名，对应的 `JdbcEncoder`、`JdbcDecoder`、`CustomField` 或 `AsSqlExpr` 需要自行提供。
 
 ### 改成 Scala 枚举
 
 数据库枚举默认生成 `String`。如果希望使用 Scala 枚举，有两种方式：
 
 1. 用 `sqalaTypeMappings` 把数据库类型映射到自己的枚举类型，并在代码中提供对应的 `CustomField` / 编解码实例。
-2. 把生成的实体复制到 `src/main/scala`，然后从 `sqalaTables` 中排除该表，避免下次生成时覆盖。
+2. 将生成的实体复制到 `src/main/scala`，然后从 `sqalaTables` 中排除该表，避免下次生成时被覆盖。
 
-生成目录是 managed sources，每次执行 `sqalaGenerate` 都会整体删除并重写，直接修改生成文件不会保留。
+生成目录的重写行为取决于输出模式：`OutputMode.Managed` 下每次执行 `sqalaGenerate` 会把整个生成目录删除并重写，直接修改生成文件不会保留；`OutputMode.Source` 下只删除并重写上次生成清单中记录的文件，同目录下的其它文件不受影响。
 
 ## 完整配置项
 

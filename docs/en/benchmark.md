@@ -1,8 +1,8 @@
 # Benchmark
 
-This page presents JMH benchmark results comparing sqala with common JVM database access frameworks. The benchmark code lives in the [benchmark](https://github.com/wz7982/sqala/tree/main/benchmark) module of the sqala repository and can be reproduced locally.
+This page presents JMH benchmark results comparing sqala with common JVM database access frameworks. The benchmark code lives in the [benchmark](https://github.com/wz7982/sqala/tree/main/benchmark) module of the sqala repository, so the results can be reproduced locally.
 
-Benchmark results depend on hardware, database version, pool settings, and JVM configuration. They should not be treated as absolute performance guarantees.
+Benchmark results depend on hardware, database version, connection pool settings, and JVM configuration, and should not be treated as absolute performance guarantees.
 
 ## Environment
 
@@ -32,9 +32,9 @@ Parsers:
 
 ## Workloads
 
-1. **Point query**: fetch a random primary key, read all 10 columns, and decode the row into an object.
+1. **Point query**: look up a random primary key, read all 10 columns, and decode the row into an object.
 2. **Range query**: start at a random id, return 10,000 consecutive rows, read all 10 columns, and decode every row.
-3. **SQL parser**: parse the same analytical SQL containing JOIN, BETWEEN, aggregates, HAVING, ORDER BY, and LIMIT/OFFSET.
+3. **SQL parser**: parse the same analytical SQL statement, containing JOIN, BETWEEN, aggregates, HAVING, ORDER BY, and LIMIT/OFFSET.
 
 ## Point Query
 
@@ -49,7 +49,7 @@ Parsers:
 
 ![Point query throughput](/benchmark/en/01-point-throughput.png)
 
-Point queries are dominated by the database round trip, so the gap between frameworks is relatively small. sqala is essentially on par with Hibernate.
+Point queries are dominated by the database round trip, so the differences between frameworks are relatively small. sqala is essentially on par with Hibernate.
 
 ## Range Query
 
@@ -64,7 +64,7 @@ Point queries are dominated by the database round trip, so the gap between frame
 
 ![Range query throughput](/benchmark/en/03-range-throughput.png)
 
-Decoding 10,000 rows highlights differences in result-set decoding. sqala reaches about 94% of plain JDBC throughput.
+Batch-decoding 10,000 rows better highlights the differences between decoding implementations; sqala reaches about 94% of plain JDBC throughput.
 
 ## SQL Parsers
 
@@ -89,9 +89,9 @@ Parser results are independent of the database. sqala's hand-written recursive-d
 
 ## Takeaways
 
-- Point query throughput: sqala reaches about 164k ops/s, essentially on par with Hibernate and about 89% of plain JDBC.
+- Point query throughput: sqala reaches about 164k ops/s, essentially on par with Hibernate and at about 89% of plain JDBC.
 - Range query throughput: sqala reaches about 956 ops/s, or about 9.56 million rows/s, roughly 94% of plain JDBC and clearly ahead of MyBatis, Hibernate, and jOOQ.
-- With 8 threads, point-query scaling is about 5.2–5.6x and range-query scaling is about 6.0–6.8x, already limited by PostgreSQL concurrency.
+- With 8 threads, point-query scaling is about 5.2–5.6x and range-query scaling is about 6.0–6.8x, and throughput is already starting to be limited by PostgreSQL's concurrency capacity.
 - Parser throughput: Druid about 2.26M ops/s, sqala about 1.37M ops/s, Calcite about 187k ops/s, and JSqlParser about 7,300 ops/s.
 - JMH `AverageTime` with multiple threads reports the mean of per-thread average time per operation, not aggregate throughput. Throughput is measured separately with `-bm thrpt -tu s`.
 

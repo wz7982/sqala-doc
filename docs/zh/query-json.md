@@ -8,9 +8,9 @@
 > ```
 
 
-`JSON_TABLE`是SQL中较新的标准，用于将嵌套JSON数据平铺成关系型数据库能处理的关系表，sqala也对JSON表进行了支持。
+`JSON_TABLE`是SQL中较新的标准，用于将嵌套的JSON数据平铺为关系型数据库可处理的关系表。sqala同样支持JSON表。
 
-`jsonTable`方法用于生成一个JSON表，第一个参数是JSON数据，第二个参数是基础的JSON PATH，第三个参数是列定义：
+`jsonTable`方法用于生成JSON表：第一个参数是JSON数据，第二个参数是基础JSON PATH，第三个参数是列定义：
 
 ```scala
 val query =
@@ -29,9 +29,9 @@ val query =
         )
 ```
 
-列定义支持：
+列定义支持以下四种：
 
-`ordinalColumn`、`pathColumn`、`existsColumn`、`nestedColumns`四种。
+`ordinalColumn`、`pathColumn`、`existsColumn`、`nestedColumns`。
 
 生成的SQL为：
 
@@ -54,14 +54,14 @@ FROM
     ) AS "t1"
 ```
 
-最终在生成类型时，sqala将`nestedColumns`中的字段平铺在外层，因此最后查询的返回类型为：
+在生成返回类型时，sqala会将`nestedColumns`中的字段平铺到外层，因此查询的最终返回类型为：
 
 ```scala
 // 返回类型为List[(o: Int, a: Option[Int], b: Option[String], c: Option[Boolean])]
 val result = db.fetch(query)
 ```
 
-我们可以使用`LATERAL`功能让JSON表获取外部字段作为JSON输入源：
+借助`LATERAL`功能，可以让JSON表以外部字段作为JSON输入源：
 
 ```scala
 case class Entity(json: Json)
@@ -107,7 +107,7 @@ FROM
     ) AS "t2"
 ```
 
-JSON表各主流数据库最新版本实测支持程度如下：
+JSON表在各大主流数据库最新版本中的实测支持情况如下：
 
 | 数据库 | JSON_TABLE 支持 |
 |--------|-----------------|

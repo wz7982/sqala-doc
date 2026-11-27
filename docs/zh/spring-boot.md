@@ -18,16 +18,16 @@
 
 ## 引入依赖
 
-starter只包含适配代码，Spring相关依赖全部为`Provided`，版本由应用自身的依赖管理决定。因此需要同时引入JDBC starter：
+starter仅包含适配代码，Spring相关依赖全部声明为`Provided`，版本由应用自身的依赖管理决定，因此需要同时引入JDBC starter：
 
 ```scala
 libraryDependencies ++= Seq(
-    "com.wz7982" %% "sqala-spring-boot-starter" % "latest.integration",
+    "cn.sqala" %% "sqala-spring-boot-starter" % "latest.integration",
     "org.springframework.boot" % "spring-boot-starter-jdbc" % "4.0.10"
 )
 ```
 
-`spring-boot-starter-jdbc`负责提供`DataSource`、`spring-jdbc`和`spring-tx`。如果应用已经通过`spring-boot-starter-data-jpa`、MyBatis等引入了JDBC starter，则不需要重复声明。
+`spring-boot-starter-jdbc`负责提供`DataSource`、`spring-jdbc`和`spring-tx`。如果应用已通过`spring-boot-starter-data-jpa`、MyBatis等引入了JDBC starter，则无需重复声明。
 
 ## Scala 3.9 注意事项
 
@@ -48,9 +48,9 @@ owner.fullName = io.micrometer.context.ContextSnapshot
 while parsing .../spring-core-7.0.11.jar(org/springframework/core/PropagationContextElement.class)
 ```
 
-- Scala 3.10.x已修复，不需要该依赖
-- 只使用`sqala-jdbc`、不使用Spring的项目不需要
-- 使用Spring Boot 3.x（Spring Framework 6.x）不需要
+- Scala 3.10.x已修复该问题，不需要该依赖
+- 仅使用`sqala-jdbc`、不涉及Spring的项目不需要添加
+- 使用Spring Boot 3.x（Spring Framework 6.x）的应用不需要添加
 - `1.2.1`与Spring Boot 4.0.10管理的`micrometer-observation 1.16.9`对齐
 
 ## 快速开始
@@ -102,7 +102,7 @@ class UserService(
         List(a, b)
 ```
 
-`SqalaExecutionContext`和`SqalaLogging`都是Spring bean，注入后通过`import`引入它们的`given`即可。
+`SqalaExecutionContext`和`SqalaLogging`均为Spring bean，注入后通过`import`引入其`given`实例即可。
 
 ### Controller
 
@@ -155,7 +155,7 @@ logging:
     sqala: debug
 ```
 
-`sqala.logging.level`控制sqala以什么级别生成日志，`logging.level.sqala`控制Logback是否接收该级别。两者不一致时，成功语句可能不会输出。
+`sqala.logging.level`控制sqala以何种级别生成日志，`logging.level.sqala`控制Logback是否接收该级别的日志。两者不一致时，成功语句可能不会输出。
 
 ## 自动配置
 
@@ -166,7 +166,7 @@ logging:
 | `SqalaLogging` | 存在SLF4J | 持有`Logger`，使用`sqala.logging.*`配置 |
 | `PlatformTransactionManager` | 存在唯一或`@Primary`的`DataSource`且没有其他事务管理器 | 注册`DataSourceTransactionManager` |
 
-所有自动配置都伴有`@ConditionalOnMissingBean`，应用可以声明自己的Bean覆盖默认行为。
+所有自动配置均带有`@ConditionalOnMissingBean`条件，应用可声明自己的Bean以覆盖默认行为。
 
 ## 配置项
 
@@ -174,7 +174,7 @@ logging:
 
 | 配置 | 默认值 | 说明 |
 | :--- | :--- | :--- |
-| `sqala.jdbc.dialect` | `postgresql` | 数据库方言，可选`postgresql`、`mysql`、`oracle` |
+| `sqala.jdbc.dialect` | `postgresql` | 数据库方言，可选`postgresql`（别名`postgres`）、`mysql`、`oracle` |
 | `sqala.jdbc.standard-escape-strings` | `true` | 是否使用标准SQL字符串转义 |
 
 ### sqala.logging
@@ -187,11 +187,11 @@ logging:
 | `sqala.logging.max-argument-length` | `200` | 单个参数渲染的最大长度 |
 | `sqala.logging.name` | `sqala` | SLF4J logger名称 |
 
-失败的操作始终以`error`级别记录，`sqala.logging.level`只控制成功操作使用的级别。
+失败的操作始终以`error`级别记录，`sqala.logging.level`仅控制成功操作使用的级别。
 
 ## 事务
 
-在Spring Boot环境下，事务边界完全交给Spring，**不推荐使用sqala的原生事务管理**。请直接使用`@Transactional`或`TransactionTemplate`：
+在Spring Boot环境下，事务边界完全交由Spring管理，**不推荐使用sqala的原生事务管理**。请直接使用`@Transactional`或`TransactionTemplate`：
 
 ```scala
 import org.springframework.transaction.annotation.Transactional
@@ -203,15 +203,15 @@ def transfer(): Unit =
     db.execute(update[Account].set(a => a.balance := a.balance + 100).where(_.id === 2))
 ```
 
-`db.executeTransaction`是为非Spring环境准备的。在Spring Boot中不需要，也不应该再包一层sqala事务。
+`db.executeTransaction`是为非Spring环境准备的。在Spring Boot中既无必要，也不应再额外包裹一层sqala事务。
 
-Spring事务的`timeout`会传递给sqala创建的`Statement`。JDBC `SQLException`会转换为Spring的`DataAccessException`，因此Spring默认的回滚规则会生效。
+Spring事务的`timeout`会传递给sqala创建的`Statement`。JDBC `SQLException`会被转换为Spring的`DataAccessException`，因此Spring默认的回滚规则会生效。
 
-适配层只转换JDBC的`SQLException`。如果业务代码还会抛出其他受检异常，并希望Spring回滚，请使用`@Transactional(rollbackFor = Array(classOf[Exception]))`，或自行将异常包装为运行时异常。
+适配层仅转换JDBC的`SQLException`。若业务代码还会抛出其他受检异常并希望Spring回滚，请使用`@Transactional(rollbackFor = Array(classOf[Exception]))`，或自行将异常包装为运行时异常。
 
 ## 日志
 
-注入`SqalaLogging`并导入它的`given`：
+注入`SqalaLogging`并导入其`given`：
 
 ```scala
 import sqala.spring.boot.SqalaLogging
@@ -220,11 +220,11 @@ class UserService(logging: SqalaLogging):
     import logging.given
 ```
 
-**不要在Spring应用中同时使用`import sqala.slf4j.given`。** 那会引入另一个使用默认配置的`Logger`，导致`sqala.logging.*`配置不生效，严重时还会产生`given`二义。
+**请勿在Spring应用中同时使用`import sqala.slf4j.given`。** 否则会引入另一个使用默认配置的`Logger`，导致`sqala.logging.*`配置失效，严重时还会造成`given`二义性。
 
 ## JSON 序列化
 
-Spring Boot 4使用Jackson 3。如果Controller直接返回case class，需要注册Scala模块：
+Spring Boot 4使用Jackson 3。若Controller直接返回case class，需注册Scala模块：
 
 ```scala
 import org.springframework.context.annotation.{Bean, Configuration}
@@ -246,7 +246,7 @@ libraryDependencies += "tools.jackson.module" %% "jackson-module-scala" % "3.1.8
 
 Spring Boot会自动收集`JacksonModule`类型的Bean并注册到`JsonMapper`。
 
-Jackson目前还不支持直接对Scala 3命名元组（named tuple）做JSON序列化。Controller不要直接返回sqala查询得到的命名元组；请定义一个专门的接收类，把查询结果映射过去再返回：
+Jackson目前尚不支持直接对Scala 3命名元组（named tuple）进行JSON序列化。Controller不应直接返回sqala查询得到的命名元组，请定义一个专门的接收类，将查询结果映射后再返回：
 
 ```scala
 case class UserResponse(id: Int, name: String)
@@ -257,7 +257,7 @@ val response = rows.map(row => UserResponse(row.id, row.name))
 
 ## 多数据源
 
-自动配置只在存在唯一或`@Primary`的`DataSource`时创建`JdbcContext`和回退的`PlatformTransactionManager`。存在多个`DataSource`且没有`@Primary`时，这两个自动配置会跳过，应用仍可正常启动，需要按数据源自行声明。
+自动配置只在存在唯一或`@Primary`的`DataSource`时创建`JdbcContext`和回退的`PlatformTransactionManager`。存在多个`DataSource`且没有`@Primary`时，这两项自动配置会被跳过，应用仍可正常启动，相关Bean需按数据源自行声明。
 
 `SqalaExecutionContext`不绑定固定的`DataSource`，它总是使用当前`JdbcContext`的`DataSource`，因此一个实例即可服务多个数据源；starter会自动注册它。
 

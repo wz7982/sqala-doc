@@ -8,11 +8,11 @@
 > ```
 
 
-属性图查询是SQL 2023标准中新推出的功能，用于复杂图状数据匹配，但目前主流关系型数据库中只有Oracle支持此功能，PostgreSQL数据库则预计在19版本支持此功能。
+属性图查询是SQL 2023标准新引入的功能，用于匹配复杂的图状数据。目前主流关系型数据库中仅Oracle支持此功能，PostgreSQL预计将在19版本提供支持。
 
-sqala选择先基于SQL标准做功能实现，待您的数据库支持此功能后便可以无缝接入，而无需等待查询库跟进。
+sqala选择先基于SQL标准实现该功能，待您的数据库支持后即可无缝接入，无需等待查询库跟进。
 
-首先我们需要在sqala中描述图数据：
+首先，需要在sqala中描述图数据：
 
 ```scala
 case class Person(id: Int, name: String)
@@ -26,7 +26,7 @@ val friendGraph = createGraph(name = "friend_graph")(
 )
 ```
 
-然后使用`graphTable`创建图查询：
+然后，使用`graphTable`创建图查询：
 
 ```scala
 val query =
